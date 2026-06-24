@@ -109,8 +109,8 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
   const p = raw.property ?? {};
   const street = buildStreet(p);
   const suburb = p.suburb ?? "";
-  const images = [...(raw.images ?? [])]
-    .sort((a: any, b: any) => Number(a.index ?? 0) - Number(b.index ?? 0))
+  // Keep Box & Dice's own image order (the arrangement set in the CRM).
+  const images = (raw.images ?? [])
     .map((img: any) => ({ url: img.url, alt: `${street}, ${suburb}` }))
     .filter((i: any) => i.url);
 
