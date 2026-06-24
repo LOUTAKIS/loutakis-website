@@ -141,10 +141,25 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
     .filter((f: any) => f.url !== soiUrl)
     .map((f: any) => ({ name: f.name ?? f.description ?? "Document", url: f.url }));
 
+  // Price: sold listings show the actual SALE price (respecting "price undisclosed");
+  // current/under-offer show the marketing display price.
+  const status = mapStatus(raw);
+  const saleP = Number(raw.sale_price);
+  const priceDisplay =
+    status === "sold"
+      ? raw.price_undisclosed
+        ? "Price undisclosed"
+        : saleP
+        ? "$" + saleP.toLocaleString("en-AU")
+        : "Sold"
+      : raw.price_undisclosed
+      ? "Contact Agent"
+      : raw.display_price || "Contact Agent";
+
   return {
     id: String(raw.id),
     slug: slugify(`${street} ${suburb}`) || String(raw.id),
-    status: mapStatus(raw),
+    status,
     category: mapCategory(raw),
     headline: raw.advertising_copy?.heading ?? `${street}, ${suburb}`,
     address: {
@@ -153,7 +168,7 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
       state: p.state ?? "VIC",
       postcode: p.postcode ?? "",
     },
-    priceDisplay: raw.display_price ?? "Contact Agent",
+    priceDisplay,
     bed: Number(p.beds ?? 0),
     bath: Number(p.baths ?? 0),
     car: Number(p.cars ?? p.garages ?? 0),
