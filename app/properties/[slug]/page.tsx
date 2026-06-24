@@ -98,6 +98,23 @@ export default async function PropertyPage({ params }: { params: { slug: string 
                 </p>
               </>
             )}
+
+            {l.documents && l.documents.length > 0 && (
+              <>
+                <h3 style={{ fontFamily: "var(--serif)", fontWeight: 400, fontSize: 20, margin: "30px 0 10px" }}>Documents</h3>
+                <ul style={{ listStyle: "none", padding: 0 }}>
+                  {l.documents.map((d, i) => (
+                    <li key={i} style={{ borderTop: "1px solid var(--line)", padding: "12px 0" }}>
+                      <a href={d.url} target="_blank" rel="noopener noreferrer"
+                         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 14 }}>
+                        <span>{d.name}</span>
+                        <span style={{ fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--muted)" }}>View / download</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
           </div>
 
           <aside>
