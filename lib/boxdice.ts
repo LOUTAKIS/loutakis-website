@@ -63,11 +63,31 @@ async function paginate(path: string, recordKey: string): Promise<any[]> {
   return all;
 }
 
+/** The agent-controlled "My Website Status" field, lowercased. */
+function websiteStatus(raw: any): string {
+  return String(raw.website_status ?? "").toLowerCase().trim();
+}
+
+/**
+ * A listing appears on the website ONLY when its "My Website Status" is set to
+ * a display value — exactly like the portal feeds respect Portal Status.
+ * Anything unset ("Choose…") or set to withdrawn/off-market/etc. is excluded.
+ */
+function isWebsiteVisible(raw: any): boolean {
+  if (raw.hidden === true) return false;
+  const ws = websiteStatus(raw);
+  if (ws === "") return false; // not published to the website
+  const HIDDEN = ["withdrawn", "off market", "off_market", "offmarket", "prospect", "appraisal", "draft", "deleted"];
+  return !HIDDEN.some((h) => ws.includes(h));
+}
+
+/** Map "My Website Status" to our UI status. */
 function mapStatus(raw: any): ListingStatus {
-  if (raw.under_offer === true) return "under_offer";
-  const sale = String(raw.sale_status ?? "").toLowerCase();
-  if (raw.sale_date || sale.includes("sold") || sale.includes("settled") || sale.includes("unconditional"))
-    return "sold";
+  const ws = websiteStatus(raw);
+  if (ws.includes("sold")) return "sold";
+  if (ws.includes("leased")) return "leased";
+  if (ws.includes("under") || ws.includes("offer") || ws.includes("conditional") || raw.under_offer === true)
+    return "under_offer";
   return "current";
 }
 
@@ -153,7 +173,8 @@ export async function getListings(): Promise<Listing[]> {
     const consultants = await getConsultants();
     const raw = await paginate("/sales_listings", "sales_listings");
     const listings = raw
-      .filter((r) => r.hidden !== true)
+      // show only what the agent has published via "My Website Status"
+      .filter(isWebsiteVisible)
       .map((r) => normalise(r, consultants));
     // de-dupe (pagination can return an updated record again) + newest first
     const byId = new Map(listings.map((l) => [l.id, l]));
@@ -170,8 +191,13 @@ export async function getListingBySlug(slug: string): Promise<Listing | null> {
 }
 
 /**
- * Post an enquiry as a Box & Dice lead (Enquiries endpoint).
- * Requires a listing_id (or consultant_id). The CRM matches/creates the contact.
+ * READ-ONLY MODE — this site NEVER writes to Box & Dice.
+ * This function intentionally does NOT call the Box & Dice API. Enquiries are
+ * handled by the website by email (see components/EnquiryForm.tsx), so no
+ * record is ever created, updated, or deleted in the CRM.
+ *
+ * The entire client above uses GET requests only (sales_listings, consultants).
+ * There are no POST/PUT/PATCH/DELETE calls to Box & Dice anywhere.
  */
 export async function submitEnquiry(input: {
   name: string;
@@ -181,26 +207,6 @@ export async function submitEnquiry(input: {
   listingId?: string;
   consultantId?: string;
 }): Promise<{ ok: boolean }> {
-  if (USE_MOCK || !API_KEY) {
-    console.log("[boxdice] (mock) enquiry received:", input);
-    return { ok: true };
-  }
-  const [first_name, ...rest] = input.name.trim().split(" ");
-  const res = await fetch(`${API_BASE}/enquiries`, {
-    method: "POST",
-    headers: { ...authHeaders(), "Content-Type": "application/json" },
-    body: JSON.stringify({
-      listing_id: input.listingId,
-      consultant_id: input.consultantId,
-      contact: {
-        first_name,
-        last_name: rest.join(" "),
-        email: input.email,
-        mobile: input.phone,
-      },
-      comment: input.message,
-      source: "website",
-    }),
-  });
-  return { ok: res.ok };
+  console.log("[boxdice] enquiry received (NOT sent to CRM — read-only mode):", input);
+  return { ok: true };
 }
