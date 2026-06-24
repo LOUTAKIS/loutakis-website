@@ -95,4 +95,4 @@ To swap imagery, replace the hero/about photos in `app/page.tsx` (currently lice
 
 ---
 
-*API references: [Website Box+Dice API](https://websiteboxdiceapi.docs.apiary.io/) · [Box+Dice Enquiry API](https://boxdiceenquiryapi.docs.apiary.io/)*
+*API references: [Website Box+Dice API](https://websiteboxdiceapi.docs.apiary.io/) · [Box+Dice Enquiry API](https://boxdiceenquiryapi.docs.apiary.io/)* 
