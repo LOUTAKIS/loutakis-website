@@ -117,6 +117,19 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
   const agentIds: number[] = raw.consultant_ids ?? (raw.primary_consultant_id ? [raw.primary_consultant_id] : []);
   const agents = agentIds.map((id) => consultants.get(id)).filter(Boolean) as Agent[];
 
+  // SOI is identified by file TYPE via the dedicated `soi_file` field
+  // (falls back to a website file whose name/type says Statement of Information).
+  const publicFiles = (raw.public_files ?? []).filter((f: any) => f.url);
+  const soiUrl: string | undefined =
+    (raw.soi_file ? String(raw.soi_file) : undefined) ??
+    publicFiles.find((f: any) =>
+      /statement of information|\bsoi\b/i.test(`${f.name ?? ""} ${f.description ?? ""}`)
+    )?.url;
+  // Other website-tagged documents (excluding the SOI, which has its own button).
+  const documents = publicFiles
+    .filter((f: any) => f.url !== soiUrl)
+    .map((f: any) => ({ name: f.name ?? f.description ?? "Document", url: f.url }));
+
   return {
     id: String(raw.id),
     slug: slugify(`${street} ${suburb}`) || String(raw.id),
@@ -143,11 +156,8 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
       end: `${i.inspection_date ?? ""}T${i.end_time ?? "00:00"}`,
     })),
     geo: p.latitude && p.longitude ? { lat: Number(p.latitude), lng: Number(p.longitude) } : undefined,
-    // public/website-tagged files + Statement of Information (read-only)
-    documents: [
-      ...(raw.soi_file ? [{ name: "Statement of Information", url: String(raw.soi_file) }] : []),
-      ...(raw.public_files ?? []).map((f: any) => ({ name: f.name ?? f.description ?? "Document", url: f.url })),
-    ].filter((d: any) => d.url),
+    documents, // website-tagged files (read-only), SOI excluded — it has its own button
+    soiUrl,
     updatedAt: raw.sale_date ?? raw.date_listed ?? new Date().toISOString(),
   };
 }

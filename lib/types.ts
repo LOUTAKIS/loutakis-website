@@ -47,6 +47,7 @@ export interface Listing {
   inspections?: { start: string; end: string }[];
   geo?: { lat: number; lng: number };
   documents?: { name: string; url: string }[];
+  soiUrl?: string;
   updatedAt: string;
 }
 
