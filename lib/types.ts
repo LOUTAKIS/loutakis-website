@@ -46,6 +46,7 @@ export interface Listing {
   agents: Agent[];
   inspections?: { start: string; end: string }[];
   geo?: { lat: number; lng: number };
+  documents?: { name: string; url: string }[];
   updatedAt: string;
 }
 

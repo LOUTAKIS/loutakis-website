@@ -143,6 +143,11 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
       end: `${i.inspection_date ?? ""}T${i.end_time ?? "00:00"}`,
     })),
     geo: p.latitude && p.longitude ? { lat: Number(p.latitude), lng: Number(p.longitude) } : undefined,
+    // public/website-tagged files + Statement of Information (read-only)
+    documents: [
+      ...(raw.soi_file ? [{ name: "Statement of Information", url: String(raw.soi_file) }] : []),
+      ...(raw.public_files ?? []).map((f: any) => ({ name: f.name ?? f.description ?? "Document", url: f.url })),
+    ].filter((d: any) => d.url),
     updatedAt: raw.sale_date ?? raw.date_listed ?? new Date().toISOString(),
   };
 }
