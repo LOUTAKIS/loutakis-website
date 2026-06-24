@@ -109,10 +109,21 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
   const p = raw.property ?? {};
   const street = buildStreet(p);
   const suburb = p.suburb ?? "";
-  // Keep Box & Dice's own image order (the arrangement set in the CRM).
-  const images = (raw.images ?? [])
-    .map((img: any) => ({ url: img.url, alt: `${street}, ${suburb}` }))
-    .filter((i: any) => i.url);
+  // Box & Dice image ordering by the `index` label:
+  //   "MAIN"        = hero photo (show first)
+  //   "A".."Z"      = gallery photos, alphabetical order
+  //   "FLOORPLAN_n" = floorplans (show last, never the hero)
+  const rawImages = (raw.images ?? []).filter((i: any) => i?.url);
+  const idx = (i: any) => String(i.index ?? "").toUpperCase();
+  const main = rawImages.filter((i: any) => idx(i) === "MAIN");
+  const floorplans = rawImages.filter((i: any) => idx(i).startsWith("FLOORPLAN"));
+  const gallery = rawImages
+    .filter((i: any) => idx(i) !== "MAIN" && !idx(i).startsWith("FLOORPLAN"))
+    .sort((a: any, b: any) => idx(a).localeCompare(idx(b), undefined, { numeric: true }));
+  const images = [...main, ...gallery, ...floorplans].map((img: any) => ({
+    url: img.url,
+    alt: `${street}, ${suburb}`,
+  }));
 
   const agentIds: number[] = raw.consultant_ids ?? (raw.primary_consultant_id ? [raw.primary_consultant_id] : []);
   const agents = agentIds.map((id) => consultants.get(id)).filter(Boolean) as Agent[];
