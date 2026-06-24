@@ -31,6 +31,11 @@ function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+/** "SOUTH MELBOURNE" -> "South Melbourne" (Box & Dice returns suburbs in caps). */
+function titleCase(s: string): string {
+  return String(s ?? "").toLowerCase().replace(/\b[a-z]/g, (m) => m.toUpperCase());
+}
+
 /** Pull the records array out of a paginated response body, defensively. */
 function extractRecords(json: any, keyHint?: string): any[] {
   if (Array.isArray(json)) return json;
@@ -108,7 +113,7 @@ function buildStreet(p: any): string {
 function normalise(raw: any, consultants: Map<number, Agent>): Listing {
   const p = raw.property ?? {};
   const street = buildStreet(p);
-  const suburb = p.suburb ?? "";
+  const suburb = titleCase(p.suburb ?? "");
   // Box & Dice image ordering by the `index` label:
   //   "MAIN"        = hero photo (show first)
   //   "A".."Z"      = gallery photos, alphabetical order
