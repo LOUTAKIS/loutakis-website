@@ -70,15 +70,14 @@ function websiteStatus(raw: any): string {
 
 /**
  * A listing appears on the website ONLY when its "My Website Status" is set to
- * a display value — exactly like the portal feeds respect Portal Status.
- * Anything unset ("Choose…") or set to withdrawn/off-market/etc. is excluded.
+ * "Current" or "Sold" — exactly the dropdown values in Box & Dice. Anything set
+ * to "Hidden", or left unset ("Choose…"), is excluded. This mirrors how the
+ * portal feeds respect Portal Status.
  */
 function isWebsiteVisible(raw: any): boolean {
   if (raw.hidden === true) return false;
   const ws = websiteStatus(raw);
-  if (ws === "") return false; // not published to the website
-  const HIDDEN = ["withdrawn", "off market", "off_market", "offmarket", "prospect", "appraisal", "draft", "deleted"];
-  return !HIDDEN.some((h) => ws.includes(h));
+  return ws === "current" || ws === "sold";
 }
 
 /** Map "My Website Status" to our UI status. */
