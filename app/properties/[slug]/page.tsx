@@ -1,9 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getListings, getListingBySlug } from "@/lib/boxdice";
 import { STATUS_LABEL } from "@/lib/types";
 import EnquiryForm from "@/components/EnquiryForm";
+import Gallery from "@/components/Gallery";
 
 export const revalidate = 600;
 
@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const l = await getListingBySlug(params.slug);
   if (!l) return { title: "Property not found" };
   return {
-    title: `${l.address.street}, ${l.address.suburb} — Harbourview`,
+    title: `${l.address.street}, ${l.address.suburb} — Loutakis Real Estate`,
     description: l.headline,
     openGraph: { images: l.images[0]?.url ? [l.images[0].url] : [] },
   };
@@ -48,20 +48,9 @@ export default async function PropertyPage({ params }: { params: { slug: string 
       <div className="wrap">
         <Link href="/properties" className="backlink">← All properties</Link>
 
-        <div className="detail-hero" style={{ marginTop: 18 }}>
-          {l.images[0] && (
-            <Image src={l.images[0].url} alt={l.images[0].alt} fill priority style={{ objectFit: "cover" }} />
-          )}
+        <div style={{ marginTop: 18 }}>
+          <Gallery images={l.images} />
         </div>
-        {l.images.length > 1 && (
-          <div className="gallery-strip">
-            {l.images.slice(1, 4).map((img, i) => (
-              <div className="g" key={i}>
-                <Image src={img.url} alt={img.alt} fill style={{ objectFit: "cover" }} />
-              </div>
-            ))}
-          </div>
-        )}
 
         <div className="detail-grid">
           <div>
