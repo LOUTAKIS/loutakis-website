@@ -4,7 +4,7 @@ import PropertyFilters from "@/components/PropertyFilters";
 export const revalidate = 600;
 
 export const metadata = {
-  title: "Properties — Harbourview Real Estate",
+  title: "Properties — Loutakis Real Estate",
   description: "Current listings and recent sales across Melbourne's Inner West.",
 };
 
