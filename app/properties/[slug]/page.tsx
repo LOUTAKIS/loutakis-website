@@ -71,6 +71,12 @@ export default async function PropertyPage({ params }: { params: { slug: string 
             </h1>
             <div style={{ fontFamily: "var(--serif)", fontSize: 24, marginTop: 8 }}>{l.priceDisplay}</div>
 
+            {l.soiUrl && (
+              <a href={l.soiUrl} target="_blank" rel="noopener noreferrer" className="btn" style={{ marginTop: 18 }}>
+                Statement of Information &darr;
+              </a>
+            )}
+
             <div className="feat">
               <div><span className="n">{l.bed}</span><span className="l">Beds</span></div>
               <div><span className="n">{l.bath}</span><span className="l">Baths</span></div>
