@@ -159,7 +159,7 @@ section { padding: 96px 0; }
 
 /* Gallery fills the screen: hero + 3 thumbnails together fit the viewport,
    so the bottom of the thumbnails always lands at the bottom of the screen. */
-.gallery-fit { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 156px); height: calc(100dvh - 156px); min-height: 460px; }
+.gallery-fit { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 168px); height: calc(100dvh - 168px); min-height: 460px; }
 .gallery-fit .detail-hero { flex: 1 1 auto; min-height: 0; aspect-ratio: auto; }
 .gallery-fit .gallery-strip { flex: 0 0 auto; height: clamp(110px, 20vh, 220px); margin-top: 0; }
 .gallery-fit .gallery-strip .g { aspect-ratio: auto; height: 100%; }
