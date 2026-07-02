@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getListings } from "@/lib/boxdice";
 import ListingCard from "@/components/ListingCard";
+import VideoEmbed from "@/components/VideoEmbed";
 
 export const revalidate = 600;
 
@@ -37,11 +38,7 @@ export default async function HomePage() {
             <p>Every property journey holds a unique story, and I treat each moment with the care and commitment it deserves. To me, it&rsquo;s never &lsquo;just another listing&rsquo; &mdash; it&rsquo;s someone&rsquo;s future, someone&rsquo;s dreams, someone&rsquo;s next chapter&mdash;and I&rsquo;m deeply honoured to be a part of one&rsquo;s story.</p>
             <a href="https://www.loutakis.com.au/contact" className="btn" style={{ marginTop: 28 }}>Join the movement</a>
           </div>
-          {/* Video placeholder — swap for the brand film when ready */}
-          <div className="video-ph" aria-label="Video placeholder">
-            <span className="play" />
-            <span className="video-label">Video placeholder</span>
-          </div>
+          <VideoEmbed id="J-nrYPgIgwU" title="Loutakis Real Estate" />
         </div>
       </section>
 

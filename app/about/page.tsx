@@ -26,8 +26,9 @@ export default function AboutPage() {
       {/* LED BY PASSION */}
       <section className="services">
         <div className="wrap intro-grid">
-          <div className="img-ph" aria-label="Portrait placeholder">
-            <span>Portrait placeholder</span>
+          <div className="portrait">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/michael.jpg" alt="Michael Loutakis" />
           </div>
           <div>
             <div className="eyebrow">Led by passion &amp; authenticity</div>

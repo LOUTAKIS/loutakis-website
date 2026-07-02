@@ -97,6 +97,14 @@ section { padding: 96px 0; }
 .video-ph .play { width: 0; height: 0; border-style: solid; border-width: 16px 0 16px 26px; border-color: transparent transparent transparent #fff; margin-left: 6px; opacity: .9; }
 .video-ph .video-label { position: absolute; bottom: 16px; left: 0; right: 0; text-align: center; color: #fff; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; opacity: .55; }
 .img-ph { position: relative; aspect-ratio: 4/5; background: var(--paper-2); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
+.portrait { position: relative; aspect-ratio: 4/5; overflow: hidden; }
+.portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.video-embed { position: relative; aspect-ratio: 16/9; background: #000; overflow: hidden; }
+.video-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.video-embed-btn { position: absolute; inset: 0; width: 100%; height: 100%; border: none; cursor: pointer; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; }
+.video-embed-btn::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.25); transition: background .2s; }
+.video-embed-btn:hover::after { background: rgba(0,0,0,.15); }
+.video-embed-btn .play { position: relative; z-index: 1; width: 0; height: 0; border-style: solid; border-width: 18px 0 18px 30px; border-color: transparent transparent transparent #fff; margin-left: 8px; }
 @media (min-width: 821px) { .intro-grid .order-last { order: 2; } }
 @media (max-width: 820px) { .intro-grid { grid-template-columns: 1fr; gap: 34px; } }
 

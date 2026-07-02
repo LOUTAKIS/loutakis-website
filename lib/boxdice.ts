@@ -193,6 +193,7 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
     geo: p.latitude && p.longitude ? { lat: Number(p.latitude), lng: Number(p.longitude) } : undefined,
     documents, // website-tagged files (read-only), SOI excluded — it has its own button
     soiUrl,
+    videoUrl: raw.video_link_url || undefined,
     updatedAt: raw.sale_date ?? raw.date_listed ?? new Date().toISOString(),
   };
 }

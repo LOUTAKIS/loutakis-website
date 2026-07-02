@@ -61,6 +61,12 @@ export default async function PropertyPage({ params }: { params: { slug: string 
             <div className="price-row">
               <div>
                 <div className="price-big">{l.priceDisplay}</div>
+                {l.videoUrl && (
+                  <a href={l.videoUrl} target="_blank" rel="noopener noreferrer" className="btn"
+                    style={{ marginTop: 16, marginRight: 10 }}>
+                    &#9654;&nbsp; Watch video
+                  </a>
+                )}
                 {l.soiUrl && (
                   <a href={l.soiUrl} target="_blank" rel="noopener noreferrer" className="btn"
                     style={{ marginTop: 16, fontSize: 9, padding: "10px 21px", letterSpacing: ".15em" }}>

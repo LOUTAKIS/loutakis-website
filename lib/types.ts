@@ -49,6 +49,7 @@ export interface Listing {
   geo?: { lat: number; lng: number };
   documents?: { name: string; url: string }[];
   soiUrl?: string;
+  videoUrl?: string;
   updatedAt: string;
 }
 
