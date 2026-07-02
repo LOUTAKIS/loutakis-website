@@ -125,8 +125,22 @@ export default async function PropertyPage({ params }: { params: { slug: string 
 
           <aside>
             <div className="agent">
+              {l.agents[0]?.photo && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="agent-photo" src={l.agents[0].photo} alt={l.agents[0].name} />
+              )}
               <div className="nm">{l.agents[0]?.name ?? "Loutakis Real Estate"}</div>
               <div className="ttl">{l.agents[0]?.title ?? "Sales"}</div>
+              {(l.agents[0]?.phone || l.agents[0]?.email) && (
+                <div className="agent-contact">
+                  {l.agents[0]?.phone && (
+                    <a href={`tel:${l.agents[0].phone.replace(/\s+/g, "")}`}>{l.agents[0].phone}</a>
+                  )}
+                  {l.agents[0]?.email && (
+                    <a href={`mailto:${l.agents[0].email}`}>{l.agents[0].email}</a>
+                  )}
+                </div>
+              )}
               <EnquiryForm listingId={l.id} />
             </div>
           </aside>
