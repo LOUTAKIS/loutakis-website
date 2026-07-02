@@ -4,6 +4,14 @@ import { getListings, getListingBySlug } from "@/lib/boxdice";
 import { STATUS_LABEL } from "@/lib/types";
 import EnquiryForm from "@/components/EnquiryForm";
 import Gallery from "@/components/Gallery";
+import PropertyVideoHero from "@/components/PropertyVideoHero";
+
+/** Extract a YouTube video id from a Box & Dice video link. */
+function youTubeId(url?: string): string | null {
+  if (!url) return null;
+  const m = url.match(/(?:youtu\.be\/|[?&]v=|\/embed\/|\/shorts\/)([\w-]{11})/);
+  return m ? m[1] : null;
+}
 
 export const revalidate = 600;
 
@@ -33,6 +41,8 @@ export default async function PropertyPage({ params }: { params: { slug: string 
   const l = await getListingBySlug(params.slug);
   if (!l) notFound();
 
+  const vid = youTubeId(l.videoUrl);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "RealEstateListing",
@@ -43,9 +53,10 @@ export default async function PropertyPage({ params }: { params: { slug: string 
   };
 
   return (
-    <section style={{ paddingTop: 40 }}>
+    <section style={{ paddingTop: vid ? 0 : 40 }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <div className="wrap">
+      {vid && <PropertyVideoHero id={vid} />}
+      <div className="wrap" style={vid ? { marginTop: 28 } : undefined}>
         <Link href="/properties" className="backlink">← All properties</Link>
 
         <div style={{ marginTop: 18 }}>
@@ -61,7 +72,7 @@ export default async function PropertyPage({ params }: { params: { slug: string 
             <div className="price-row">
               <div>
                 <div className="price-big">{l.priceDisplay}</div>
-                {l.videoUrl && (
+                {l.videoUrl && !vid && (
                   <a href={l.videoUrl} target="_blank" rel="noopener noreferrer" className="btn"
                     style={{ marginTop: 16, marginRight: 10 }}>
                     &#9654;&nbsp; Watch video
