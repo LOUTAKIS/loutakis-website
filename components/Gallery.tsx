@@ -40,22 +40,24 @@ export default function Gallery({ images }: { images: Img[] }) {
 
   return (
     <>
-      <div className="detail-hero" style={{ cursor: "pointer" }} onClick={() => openAt(0)}>
-        <Image src={images[0].url} alt={images[0].alt} fill priority sizes="100vw" style={{ objectFit: "cover" }} />
-      </div>
-
-      {thumbs.length > 0 && (
-        <div className="gallery-strip">
-          {thumbs.map((img, n) => (
-            <div className="g" key={n} style={{ cursor: "pointer" }} onClick={() => openAt(n + 1)}>
-              <Image src={img.url} alt={img.alt} fill sizes="33vw" style={{ objectFit: "cover" }} />
-              {n === 2 && images.length > 4 && (
-                <div className="more-overlay">+{images.length - 4} more</div>
-              )}
-            </div>
-          ))}
+      <div className="gallery-fit">
+        <div className="detail-hero" style={{ cursor: "pointer" }} onClick={() => openAt(0)}>
+          <Image src={images[0].url} alt={images[0].alt} fill priority sizes="100vw" style={{ objectFit: "cover" }} />
         </div>
-      )}
+
+        {thumbs.length > 0 && (
+          <div className="gallery-strip">
+            {thumbs.map((img, n) => (
+              <div className="g" key={n} style={{ cursor: "pointer" }} onClick={() => openAt(n + 1)}>
+                <Image src={img.url} alt={img.alt} fill sizes="33vw" style={{ objectFit: "cover" }} />
+                {n === 2 && images.length > 4 && (
+                  <div className="more-overlay">+{images.length - 4} more</div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {images.length > 1 && (
         <button className="btn" style={{ marginTop: 16 }} onClick={() => openAt(0)}>
