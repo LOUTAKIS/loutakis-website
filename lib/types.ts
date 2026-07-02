@@ -45,6 +45,7 @@ export interface Listing {
   images: { url: string; alt: string }[];
   agents: Agent[];
   inspections?: { start: string; end: string }[];
+  auctionAt?: string;
   geo?: { lat: number; lng: number };
   documents?: { name: string; url: string }[];
   soiUrl?: string;

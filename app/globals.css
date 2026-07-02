@@ -167,6 +167,10 @@ section { padding: 96px 0; }
 .lb-count { position: absolute; bottom: 22px; left: 0; right: 0; text-align: center; color: #fff; font-size: 12px; letter-spacing: .2em; }
 .detail-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 48px; margin-top: 44px; }
 @media (max-width: 760px) { .detail-grid { grid-template-columns: 1fr; } }
+.price-row { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; margin: 10px 0 4px; }
+.price-row .price-big { font-family: var(--serif); font-size: 24px; }
+.times-label { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+@media (max-width: 620px) { .price-row { grid-template-columns: 1fr; } }
 .feat { display: flex; gap: 34px; padding: 22px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 26px 0; }
 .feat .n { font-family: var(--serif); font-size: 26px; display: block; }
 .feat .l { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-top: 2px; display: block; }

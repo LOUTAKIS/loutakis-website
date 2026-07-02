@@ -186,6 +186,10 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
       start: `${i.inspection_date ?? ""}T${i.start_time ?? "00:00"}`,
       end: `${i.inspection_date ?? ""}T${i.end_time ?? "00:00"}`,
     })),
+    auctionAt:
+      raw.auction && raw.auction_date
+        ? `${raw.auction_date}T${raw.auction_time ?? "12:00"}`
+        : undefined,
     geo: p.latitude && p.longitude ? { lat: Number(p.latitude), lng: Number(p.longitude) } : undefined,
     documents, // website-tagged files (read-only), SOI excluded — it has its own button
     soiUrl,

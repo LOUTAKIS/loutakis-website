@@ -58,13 +58,34 @@ export default async function PropertyPage({ params }: { params: { slug: string 
             <h1 style={{ fontFamily: "var(--serif)", fontWeight: 400, fontSize: "clamp(28px,4vw,40px)" }}>
               {l.address.street}, {l.address.suburb}
             </h1>
-            <div style={{ fontFamily: "var(--serif)", fontSize: 24, marginTop: 8 }}>{l.priceDisplay}</div>
-
-            {l.soiUrl && (
-              <a href={l.soiUrl} target="_blank" rel="noopener noreferrer" className="btn" style={{ marginTop: 18 }}>
-                Statement of Information &darr;
-              </a>
-            )}
+            <div className="price-row">
+              <div>
+                <div className="price-big">{l.priceDisplay}</div>
+                {l.soiUrl && (
+                  <a href={l.soiUrl} target="_blank" rel="noopener noreferrer" className="btn"
+                    style={{ marginTop: 16, fontSize: 9, padding: "10px 21px", letterSpacing: ".15em" }}>
+                    Statement of Information
+                  </a>
+                )}
+              </div>
+              <div>
+                {l.auctionAt && (
+                  <div style={{ marginBottom: 18 }}>
+                    <div className="times-label">Auction</div>
+                    <p>{fmtInspection(l.auctionAt)}</p>
+                  </div>
+                )}
+                {l.inspections && l.inspections.length > 0 && (
+                  <div>
+                    <div className="times-label">Inspections</div>
+                    <p style={{ color: "var(--muted)" }}>
+                      {l.inspections.map((insp, i) => <span key={i}>{fmtInspection(insp.start)}<br /></span>)}
+                      or by private appointment
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div className="feat">
               <div><span className="n">{l.bed}</span><span className="l">Beds</span></div>
@@ -81,16 +102,6 @@ export default async function PropertyPage({ params }: { params: { slug: string 
                 <ul className="features-list">
                   {l.features.map((f, i) => <li key={i}>{f}</li>)}
                 </ul>
-              </>
-            )}
-
-            {l.inspections && l.inspections.length > 0 && (
-              <>
-                <h3 style={{ fontFamily: "var(--serif)", fontWeight: 400, fontSize: 20, margin: "30px 0 6px" }}>Inspections</h3>
-                <p style={{ color: "var(--muted)" }}>
-                  {l.inspections.map((insp, i) => <span key={i}>{fmtInspection(insp.start)}<br /></span>)}
-                  or by private appointment
-                </p>
               </>
             )}
 
@@ -114,7 +125,7 @@ export default async function PropertyPage({ params }: { params: { slug: string 
 
           <aside>
             <div className="agent">
-              <div className="nm">{l.agents[0]?.name ?? "Harbourview Real Estate"}</div>
+              <div className="nm">{l.agents[0]?.name ?? "Loutakis Real Estate"}</div>
               <div className="ttl">{l.agents[0]?.title ?? "Sales"}</div>
               <EnquiryForm listingId={l.id} />
             </div>
