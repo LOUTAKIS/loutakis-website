@@ -40,14 +40,14 @@ export default function Gallery({ images }: { images: Img[] }) {
 
   return (
     <>
-      <div className="detail-hero" style={{ cursor: "zoom-in" }} onClick={() => openAt(0)}>
+      <div className="detail-hero" style={{ cursor: "pointer" }} onClick={() => openAt(0)}>
         <Image src={images[0].url} alt={images[0].alt} fill priority sizes="100vw" style={{ objectFit: "cover" }} />
       </div>
 
       {thumbs.length > 0 && (
         <div className="gallery-strip">
           {thumbs.map((img, n) => (
-            <div className="g" key={n} style={{ cursor: "zoom-in" }} onClick={() => openAt(n + 1)}>
+            <div className="g" key={n} style={{ cursor: "pointer" }} onClick={() => openAt(n + 1)}>
               <Image src={img.url} alt={img.alt} fill sizes="33vw" style={{ objectFit: "cover" }} />
               {n === 2 && images.length > 4 && (
                 <div className="more-overlay">+{images.length - 4} more</div>
