@@ -19,7 +19,10 @@ export default function PropertyVideoHero({ id }: { id: string }) {
       if (cancelled || !holder.current || !w.YT?.Player) return;
       player.current = new w.YT.Player(holder.current, {
         videoId: id,
-        playerVars: { autoplay: 1, mute: 1, controls: 1, rel: 0, modestbranding: 1, playsinline: 1 },
+        playerVars: {
+          autoplay: 1, mute: 1, controls: 0, rel: 0, modestbranding: 1,
+          playsinline: 1, fs: 0, disablekb: 1, iv_load_policy: 3,
+        },
         events: {
           onReady: (e: any) => {
             try { e.target.mute(); e.target.playVideo(); } catch {}
