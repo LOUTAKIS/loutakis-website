@@ -18,7 +18,7 @@ import { MOCK_LISTINGS } from "./mock-data";
  */
 
 const API_KEY = process.env.BOXDICE_API_KEY;
-const API_BASE = (process.env.BOXDICE_API_BASE ?? "https://api.boxdice.com.au/website/v1").replace(/\/$/, "");
+const API_BASE = (process.env.BOXDICE_API_BASE ?? "https://loutakis.boxdice.com.au/website_api").replace(/\/$/, "");
 const REVALIDATE = Number(process.env.LISTINGS_REVALIDATE_SECONDS ?? 600);
 const USE_MOCK = process.env.USE_MOCK_DATA === "true" || !API_KEY;
 const MAX_PAGES = 50;
