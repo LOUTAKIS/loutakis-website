@@ -86,13 +86,20 @@ export default async function PropertyPage({ params }: { params: { slug: string 
                 )}
               </div>
               <div>
-                {l.auctionAt && (
+                {/* Never advertise an auction on a sold or leased property.
+                    Box & Dice often leaves the auction flag set after a sale,
+                    so the campaign status is the source of truth here, not the
+                    auction date. */}
+                {l.auctionAt && l.status !== "sold" && l.status !== "leased" && (
                   <div style={{ marginBottom: 18 }}>
                     <div className="times-label">Auction</div>
                     <p>{fmtInspection(l.auctionAt)}</p>
                   </div>
                 )}
-                {l.inspections && l.inspections.length > 0 && (
+                {/* Same again for inspections — a sold property must never
+                    advertise an open, or someone turns up to a house that
+                    has gone. */}
+                {l.inspections && l.inspections.length > 0 && l.status !== "sold" && l.status !== "leased" && (
                   <div>
                     <div className="times-label">Inspections</div>
                     <p style={{ color: "var(--muted)" }}>
