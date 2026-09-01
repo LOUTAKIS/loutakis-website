@@ -31,6 +31,29 @@ export default function SiteFooter() {
             </p>
           </div>
         </div>
+        {/* Estate Agents Act 1980 (Vic) s 42(1) requires advertising to specify the
+            name under which the agent carries on business — satisfied here. The
+            licence number is not required in Victoria, but can be added below if
+            you want it shown. */}
+        <div className="legal-line" style={{ marginTop: 28, fontSize: 13, opacity: 0.7 }}>
+          <p>
+            Loutakis Real Estate Pty Ltd · Licensed Estate Agent (Vic)
+            <br />
+            ABN 51 686 263 623
+          </p>
+          <p style={{ marginTop: 10 }}>
+            <a href="/privacy">Privacy Policy</a>
+            {"  ·  "}
+            <a
+              href="https://www.consumer.vic.gov.au/duediligencechecklist"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Due diligence checklist
+            </a>
+          </p>
+        </div>
+
         <div className="copy">
           <span>© {new Date().getFullYear()} Loutakis Real Estate Pty Ltd.</span>
           <span>It&rsquo;s time to move.</span>

@@ -158,7 +158,10 @@ export default async function PropertyPage({ params }: { params: { slug: string 
                   )}
                 </div>
               )}
-              <EnquiryForm listingId={l.id} />
+              <EnquiryForm
+                listingId={l.id}
+                listingAddress={`${l.address.street}, ${l.address.suburb}`}
+              />
             </div>
           </aside>
         </div>
