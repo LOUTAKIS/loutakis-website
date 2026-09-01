@@ -72,6 +72,9 @@ export type Enquiry = {
   listingId?: string;
   listingAddress?: string;
   pageUrl?: string;
+  /** Overrides ENQUIRY_TO — used to route a listing enquiry to its own agent.
+   *  Must be resolved SERVER-SIDE from the CRM, never taken from the browser. */
+  to?: string[];
 };
 
 /**
@@ -84,6 +87,8 @@ export async function sendEnquiry(enq: Enquiry): Promise<void> {
       "Email is not configured — set MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET, ENQUIRY_FROM and ENQUIRY_TO"
     );
   }
+
+  const recipients = enq.to?.length ? enq.to : TO;
 
   const token = await getAccessToken();
 
@@ -136,7 +141,7 @@ export async function sendEnquiry(enq: Enquiry): Promise<void> {
         message: {
           subject,
           body: { contentType: "HTML", content: html },
-          toRecipients: TO.map((address) => ({ emailAddress: { address } })),
+          toRecipients: recipients.map((address) => ({ emailAddress: { address } })),
           // So hitting Reply in Outlook answers the buyer, not ourselves.
           replyTo: [{ emailAddress: { address: enq.email, name: enq.name } }],
         },

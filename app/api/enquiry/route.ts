@@ -1,13 +1,44 @@
 import { NextResponse } from "next/server";
 import { sendEnquiry, mailIsConfigured } from "@/lib/mail";
+import { getListings } from "@/lib/boxdice";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_LEN = 5000;
+const ALLOWED_DOMAIN = "@loutakis.com.au";
 
 function clean(v: unknown, max = 200): string {
   return String(v ?? "").trim().slice(0, max);
+}
+
+/**
+ * Work out who should receive this enquiry.
+ *
+ * A property enquiry goes to that listing's own agent; a general enquiry goes
+ * to ENQUIRY_TO. The agent address is looked up from Box & Dice SERVER-SIDE
+ * using only the listing id — the browser never gets to nominate a recipient,
+ * or the form would be an open relay for sending mail from our own domain.
+ * Anything outside our domain is ignored and we fall back to ENQUIRY_TO.
+ */
+async function resolveRecipients(listingId: string): Promise<string[] | undefined> {
+  if (!listingId) return undefined;
+
+  try {
+    const listings = await getListings();
+    const listing = listings.find((l) => l.id === listingId);
+    if (!listing) return undefined;
+
+    const agentEmails = listing.agents
+      .map((a) => (a.email ?? "").trim().toLowerCase())
+      .filter((e) => e.endsWith(ALLOWED_DOMAIN));
+
+    return agentEmails.length ? agentEmails : undefined;
+  } catch (err) {
+    // Never lose an enquiry over a lookup failure — fall back to ENQUIRY_TO.
+    console.error("[enquiry] agent lookup failed, using default recipient", err);
+    return undefined;
+  }
 }
 
 export async function POST(req: Request) {
@@ -56,19 +87,29 @@ export async function POST(req: Request) {
     );
   }
 
+  const listingId = clean(body?.listingId, 50);
+
   try {
+    const to = await resolveRecipients(listingId);
+
     await sendEnquiry({
       name,
       email,
       phone: phone || undefined,
       message,
-      listingId: clean(body?.listingId, 50) || undefined,
+      listingId: listingId || undefined,
       listingAddress: clean(body?.listingAddress) || undefined,
       pageUrl: clean(body?.pageUrl, 500) || undefined,
+      to,
     });
 
     // Durable-ish trail in the Vercel logs alongside the email.
-    console.log("[enquiry] sent", { name, email, listingId: body?.listingId ?? null });
+    console.log("[enquiry] sent", {
+      name,
+      email,
+      listingId: listingId || null,
+      routedTo: to ?? "ENQUIRY_TO (default)",
+    });
 
     return NextResponse.json({ ok: true });
   } catch (err) {
