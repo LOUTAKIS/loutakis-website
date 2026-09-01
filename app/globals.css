@@ -239,3 +239,8 @@ footer.site p, footer.site a { font-size: 13.5px; color: #aaaaaa; }
 /* Licence / ABN line in the footer */
 footer.site .legal-line p { margin: 0; }
 footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2px; }
+
+/* Second and subsequent agents on a listing */
+.agent .agent-extra { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
+.agent-pick { display: block; margin-bottom: 14px; }
+.agent-pick span { display: block; font-size: 11px; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }

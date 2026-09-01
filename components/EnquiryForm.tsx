@@ -11,12 +11,17 @@ import { useState } from "react";
 export default function EnquiryForm({
   listingId,
   listingAddress,
+  agentNames = [],
 }: {
   listingId?: string;
   listingAddress?: string;
+  /** Names only — the server resolves the actual address from the CRM by index,
+   *  so the browser can never nominate who gets emailed. */
+  agentNames?: string[];
 }) {
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState<string>("");
+  const [agentIndex, setAgentIndex] = useState(0);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -40,6 +45,7 @@ export default function EnquiryForm({
           company: f.get("company"), // honeypot
           listingId,
           listingAddress,
+          agentIndex: agentNames.length > 1 ? agentIndex : undefined,
           pageUrl: typeof window !== "undefined" ? window.location.href : undefined,
         }),
       });
@@ -74,6 +80,23 @@ export default function EnquiryForm({
 
   return (
     <form onSubmit={onSubmit} noValidate>
+      {agentNames.length > 1 && (
+        <label className="agent-pick">
+          <span>Who would you like to contact?</span>
+          <select
+            className="field"
+            value={agentIndex}
+            onChange={(e) => setAgentIndex(Number(e.target.value))}
+          >
+            {agentNames.map((n, i) => (
+              <option key={i} value={i}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
       <input className="field" name="name" placeholder="Your name" required />
       <input className="field" name="email" type="email" placeholder="Email" required />
       <input className="field" name="phone" placeholder="Phone" />
