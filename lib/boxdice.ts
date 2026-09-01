@@ -22,6 +22,8 @@ const API_BASE = (process.env.BOXDICE_API_BASE ?? "https://loutakis.boxdice.com.
 const REVALIDATE = Number(process.env.LISTINGS_REVALIDATE_SECONDS ?? 600);
 const USE_MOCK = process.env.USE_MOCK_DATA === "true" || !API_KEY;
 const MAX_PAGES = 50;
+const MAX_RETRIES = 3;            // attempts after the first 429 before giving up
+const MAX_RETRY_WAIT_MS = 30_000; // never sleep longer than this, whatever the header says
 
 function authHeaders() {
   return { Authorization: `Api-Key token=${API_KEY}`, Accept: "application/json" };
@@ -48,15 +50,71 @@ function extractRecords(json: any, keyHint?: string): any[] {
   return [];
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * How long to wait after a 429. Box & Dice send `Retry-After`, which per spec
+ * is either a number of seconds or an HTTP date. Handle both, fall back to 1s
+ * if missing or unparseable, and never wait absurdly long.
+ */
+function retryAfterMs(res: Response): number {
+  const header = res.headers.get("retry-after");
+  if (!header) return 1000;
+
+  const seconds = Number(header);
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.min(seconds * 1000, MAX_RETRY_WAIT_MS);
+  }
+
+  const until = Date.parse(header);
+  if (!Number.isNaN(until)) {
+    return Math.min(Math.max(until - Date.now(), 0), MAX_RETRY_WAIT_MS);
+  }
+
+  return 1000;
+}
+
+/**
+ * One page fetch, with 429 handling.
+ *
+ * The first attempt uses the Next.js data cache (revalidate + tag) exactly as
+ * before. Retries use `no-store` deliberately: without it a 429 can be written
+ * into the data cache and replayed for the whole revalidate window, turning a
+ * moment of rate limiting into ten minutes of mock data.
+ */
+async function fetchPage(url: string): Promise<Response> {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const res: Response = await fetch(url, {
+      headers: authHeaders(),
+      ...(attempt === 0
+        ? { next: { revalidate: REVALIDATE, tags: ["listings"] } }
+        : { cache: "no-store" as RequestCache }),
+    });
+
+    if (res.status !== 429) return res;
+
+    if (attempt === MAX_RETRIES) {
+      console.error(`[boxdice] still rate limited after ${MAX_RETRIES} retries: ${url}`);
+      return res; // let the caller throw with the 429 in the message
+    }
+
+    const wait = retryAfterMs(res);
+    console.warn(
+      `[boxdice] 429 rate limited, waiting ${wait}ms then retrying ` +
+        `(attempt ${attempt + 1}/${MAX_RETRIES}): ${url}`
+    );
+    await sleep(wait);
+  }
+
+  throw new Error("[boxdice] fetchPage exhausted retries unexpectedly");
+}
+
 /** Follow the timestamp-paginated collection until 204 / no `next`. */
 async function paginate(path: string, recordKey: string): Promise<any[]> {
   let url: string | null = `${API_BASE}${path}`;
   const all: any[] = [];
   for (let i = 0; i < MAX_PAGES && url; i++) {
-    const res: Response = await fetch(url, {
-      headers: authHeaders(),
-      next: { revalidate: REVALIDATE, tags: ["listings"] },
-    });
+    const res: Response = await fetchPage(url);
     if (res.status === 204) break; // caught up
     if (!res.ok) throw new Error(`Box & Dice ${path} -> ${res.status} ${res.statusText}`);
     const json: any = await res.json();
