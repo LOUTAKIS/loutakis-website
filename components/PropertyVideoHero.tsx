@@ -22,6 +22,7 @@ export default function PropertyVideoHero({ id }: { id: string }) {
         playerVars: {
           autoplay: 1, mute: 1, controls: 0, rel: 0, modestbranding: 1,
           playsinline: 1, fs: 0, disablekb: 1, iv_load_policy: 3,
+          cc_load_policy: 0, // captions off
         },
         events: {
           onReady: (e: any) => {
