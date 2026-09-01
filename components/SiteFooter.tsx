@@ -7,7 +7,7 @@ export default function SiteFooter() {
         <div className="foot-grid">
           <div>
             <div style={{ marginBottom: 18 }}>
-              <Logo height={24} variant="white" />
+              <Logo height={24} variant="black" />
             </div>
             <p style={{ maxWidth: 340 }}>
               Boutique real estate for Melbourne&apos;s Inner West. It&apos;s time to move.
