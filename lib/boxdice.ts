@@ -342,10 +342,17 @@ function isOffMarket(raw: any): boolean {
   );
 }
 
+/**
+ * Uses the CACHED fetch, deliberately. An uncached read here meant every
+ * portal visit hit Box & Dice directly, and a 429 took the whole page down
+ * with it. Sharing the cache with getListings() means one fetch serves the
+ * public site and the portal alike, at most `REVALIDATE` seconds old — the
+ * off-market list changes when a tag changes, not by the second.
+ */
 export async function getOffMarketListings(): Promise<Listing[]> {
   if (USE_MOCK) return [];
   const consultants = await getConsultants();
-  const raw = await paginate("/sales_listings", "sales_listings", true);
+  const raw = await paginate("/sales_listings", "sales_listings");
   const byId = new Map<string, any>();
   for (const r of raw) byId.set(String(r.id), r);
   return [...byId.values()]

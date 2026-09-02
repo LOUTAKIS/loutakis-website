@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/portal-session";
 import { getOffMarketListings } from "@/lib/boxdice";
+import type { Listing } from "@/lib/types";
 import EnquiryForm from "@/components/EnquiryForm";
 
 export const metadata = {
@@ -45,7 +46,32 @@ export default async function PortalPage() {
     );
   }
 
-  const listings = await getOffMarketListings();
+  // Never let a CRM hiccup take the page down. "Nothing available" and "we
+  // couldn't reach the CRM" are different messages — saying the first when the
+  // second is true would tell an approved buyer there's nothing for them.
+  let listings: Listing[] = [];
+  let unavailable = false;
+  try {
+    listings = await getOffMarketListings();
+  } catch (err) {
+    console.error("[portal] off-market list unavailable:", err);
+    unavailable = true;
+  }
+
+  if (unavailable) {
+    return (
+      <section className="portal-page">
+        <div className="wrap" style={{ maxWidth: 640 }}>
+          <div className="eyebrow">Off-market</div>
+          <h2>Just a moment</h2>
+          <p className="portal-intro">
+            We couldn&rsquo;t load the list right now. Please refresh in a minute — or call Michael
+            on 0409 438 025 and he&rsquo;ll talk you through what&rsquo;s available.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="portal-page">
