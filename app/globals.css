@@ -253,3 +253,24 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .agent .agent-extra { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
 .agent-pick { display: block; margin-bottom: 14px; }
 .agent-pick span { display: block; font-size: 11px; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }
+
+/* ---- Off-market portal ---- */
+.portal-page h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 4vw, 46px); margin-bottom: 26px; }
+.portal-intro { color: var(--muted); max-width: 62ch; margin-bottom: 14px; }
+
+.portal-form { margin-top: 42px; display: flex; flex-direction: column; gap: 4px; }
+.portal-form label { display: block; }
+.portal-form label > span { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.pf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+@media (max-width: 620px) { .pf-row { grid-template-columns: 1fr; } }
+.pf-optional { font-size: 13px; color: var(--muted); margin: 22px 0 14px; padding-top: 20px; border-top: 1px solid var(--line); }
+
+.pf-checks { display: flex; flex-direction: column; gap: 14px; margin: 24px 0 28px; padding-top: 22px; border-top: 1px solid var(--line); }
+.pf-check { display: grid; grid-template-columns: 20px 1fr; gap: 12px; align-items: start; cursor: pointer; }
+.pf-check input { margin-top: 4px; width: 16px; height: 16px; }
+.pf-check span { font-size: 14px; line-height: 1.55; color: var(--muted); }
+.pf-check strong { color: var(--ink); font-weight: 600; }
+
+.portal-done { margin-top: 42px; padding: 30px 32px; background: var(--paper-2); border-left: 3px solid var(--ink); }
+.portal-done h3 { font-family: var(--serif); font-weight: 400; font-size: 24px; margin-bottom: 12px; }
+.portal-done p { color: var(--muted); max-width: 56ch; margin-bottom: 10px; }
