@@ -20,7 +20,15 @@ import { MOCK_LISTINGS } from "./mock-data";
 const API_KEY = process.env.BOXDICE_API_KEY;
 const API_BASE = (process.env.BOXDICE_API_BASE ?? "https://loutakis.boxdice.com.au/website_api").replace(/\/$/, "");
 const REVALIDATE = Number(process.env.LISTINGS_REVALIDATE_SECONDS ?? 600);
-const USE_MOCK = process.env.USE_MOCK_DATA === "true" || !API_KEY;
+/**
+ * Sample listings are a LOCAL DEVELOPMENT convenience only — never production.
+ * `USE_MOCK_DATA` has sat in Vercel Production since June 2026 with a sealed
+ * value; if it were ever "true" the public site would advertise six invented
+ * properties. The environment check disarms that permanently.
+ */
+const USE_MOCK =
+  process.env.NODE_ENV !== "production" &&
+  (process.env.USE_MOCK_DATA === "true" || !API_KEY);
 const MAX_PAGES = 50;
 const MAX_RETRIES = 5;            // attempts after the first 429 before giving up
 const MAX_RETRY_WAIT_MS = 30_000; // never sleep longer than this, whatever the header says
@@ -374,8 +382,15 @@ export async function getListings(): Promise<Listing[]> {
     const byId = new Map(listings.map((l) => [l.id, l]));
     return [...byId.values()].sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
   } catch (err) {
-    console.error("[boxdice] falling back to mock data:", err);
-    return MOCK_LISTINGS;
+    // Deliberately NOT falling back to mock data. Publishing invented
+    // addresses and prices on a licensed agent's website is far worse than
+    // showing nothing, and it hid three real outages by looking like content.
+    //
+    // Throwing is also the right ISR behaviour: when a background revalidation
+    // fails, Next keeps serving the last good page, so a rate-limit blip is
+    // invisible to visitors. Only a cold cache reaches the error boundary.
+    console.error("[boxdice] listings unavailable:", err);
+    throw err;
   }
 }
 

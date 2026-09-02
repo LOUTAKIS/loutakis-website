@@ -33,20 +33,10 @@ export default async function PropertiesPage() {
           <Link href="/portal/register" className="btn">Request access</Link>
         </aside>
 
-        {/* Sale of Land Act 1962 (Vic) ss 33B–33C: the due diligence checklist
-            must be made available to prospective purchasers of residential land
-            from the time the property is offered for sale. */}
-        <p className="due-diligence" style={{ marginTop: 48, fontSize: 14, opacity: 0.75 }}>
-          Buying a residential property? Consumer Affairs Victoria&rsquo;s{" "}
-          <a
-            href="https://www.consumer.vic.gov.au/duediligencechecklist"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            due diligence checklist
-          </a>{" "}
-          covers the questions worth asking before you sign.
-        </p>
+        {/* Sale of Land Act 1962 (Vic) ss 33B–33C — the due diligence checklist
+            must be available to prospective purchasers from the time the land is
+            offered for sale. Removed from this page by request; the obligation is
+            still met by the permanent link in the site footer. Don't remove both. */}
       </div>
     </section>
   );
