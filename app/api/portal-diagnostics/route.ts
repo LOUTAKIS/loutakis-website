@@ -18,7 +18,17 @@ import { getRawSalesListings } from "@/lib/boxdice";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const PORTAL_TAG = "portal-offmarket";
+/**
+ * The off-market marker is the Box & Dice Listing Tag named "Off Market"
+ * (Settings → Listings → Listing Tags). Listing Tags are a managed list, so the
+ * value is consistent when applied — but we normalise anyway, so renaming it to
+ * "Off-Market" or "off market" later doesn't silently empty the portal.
+ */
+const PORTAL_TAG = "Off Market";
+const norm = (s: unknown) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+const PORTAL_TAG_NORM = norm(PORTAL_TAG);
+const hasPortalTag = (l: any) =>
+  (l.property?.tags ?? []).some((t: unknown) => norm(t) === PORTAL_TAG_NORM);
 
 export async function GET() {
   let raw: any[];
@@ -54,7 +64,7 @@ export async function GET() {
   }
 
   const count = (fn: (l: any) => boolean) => listings.filter(fn).length;
-  const tagged = listings.filter((l) => (l.property?.tags ?? []).includes(PORTAL_TAG));
+  const tagged = listings.filter(hasPortalTag);
 
   // Which website_status values are actually in use — tells us whether the
   // portal can lean on status at all, or must rely on tags alone.
