@@ -72,9 +72,19 @@ export async function assignCategory(
     body: JSON.stringify({ categories: [{ name: category, consultant_id: consultantId }] }),
     cache: "no-store",
   });
-  if (!res.ok) {
-    throw new Error(`assignCategory ${category} -> ${res.status} ${await res.text()}`);
-  }
+
+  if (res.ok) return;
+
+  // A repeat registration answers 422 because the category is already there.
+  // Status codes have been unreliable on this API in both directions, so the
+  // only thing worth trusting is the record itself.
+  const detail = await res.text();
+  const stored = await getContact(contactId).catch(() => null);
+  const present = (stored?.categories ?? []).some((c: any) => (c?.name ?? c) === category);
+
+  if (present) return; // already assigned — nothing to do, not an error
+
+  throw new Error(`assignCategory ${category} -> ${res.status} ${detail}`);
 }
 
 /**

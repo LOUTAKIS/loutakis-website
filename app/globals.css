@@ -274,3 +274,17 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .portal-done { margin-top: 42px; padding: 30px 32px; background: var(--paper-2); border-left: 3px solid var(--ink); }
 .portal-done h3 { font-family: var(--serif); font-weight: 400; font-size: 24px; margin-bottom: 12px; }
 .portal-done p { color: var(--muted); max-width: 56ch; margin-bottom: 10px; }
+
+/* Consent rows: these must beat `.portal-form label > span`, which is more
+   specific than `.pf-check span` and was forcing the consent text into
+   uppercase and breaking the checkbox alignment. */
+.portal-form .pf-check { display: grid; grid-template-columns: 20px 1fr; gap: 12px; align-items: start; cursor: pointer; }
+.portal-form .pf-check > span {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+  margin-bottom: 0;
+}
+.portal-form .pf-check > span strong { color: var(--ink); font-weight: 600; }
