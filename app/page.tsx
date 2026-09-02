@@ -4,7 +4,14 @@ import { getListings } from "@/lib/boxdice";
 import ListingCard from "@/components/ListingCard";
 import VideoEmbed from "@/components/VideoEmbed";
 
-export const revalidate = 600;
+/**
+ * Rendered per request, not at build time. Box & Dice rate-limits builds into
+ * failure (2 Sep 2026), and a page that can't be built blocks every unrelated
+ * deploy. The listings fetch itself is still cached for LISTINGS_REVALIDATE_
+ * SECONDS in the data cache, so this costs at most one API call per 10 minutes
+ * — the same as the ISR it replaces.
+ */
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const listings = await getListings();

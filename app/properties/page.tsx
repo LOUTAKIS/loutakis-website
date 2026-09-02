@@ -2,7 +2,9 @@ import Link from "next/link";
 import { getListings } from "@/lib/boxdice";
 import PropertyFilters from "@/components/PropertyFilters";
 
-export const revalidate = 600;
+// Per request, not at build — see the note in app/page.tsx. The underlying
+// CRM fetch is still cached, so this doesn't add API traffic.
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Properties — Loutakis Real Estate",
