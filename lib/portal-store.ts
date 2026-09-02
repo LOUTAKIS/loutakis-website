@@ -77,8 +77,10 @@ export async function rememberContact(opts: {
   }
   if (!items.length) return;
 
+  // `/v1/global-config/` — the pre-rename `/v1/edge-config/` path still
+  // answers, but with a misleading 404 "Edge Config Item not found" (2 Sep 2026).
   const res = await fetch(
-    `https://api.vercel.com/v1/edge-config/${STORE_ID}/items?teamId=${encodeURIComponent(TEAM_ID)}`,
+    `https://api.vercel.com/v1/global-config/${STORE_ID}/items?teamId=${encodeURIComponent(TEAM_ID)}`,
     {
       method: "PATCH",
       headers: {
