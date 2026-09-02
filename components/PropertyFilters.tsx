@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Listing } from "@/lib/types";
 import ListingCard from "./ListingCard";
@@ -64,6 +65,20 @@ export default function PropertyFilters({ listings }: { listings: Listing[] }) {
         <p style={{ color: "var(--muted)", marginTop: 30 }}>
           No properties match this filter right now.
         </p>
+      )}
+
+      {/* Current listings only. Someone browsing past sales is reading history,
+          not shopping — pitching the private list there reads as a sales pitch
+          on a results page. */}
+      {tab === "current" && (
+        <aside className="offmarket-card">
+          <div>
+            <div className="eyebrow">Off-market</div>
+            <h3>Not everything we sell is here.</h3>
+            <p>Some owners prefer a quiet campaign. Those homes go to a private list.</p>
+          </div>
+          <Link href="/portal/register" className="btn">Request access</Link>
+        </aside>
       )}
     </>
   );

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getListings } from "@/lib/boxdice";
 import PropertyFilters from "@/components/PropertyFilters";
 
@@ -23,17 +22,9 @@ export default async function PropertiesPage() {
             <h2>Current listings</h2>
           </div>
         </div>
+        {/* The off-market card lives inside PropertyFilters — it only shows on
+            the Current tab, so it needs the tab state. */}
         <PropertyFilters listings={listings} />
-
-        {/* Catches the buyer who has just scrolled everything we advertise. */}
-        <aside className="offmarket-card">
-          <div>
-            <div className="eyebrow">Off-market</div>
-            <h3>Not everything we sell is here.</h3>
-            <p>Some owners prefer a quiet campaign. Those homes go to a private list.</p>
-          </div>
-          <Link href="/portal/register" className="btn">Request access</Link>
-        </aside>
 
         {/* Sale of Land Act 1962 (Vic) ss 33B–33C — the due diligence checklist
             must be available to prospective purchasers from the time the land is
