@@ -2,6 +2,7 @@ import "server-only";
 import { createContact } from "./boxdice-write";
 import { sendMail, officeRecipients, esc } from "./mail";
 import { createToken } from "./portal-token";
+import { rememberContact } from "./portal-store";
 
 /**
  * Off-market portal — Box & Dice operations.
@@ -169,6 +170,13 @@ export async function registerBuyer(r: Registration) {
 
   await assignCategory(contactId, CATEGORY_PENDING, consultantId);
   await addNote(contactId, summarise(r));
+
+  // So they can sign in later by email or mobile. Recorded at registration,
+  // not approval, so a pending buyer who tries to sign in can be told they're
+  // pending rather than "unknown".
+  await rememberContact({ contactId, email: r.email, mobile: r.mobile }).catch((err) =>
+    console.error("[portal] store write failed", err)
+  );
 
   // Tell the office. A registration nobody hears about is a lead lost — this
   // must not depend on anyone remembering to look in the CRM.

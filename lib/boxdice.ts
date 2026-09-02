@@ -22,7 +22,7 @@ const API_BASE = (process.env.BOXDICE_API_BASE ?? "https://loutakis.boxdice.com.
 const REVALIDATE = Number(process.env.LISTINGS_REVALIDATE_SECONDS ?? 600);
 const USE_MOCK = process.env.USE_MOCK_DATA === "true" || !API_KEY;
 const MAX_PAGES = 50;
-const MAX_RETRIES = 3;            // attempts after the first 429 before giving up
+const MAX_RETRIES = 5;            // attempts after the first 429 before giving up
 const MAX_RETRY_WAIT_MS = 30_000; // never sleep longer than this, whatever the header says
 
 function authHeaders() {
@@ -77,19 +77,18 @@ function retryAfterMs(res: Response): number {
 /**
  * One page fetch, with 429 handling.
  *
- * The first attempt uses the Next.js data cache (revalidate + tag) exactly as
- * before. Retries use `no-store` deliberately: without it a 429 can be written
- * into the data cache and replayed for the whole revalidate window, turning a
- * moment of rate limiting into ten minutes of mock data.
+ * Every attempt uses the same cache options. Next.js only writes 200 responses
+ * to its data cache, so a 429 is never replayed — and switching retries to
+ * `no-store` (an earlier version did) throws DYNAMIC_SERVER_USAGE inside
+ * statically generated pages, which turned every rate-limited build into a
+ * mock-data build.
  */
 async function fetchPage(url: string, noStore = false): Promise<Response> {
+  const cacheOpts = noStore
+    ? { cache: "no-store" as RequestCache }
+    : { next: { revalidate: REVALIDATE, tags: ["listings"] } };
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const res: Response = await fetch(url, {
-      headers: authHeaders(),
-      ...(attempt === 0 && !noStore
-        ? { next: { revalidate: REVALIDATE, tags: ["listings"] } }
-        : { cache: "no-store" as RequestCache }),
-    });
+    const res: Response = await fetch(url, { headers: authHeaders(), ...cacheOpts });
 
     if (res.status !== 429) return res;
 
@@ -109,8 +108,26 @@ async function fetchPage(url: string, noStore = false): Promise<Response> {
   throw new Error("[boxdice] fetchPage exhausted retries unexpectedly");
 }
 
-/** Follow the timestamp-paginated collection until 204 / no `next`. */
-async function paginate(path: string, recordKey: string, noStore = false): Promise<any[]> {
+/**
+ * Follow the timestamp-paginated collection until 204 / no `next`.
+ *
+ * Concurrent callers for the same collection share one in-flight request.
+ * `next build` renders every property page at once and each one asks for the
+ * same two collections; without this they all miss the data cache together
+ * and Box & Dice rate-limits the whole build into mock data.
+ */
+const inflight = new Map<string, Promise<any[]>>();
+
+function paginate(path: string, recordKey: string, noStore = false): Promise<any[]> {
+  const key = `${path}|${noStore ? "live" : "cached"}`;
+  const existing = inflight.get(key);
+  if (existing) return existing;
+  const p = paginateUncached(path, recordKey, noStore).finally(() => inflight.delete(key));
+  inflight.set(key, p);
+  return p;
+}
+
+async function paginateUncached(path: string, recordKey: string, noStore: boolean): Promise<any[]> {
   let url: string | null = `${API_BASE}${path}`;
   const all: any[] = [];
   for (let i = 0; i < MAX_PAGES && url; i++) {
@@ -121,7 +138,13 @@ async function paginate(path: string, recordKey: string, noStore = false): Promi
     const batch = extractRecords(json, recordKey);
     if (batch.length === 0) break;
     all.push(...batch);
-    url = typeof json?.next === "string" ? json.next : null;
+    // The documented envelope is { data: [...], paging: { next } }. Reading a
+    // top-level `next` finds nothing, so the loop used to stop after page one —
+    // harmless while everything fits in a single page, silently lossy after that.
+    url =
+      (typeof json?.paging?.next === "string" && json.paging.next) ||
+      (typeof json?.next === "string" && json.next) ||
+      null;
   }
   return all;
 }
@@ -288,6 +311,47 @@ export async function getRawSalesListings(): Promise<any[]> {
   // noStore: a diagnostic that reads a ten-minute-old cache is worse than
   // useless — it reports the state before whatever you just changed.
   return paginate("/sales_listings", "sales_listings", true);
+}
+
+/**
+ * Off-market listings for the portal.
+ *
+ * The rule, settled against the live CRM:
+ *   - carries the Box & Dice PROPERTY tag "Off Market" (Listing Tags never reach
+ *     the API), matched case- and punctuation-insensitively
+ *   - status is "current" — property tags outlive the campaign, so this is
+ *     what drops a sold property off the portal without anyone tidying the tag
+ *   - not marked sensitive or hidden
+ *
+ * Only the tag can ADD a listing. Status only ever REMOVES one. A listing that
+ * is current but untagged is not-yet-advertised, not off-market — see the
+ * eleven such campaigns found on 1 Sep 2026.
+ *
+ * Prices are stripped: the portal doesn't show them, by decision.
+ */
+const OFF_MARKET_TAG = "offmarket";
+const normTag = (s: unknown) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+function isOffMarket(raw: any): boolean {
+  const tagged = (raw.property?.tags ?? []).some((t: unknown) => normTag(t) === OFF_MARKET_TAG);
+  return (
+    tagged &&
+    String(raw.status ?? "").toLowerCase() === "current" &&
+    raw.situation_very_sensitive !== true &&
+    raw.hidden !== true
+  );
+}
+
+export async function getOffMarketListings(): Promise<Listing[]> {
+  if (USE_MOCK) return [];
+  const consultants = await getConsultants();
+  const raw = await paginate("/sales_listings", "sales_listings", true);
+  const byId = new Map<string, any>();
+  for (const r of raw) byId.set(String(r.id), r);
+  return [...byId.values()]
+    .filter(isOffMarket)
+    .map((r) => ({ ...normalise(r, consultants), priceDisplay: "" }))
+    .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
 }
 
 export async function getListings(): Promise<Listing[]> {

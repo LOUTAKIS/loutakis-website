@@ -13,7 +13,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 const SECRET = process.env.PORTAL_TOKEN_SECRET;
 
-export type Action = "approve" | "decline";
+export type Action = "approve" | "decline" | "signin" | "session";
 
 type Payload = {
   a: Action;
@@ -72,4 +72,14 @@ export function verifyToken(token: string): Payload | null {
 
 export function tokensConfigured(): boolean {
   return Boolean(SECRET);
+}
+
+/**
+ * A one-tap sign-in link, emailed to the address on the buyer's CRM record.
+ * Short-lived: it proves control of that inbox at that moment, nothing more.
+ * Forwarding it is pointless — it lapses in fifteen minutes and the session it
+ * creates is checked against the CRM on every page anyway.
+ */
+export function createSignInToken(contactId: string | number): string {
+  return createToken("signin", contactId, 15 / (24 * 60));
 }

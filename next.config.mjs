@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // One static-generation worker. Box & Dice rate-limits hard; with several
+  // workers every property page fetches the same collections at the same
+  // moment and the build degrades to mock data. Serial is a few seconds
+  // slower and lets the first fetch feed the data cache for the rest.
+  experimental: { cpus: 1 },
   images: {
     remotePatterns: [
       // Box & Dice / CRM image CDN — add your real listing image host(s) here.

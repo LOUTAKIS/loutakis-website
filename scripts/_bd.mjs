@@ -94,7 +94,11 @@ export async function paginate(base, key, path) {
     if (!batch.length) break;
 
     all.push(...batch);
-    url = typeof json.next === "string" ? json.next : null;
+    // Cursor lives at paging.next per the API blueprint, not at the top level.
+    url =
+      (typeof json?.paging?.next === "string" && json.paging.next) ||
+      (typeof json?.next === "string" && json.next) ||
+      null;
   }
   return all;
 }
