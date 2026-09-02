@@ -60,6 +60,18 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* OFF-MARKET */}
+      <section className="offmarket-band">
+        <div className="wrap">
+          <div className="eyebrow">Off-market</div>
+          <h2 className="lead">Some homes sell<br />before they&rsquo;re listed.</h2>
+          <p>
+            A quiet list, shared with buyers we know. Ask to be on it.
+          </p>
+          <Link href="/portal/register" className="btn">Request access</Link>
+        </div>
+      </section>
+
       {/* CONTACT */}
       <section id="contact" className="services" style={{ textAlign: "center" }}>
         <div className="wrap">

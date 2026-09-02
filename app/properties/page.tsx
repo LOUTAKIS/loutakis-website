@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getListings } from "@/lib/boxdice";
 import PropertyFilters from "@/components/PropertyFilters";
 
@@ -21,6 +22,16 @@ export default async function PropertiesPage() {
           </div>
         </div>
         <PropertyFilters listings={listings} />
+
+        {/* Catches the buyer who has just scrolled everything we advertise. */}
+        <aside className="offmarket-card">
+          <div>
+            <div className="eyebrow">Off-market</div>
+            <h3>Not everything we sell is here.</h3>
+            <p>Some owners prefer a quiet campaign. Those homes go to a private list.</p>
+          </div>
+          <Link href="/portal/register" className="btn">Request access</Link>
+        </aside>
 
         {/* Sale of Land Act 1962 (Vic) ss 33B–33C: the due diligence checklist
             must be made available to prospective purchasers of residential land

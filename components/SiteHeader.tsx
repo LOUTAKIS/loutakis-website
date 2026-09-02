@@ -11,6 +11,7 @@ export default function SiteHeader() {
         <nav className="nav-links">
           <Link href="/services">Services</Link>
           <Link href="/properties">Properties</Link>
+          <Link href="/portal">Off-market</Link>
           <Link href="/about">About</Link>
           <Link href="/contact">Contact</Link>
         </nav>
