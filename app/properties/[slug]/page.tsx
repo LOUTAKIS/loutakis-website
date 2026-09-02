@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getListings, getListingBySlug } from "@/lib/boxdice";
+import { getListingBySlug } from "@/lib/boxdice";
 import { STATUS_LABEL } from "@/lib/types";
 import EnquiryForm from "@/components/EnquiryForm";
 import Gallery from "@/components/Gallery";
@@ -15,9 +15,17 @@ function youTubeId(url?: string): string | null {
 
 export const revalidate = 600;
 
-export async function generateStaticParams() {
-  const listings = await getListings();
-  return listings.map((l) => ({ slug: l.slug }));
+/**
+ * No property pages are pre-rendered at build time. Box & Dice rate-limits
+ * hard enough that generating ~30 pages in one build gets the whole build
+ * throttled (Vercel killed one at 6 minutes, 2 Sep 2026). Each page renders
+ * on its first request instead and is then cached for `revalidate` seconds —
+ * identical behaviour after the first visit, and the build makes only the
+ * handful of calls the home and listings pages need.
+ */
+export const dynamicParams = true;
+export function generateStaticParams() {
+  return [];
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
