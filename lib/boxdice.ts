@@ -275,6 +275,19 @@ async function getConsultants(): Promise<Map<number, Agent>> {
   return map;
 }
 
+/**
+ * Raw, unfiltered sales listings straight from Box & Dice.
+ *
+ * DIAGNOSTIC USE ONLY. getListings() below is what the site renders — it
+ * normalises and filters by website_status. This returns the untouched records
+ * so we can inspect fields the UI never reads (tags, sensitivity flags) while
+ * designing the off-market portal. Never render this to a visitor.
+ */
+export async function getRawSalesListings(): Promise<any[]> {
+  if (USE_MOCK) return [];
+  return paginate("/sales_listings", "sales_listings");
+}
+
 export async function getListings(): Promise<Listing[]> {
   if (USE_MOCK) return MOCK_LISTINGS;
   try {
