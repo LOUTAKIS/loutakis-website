@@ -64,6 +64,54 @@ async function getAccessToken(): Promise<string> {
   return json.access_token;
 }
 
+/**
+ * Send an email as ENQUIRY_FROM. The general-purpose primitive — sendEnquiry
+ * below is one caller, the portal is another.
+ */
+export async function sendMail(opts: {
+  to: string[];
+  subject: string;
+  html: string;
+  replyTo?: { address: string; name?: string };
+}): Promise<void> {
+  if (!mailIsConfigured()) throw new Error("Email is not configured");
+
+  const token = await getAccessToken();
+
+  const res = await fetch(
+    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(FROM!)}/sendMail`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: {
+          subject: opts.subject,
+          body: { contentType: "HTML", content: opts.html },
+          toRecipients: opts.to.map((address) => ({ emailAddress: { address } })),
+          ...(opts.replyTo
+            ? {
+                replyTo: [
+                  { emailAddress: { address: opts.replyTo.address, name: opts.replyTo.name } },
+                ],
+              }
+            : {}),
+        },
+        saveToSentItems: false,
+      }),
+      cache: "no-store",
+    }
+  );
+
+  if (!res.ok) throw new Error(`Graph sendMail failed: ${res.status} ${await res.text()}`);
+}
+
+/** Recipients for internal notifications (ENQUIRY_TO). */
+export function officeRecipients(): string[] {
+  return TO;
+}
+
+export { esc };
+
 export type Enquiry = {
   name: string;
   email: string;

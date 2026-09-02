@@ -1,5 +1,7 @@
 import "server-only";
 import { createContact } from "./boxdice-write";
+import { sendMail, officeRecipients, esc } from "./mail";
+import { createToken } from "./portal-token";
 
 /**
  * Off-market portal — Box & Dice operations.
@@ -168,5 +170,133 @@ export async function registerBuyer(r: Registration) {
   await assignCategory(contactId, CATEGORY_PENDING, consultantId);
   await addNote(contactId, summarise(r));
 
+  // Tell the office. A registration nobody hears about is a lead lost — this
+  // must not depend on anyone remembering to look in the CRM.
+  await notifyOffice(contactId, r).catch((err) =>
+    console.error("[portal] registration notification failed", err)
+  );
+
   return { contactId, consultantId };
+}
+
+const siteUrl = () =>
+  (process.env.NEXT_PUBLIC_SITE_URL ?? "https://loutakis-website.vercel.app").replace(/\/$/, "");
+
+/** Email the office with the registration and one-tap approve / decline links. */
+export async function notifyOffice(contactId: number | string, r: Registration) {
+  const approve = `${siteUrl()}/api/portal/approve?t=${createToken("approve", contactId)}`;
+  const decline = `${siteUrl()}/api/portal/approve?t=${createToken("decline", contactId)}`;
+
+  const rows: Array<[string, string]> = [
+    ["Name", `${r.firstName} ${r.lastName}`],
+    ["Mobile", r.mobile],
+    ["Email", r.email],
+    ["Situation", r.situation],
+    ["Budget", r.budget || "—"],
+    ["Suburbs", r.suburbs || "—"],
+    ["Min bedrooms", r.beds || "—"],
+    ["Timeframe", r.timeframe || "—"],
+    ["Marketing consent", r.marketingConsent ? "Yes" : "No"],
+  ];
+
+  const html = `
+    <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111">
+      <p style="margin:0 0 4px"><strong>Off-market access request</strong></p>
+      <p style="margin:0 0 20px;color:#666">They can't see anything until you approve.</p>
+
+      <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:26px">
+        ${rows
+          .map(
+            ([k, v]) =>
+              `<tr><td style="padding:4px 18px 4px 0;color:#666;vertical-align:top">${esc(k)}</td>` +
+              `<td style="padding:4px 0">${esc(v)}</td></tr>`
+          )
+          .join("")}
+      </table>
+
+      <table cellpadding="0" cellspacing="0"><tr>
+        <td style="padding-right:12px">
+          <a href="${approve}" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">Approve access</a>
+        </td>
+        <td>
+          <a href="${decline}" style="display:inline-block;border:1px solid #ccc;color:#666;text-decoration:none;padding:13px 26px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">Decline</a>
+        </td>
+      </tr></table>
+
+      <p style="margin:24px 0 0;color:#999;font-size:13px">
+        One tap, no login needed. Links work for 30 days.<br>
+        Reply to this email to answer ${esc(r.firstName)} directly.
+      </p>
+    </div>
+  `;
+
+  await sendMail({
+    to: officeRecipients(),
+    subject: `Off-market access request — ${r.firstName} ${r.lastName}`,
+    html,
+    replyTo: { address: r.email, name: `${r.firstName} ${r.lastName}` },
+  });
+}
+
+/** Move a contact from pending to approved, and tell them. */
+export async function approveBuyer(contactId: string) {
+  const contact = await getContact(contactId);
+  const consultantId = Number(contact?.consultant_id);
+  if (!consultantId) throw new Error(`contact ${contactId} has no consultant_id`);
+
+  const name = [contact?.first_name, contact?.last_name].filter(Boolean).join(" ") || "there";
+
+  await assignCategory(contactId, CATEGORY_APPROVED, consultantId);
+  await removeCategory(contactId, CATEGORY_PENDING, consultantId);
+  await addNote(contactId, "Approved for the off-market list via the website.");
+
+  if (contact?.email) {
+    await sendMail({
+      to: [contact.email],
+      subject: "Your off-market access is open",
+      html: `
+        <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111">
+          <p>Hi ${esc(contact.first_name || "there")},</p>
+          <p>You're approved for the Loutakis off-market list. You can see what's available here:</p>
+          <p style="margin:24px 0">
+            <a href="${siteUrl()}/portal" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">View properties</a>
+          </p>
+          <p style="color:#666">These aren't publicly advertised, so please keep them to yourself — that's the basis on which the owners agreed to be listed.</p>
+          <p style="color:#666">Michael Loutakis &middot; 0409 438 025</p>
+        </div>`,
+    }).catch((err) => console.error("[portal] approval email failed", err));
+  }
+
+  return { name, email: contact?.email ?? null };
+}
+
+/** Decline: clear the pending marker and note it. No email — a silent no. */
+export async function declineBuyer(contactId: string) {
+  const contact = await getContact(contactId);
+  const consultantId = Number(contact?.consultant_id);
+  const name = [contact?.first_name, contact?.last_name].filter(Boolean).join(" ") || "that person";
+
+  if (consultantId) await removeCategory(contactId, CATEGORY_PENDING, consultantId);
+  await addNote(contactId, "Off-market access request declined via the website.");
+
+  return { name };
+}
+
+/** Best effort — leaving a stale pending marker is untidy, not harmful. */
+export async function removeCategory(
+  contactId: number | string,
+  category: string,
+  consultantId: number
+) {
+  try {
+    const res = await fetch(`${API_BASE}/contacts/${contactId}/categories`, {
+      method: "DELETE",
+      headers: authHeaders(),
+      body: JSON.stringify({ categories: [{ name: category, consultant_id: consultantId }] }),
+      cache: "no-store",
+    });
+    if (!res.ok) console.error(`[portal] removeCategory ${category} -> ${res.status}`);
+  } catch (err) {
+    console.error("[portal] removeCategory failed", err);
+  }
 }
