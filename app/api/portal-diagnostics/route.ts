@@ -86,9 +86,47 @@ export async function GET() {
     categories[c] = (categories[c] ?? 0) + 1;
   }
 
+  // ---- Schema probe -------------------------------------------------------
+  // Field NAMES only, never values. The documentation says tags live at
+  // property.tags; this proves what the API actually returns for this account,
+  // and finds any tag-like field the docs don't mention.
+  const listingKeys = new Set<string>();
+  const propertyKeys = new Set<string>();
+  for (const l of listings) {
+    for (const k of Object.keys(l ?? {})) listingKeys.add(k);
+    for (const k of Object.keys(l.property ?? {})) propertyKeys.add(k);
+  }
+
+  // Any key anywhere whose name mentions "tag", plus how many listings have a
+  // non-empty value for it — an always-empty field looks identical to a
+  // missing one unless you count.
+  const tagLikeFields: Record<string, { level: string; nonEmpty: number }> = {};
+  const isNonEmpty = (v: any) =>
+    Array.isArray(v) ? v.length > 0 : v !== null && v !== undefined && v !== "";
+
+  for (const k of listingKeys) {
+    if (!k.toLowerCase().includes("tag")) continue;
+    tagLikeFields[k] = {
+      level: "listing",
+      nonEmpty: listings.filter((l) => isNonEmpty(l[k])).length,
+    };
+  }
+  for (const k of propertyKeys) {
+    if (!k.toLowerCase().includes("tag")) continue;
+    tagLikeFields[`property.${k}`] = {
+      level: "property",
+      nonEmpty: listings.filter((l) => isNonEmpty(l.property?.[k])).length,
+    };
+  }
+
   return NextResponse.json({
     ok: true,
     checkedAt: new Date().toISOString(),
+    schema: {
+      tagLikeFields,
+      listingKeys: [...listingKeys].sort(),
+      propertyKeys: [...propertyKeys].sort(),
+    },
     otherCategoryIdsInUse: otherCategories,
     categoryIdsInUse: categories,
     totals: {
