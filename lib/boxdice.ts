@@ -82,11 +82,11 @@ function retryAfterMs(res: Response): number {
  * into the data cache and replayed for the whole revalidate window, turning a
  * moment of rate limiting into ten minutes of mock data.
  */
-async function fetchPage(url: string): Promise<Response> {
+async function fetchPage(url: string, noStore = false): Promise<Response> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const res: Response = await fetch(url, {
       headers: authHeaders(),
-      ...(attempt === 0
+      ...(attempt === 0 && !noStore
         ? { next: { revalidate: REVALIDATE, tags: ["listings"] } }
         : { cache: "no-store" as RequestCache }),
     });
@@ -110,11 +110,11 @@ async function fetchPage(url: string): Promise<Response> {
 }
 
 /** Follow the timestamp-paginated collection until 204 / no `next`. */
-async function paginate(path: string, recordKey: string): Promise<any[]> {
+async function paginate(path: string, recordKey: string, noStore = false): Promise<any[]> {
   let url: string | null = `${API_BASE}${path}`;
   const all: any[] = [];
   for (let i = 0; i < MAX_PAGES && url; i++) {
-    const res: Response = await fetchPage(url);
+    const res: Response = await fetchPage(url, noStore);
     if (res.status === 204) break; // caught up
     if (!res.ok) throw new Error(`Box & Dice ${path} -> ${res.status} ${res.statusText}`);
     const json: any = await res.json();
@@ -285,7 +285,9 @@ async function getConsultants(): Promise<Map<number, Agent>> {
  */
 export async function getRawSalesListings(): Promise<any[]> {
   if (USE_MOCK) return [];
-  return paginate("/sales_listings", "sales_listings");
+  // noStore: a diagnostic that reads a ten-minute-old cache is worse than
+  // useless — it reports the state before whatever you just changed.
+  return paginate("/sales_listings", "sales_listings", true);
 }
 
 export async function getListings(): Promise<Listing[]> {
