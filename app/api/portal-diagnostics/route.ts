@@ -64,9 +64,23 @@ export async function GET() {
     websiteStatuses[key] = (websiteStatuses[key] ?? 0) + 1;
   }
 
+  // Is the purpose-built custom-category field free? If it is, it's a cleaner
+  // home for the off-market marker than overloading tags, which are already
+  // carrying property type and may feed the portal exports.
+  const otherCategories: Record<string, number> = {};
+  const categories: Record<string, number> = {};
+  for (const l of listings) {
+    const oc = String(l.property?.property_other_category_id ?? "(none)");
+    otherCategories[oc] = (otherCategories[oc] ?? 0) + 1;
+    const c = String(l.property?.property_category_id ?? "(none)");
+    categories[c] = (categories[c] ?? 0) + 1;
+  }
+
   return NextResponse.json({
     ok: true,
     checkedAt: new Date().toISOString(),
+    otherCategoryIdsInUse: otherCategories,
+    categoryIdsInUse: categories,
     totals: {
       listings: listings.length,
       withAnyTag: count((l) => (l.property?.tags ?? []).length > 0),
