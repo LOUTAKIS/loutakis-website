@@ -365,3 +365,8 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 
 @media (max-width: 760px) { .nav-toggle { display: block; } }
 @media (min-width: 761px) { .mobile-nav { display: none; } }
+
+/* The wordmark is only 18px tall, so the link's natural hit area is a thin
+   strip that's easy to miss — especially on a phone. Pad it out to a full
+   tap target without moving the logo. */
+.nav-inner > a[aria-label] { display: flex; align-items: center; padding: 16px 8px; margin: -16px -8px; }
