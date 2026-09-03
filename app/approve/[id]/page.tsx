@@ -8,7 +8,7 @@ import VendorVideo from "@/components/VendorVideo";
 import VendorFrame, { type Marker } from "@/components/vendor/VendorFrame";
 import Photos from "@/components/vendor/Photos";
 import Zoomable from "@/components/vendor/Zoomable";
-import BrochurePages from "@/components/vendor/BrochurePages";
+import BrochureFold from "@/components/vendor/BrochureFold";
 import Board from "@/components/vendor/Board";
 import Copy from "@/components/vendor/Copy";
 
@@ -84,7 +84,7 @@ export default async function ApprovePage({
       label: "Brochure",
       title: "The brochure",
       blurb: b.brochure,
-      body: <BrochurePages src={`/api/vendor/file/${c.id}/brochure${fileQ}`} name={c.selection.brochureName ?? "brochure.pdf"} />,
+      body: <BrochureFold src={`/api/vendor/file/${c.id}/brochure${fileQ}`} name={c.selection.brochureName ?? "brochure.pdf"} />,
     });
   if (c.selection.includeCopy && c.copyText)
     chapters.push({
