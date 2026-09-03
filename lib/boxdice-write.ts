@@ -73,3 +73,42 @@ export async function createContact(contact: NewContact): Promise<ContactResult>
 
   return { status: res.status, body };
 }
+
+/**
+ * Record a vendor's marketing approval in the CRM.
+ *
+ * The Website API has no notes endpoint for LISTINGS — only for contacts. So
+ * the record goes on the vendor's contact card (matched by email, created if
+ * new), with the property address in the note. That's where anyone in the
+ * office will look for it anyway.
+ *
+ * Marketing flags are sent false explicitly: this contact is a vendor
+ * approving their own campaign, not someone opting into a mailing list.
+ */
+export async function addApprovalNote(
+  vendor: { name: string; email: string },
+  text: string
+): Promise<{ contactId: number | null }> {
+  const [first, ...rest] = vendor.name.trim().split(/\s+/);
+  const created = await createContact({
+    first_name: first || "Vendor",
+    last_name: rest.join(" ") || "-",
+    email: vendor.email,
+    permit_email_campaign: false,
+    permit_sms: false,
+  });
+  const body: any = created.body;
+  const contactId = Number(body?.id ?? body?.contact?.id);
+  if (!contactId) {
+    throw new Error(`approval note: could not resolve vendor contact (${created.status})`);
+  }
+
+  const res = await fetch(`${API_BASE}/contacts/${contactId}/notes`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ note: { text }, text }),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`approval note -> ${res.status} ${await res.text()}`);
+  return { contactId };
+}

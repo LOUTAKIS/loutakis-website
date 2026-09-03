@@ -449,3 +449,59 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .vc-quote { margin: 12px 0 0; padding: 10px 14px; border-left: 2px solid #b45309; color: var(--muted); font-size: 14.5px; }
 .vc-list.done { margin-top: 12px; }
 .vc-list.done .vc-addr { font-size: 17px; }
+
+/* ── Staff: campaign review ───────────────────────────────────────────────── */
+.btn.ghost { background: transparent; color: var(--ink); }
+.vc-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.vc-review { display: flex; flex-direction: column; gap: 36px; }
+.vc-block { border-top: 1px solid var(--line); padding-top: 26px; display: flex; flex-direction: column; gap: 16px; }
+.vc-block h3 { font-family: var(--serif); font-weight: 400; font-size: 22px; margin: 0; }
+.vc-src { font-family: var(--sans); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-left: 10px; }
+.vc-tick { display: inline-flex; align-items: center; gap: 12px; cursor: pointer; }
+.vc-tick input { width: 18px; height: 18px; accent-color: #000; }
+.vc-warn { color: #b45309; }
+.vc-blurb span { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.vc-blurb textarea { font-size: 14px; }
+.vc-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.vc-photo { position: relative; padding: 0; border: 2px solid transparent; background: none; cursor: pointer; aspect-ratio: 4/3; overflow: hidden; }
+.vc-photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity .2s; }
+.vc-photo span { position: absolute; left: 8px; bottom: 8px; background: rgba(0,0,0,.65); color: #fff; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; padding: 3px 7px; }
+.vc-photo.off img { opacity: .22; filter: grayscale(1); }
+.vc-photo.off::after { content: "Hidden"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink); }
+.vc-photo:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.vc-plan { max-height: 220px; width: auto; border: 1px solid var(--line); background: #fff; }
+.vc-amend { margin-top: 8px; }
+.vc-pick { list-style: none; margin: 40px 0 0; padding: 0; border-top: 1px solid var(--line); }
+.vc-pick li { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+
+/* ── Vendor approval page ─────────────────────────────────────────────────
+   Same page the vendor knows from Squarespace: hero, a line of intent, one
+   section per piece, then the approval. */
+.va-preview { position: sticky; top: 78px; z-index: 40; background: #b45309; color: #fff; text-align: center; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; padding: 8px 12px; }
+.va-hero { position: relative; min-height: 62svh; background: #222 center / cover no-repeat; color: #fff; display: flex; align-items: flex-end; padding: 0 0 60px; }
+.va-hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,.08) 60%); }
+.va-hero .wrap { position: relative; }
+.va-hero h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(28px, 4.2vw, 50px); line-height: 1.12; max-width: 18ch; margin: 0 0 14px; text-wrap: balance; }
+.va-hero p { font-size: 13px; letter-spacing: .2em; text-transform: uppercase; opacity: .85; }
+.va-intro { padding: 64px 0 8px; }
+.va-intro h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 4vw, 46px); margin: 0; }
+.va-section { padding: 56px 0; border-bottom: 1px solid var(--line); }
+.va-section:last-of-type { border-bottom: 0; }
+.va-blurb { color: var(--muted); max-width: 60ch; margin: 10px 0 26px; font-size: 17px; }
+.va-file { display: block; max-width: 900px; }
+.va-file img { width: 100%; height: auto; display: block; border: 1px solid var(--line); background: #fff; }
+.va-file span { display: inline-block; margin-top: 12px; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.va-copy { max-width: 66ch; }
+.va-copy h4 { font-family: var(--serif); font-weight: 400; font-size: 26px; margin: 0 0 18px; }
+.va-copy p { margin: 0 0 16px; font-size: 17px; line-height: 1.7; }
+.va-plans { display: flex; flex-wrap: wrap; gap: 18px; }
+.va-plans img { max-height: 520px; width: auto; max-width: 100%; border: 1px solid var(--line); background: #fff; }
+.va-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.va-gallery img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+.va-video { position: relative; aspect-ratio: 16/9; max-width: 1100px; background: #000; }
+.va-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.va-approve { padding: 72px 0 110px; background: var(--paper-2); }
+.va-approve h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 4vw, 46px); margin: 0 0 8px; }
+.va-wording { font-size: 13.5px; color: var(--muted); line-height: 1.6; margin: 18px 0 22px; padding: 16px 18px; background: #fff; border: 1px solid var(--line); }
+.va-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
+@media (max-width: 620px) { .va-hero { min-height: 52svh; padding-bottom: 36px; } .va-section { padding: 40px 0; } }

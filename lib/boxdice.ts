@@ -443,6 +443,81 @@ export async function getListingBySlug(slug: string): Promise<Listing | null> {
   return listings.find((l) => l.slug === slug) ?? null;
 }
 
+/* ── Vendor marketing approval ────────────────────────────────────────────
+   The approval tool needs listings the public site never shows — campaigns
+   that are being prepared — and fields the public site never reads: the
+   image index labels, the floorplans as their own set, the raw advertising
+   copy. This is that view. Still read-only. */
+
+export type MarketingSource = {
+  id: number;
+  status: string; // CRM status: current, not_settled, settled, listing_cancelled…
+  address: string; // "76B Paxton Street, South Kingsville"
+  streetName: string; // "Paxton" — for the SharePoint folder match
+  number: string; // "76B"
+  suburb: string;
+  photos: { url: string; index: string }[]; // MAIN first, then A–Z
+  floorplans: { url: string; index: string }[];
+  copyHeading: string;
+  copyText: string;
+  videoUrl: string | null;
+  agents: Agent[];
+  dateListed: string | null;
+};
+
+function toMarketingSource(raw: any, consultants: Map<number, Agent>): MarketingSource {
+  const p = raw.property ?? {};
+  const idx = (i: any) => String(i?.index ?? "").toUpperCase();
+  const imgs = (raw.images ?? []).filter((i: any) => i?.url);
+  const main = imgs.filter((i: any) => idx(i) === "MAIN");
+  const gallery = imgs
+    .filter((i: any) => idx(i) !== "MAIN" && !idx(i).startsWith("FLOORPLAN"))
+    .sort((a: any, b: any) => idx(a).localeCompare(idx(b), undefined, { numeric: true }));
+  const floorplans = imgs
+    .filter((i: any) => idx(i).startsWith("FLOORPLAN"))
+    .sort((a: any, b: any) => idx(a).localeCompare(idx(b), undefined, { numeric: true }));
+  const agentIds: number[] = raw.consultant_ids ?? (raw.primary_consultant_id ? [raw.primary_consultant_id] : []);
+  const number = [p.unit ? `${p.unit}/` : "", p.number].join("").replace(" /", "/");
+
+  return {
+    id: Number(raw.id),
+    status: String(raw.status ?? ""),
+    address: `${buildStreet(p)}, ${titleCase(p.suburb ?? "")}`,
+    streetName: String(p.street_name ?? ""),
+    number,
+    suburb: titleCase(p.suburb ?? ""),
+    photos: [...main, ...gallery].map((i: any) => ({ url: i.url, index: idx(i) })),
+    floorplans: floorplans.map((i: any) => ({ url: i.url, index: idx(i) })),
+    copyHeading: String(raw.advertising_copy?.heading ?? "").trim(),
+    copyText: String(raw.advertising_copy?.text ?? "").trim(),
+    videoUrl: raw.video_link_url ? String(raw.video_link_url) : null,
+    agents: agentIds.map((id) => consultants.get(id)).filter(Boolean) as Agent[],
+    dateListed: raw.date_listed ?? raw.campaign_start_date ?? null,
+  };
+}
+
+/** Listings that could be sent for approval: status "current" in the CRM. Newest first. */
+export async function getMarketingSources(): Promise<MarketingSource[]> {
+  if (USE_MOCK) return [];
+  const consultants = await getConsultants();
+  const raw = await cachedSalesListings();
+  const byId = new Map<string, any>();
+  for (const r of raw) byId.set(String(r.id), r);
+  return [...byId.values()]
+    .filter((r) => String(r.status ?? "").toLowerCase() === "current")
+    .map((r) => toMarketingSource(r, consultants))
+    .sort((a, b) => +new Date(b.dateListed ?? 0) - +new Date(a.dateListed ?? 0));
+}
+
+/** One listing by id, any status — a campaign may be sold by the time it's re-opened. */
+export async function getMarketingSource(id: number | string): Promise<MarketingSource | null> {
+  if (USE_MOCK) return null;
+  const consultants = await getConsultants();
+  const raw = await cachedSalesListings();
+  const hit = [...raw].reverse().find((r) => String(r.id) === String(id)); // latest record wins
+  return hit ? toMarketingSource(hit, consultants) : null;
+}
+
 /**
  * READ-ONLY MODE — this site NEVER writes to Box & Dice.
  * This function intentionally does NOT call the Box & Dice API. Enquiries are
