@@ -1,44 +1,79 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLightbox } from "./Lightbox";
 
 /**
- * The hero shot large, then a magazine rhythm — alternating two- and
- * three-across — so the set reads as a spread, not a contact sheet. Order is
- * the CRM order, which is the portal order.
+ * The photographs, one at a time at the size the screen allows, with a
+ * filmstrip beneath to move through the set. Order is the CRM order, which
+ * is the portal order. Arrow keys and swipe work; tap the photo for full screen.
  */
 export default function Photos({ photos }: { photos: { url: string }[] }) {
   const { open, node } = useLightbox(photos.map((p) => ({ src: p.url })));
-  if (!photos.length) return null;
-  const [hero, ...rest] = photos;
+  const [i, setI] = useState(0);
+  const stripRef = useRef<HTMLDivElement>(null);
+  const touch = useRef<number | null>(null);
+  const n = photos.length;
 
-  // Rows of 2, 3, 2, 3 … keeps the eye moving without looking random.
-  const rows: { url: string; i: number }[][] = [];
-  let i = 1;
-  let size = 2;
-  while (i <= rest.length) {
-    rows.push(rest.slice(i - 1, i - 1 + size).map((p, k) => ({ url: p.url, i: i + k })));
-    i += size;
-    size = size === 2 ? 3 : 2;
-  }
+  const go = useCallback((k: number) => setI(((k % n) + n) % n), [n]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") go(i + 1);
+      if (e.key === "ArrowLeft") go(i - 1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [i, go]);
+
+  // Keep the current thumbnail in view.
+  useEffect(() => {
+    const el = stripRef.current?.children[i] as HTMLElement | undefined;
+    el?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+  }, [i]);
+
+  if (!n) return null;
+  const next = photos[(i + 1) % n]?.url;
+  const prev = photos[(i - 1 + n) % n]?.url;
 
   return (
     <div className="vp">
-      <button className="vp-hero" onClick={() => open(0)} aria-label="View photo 1 full screen">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={hero.url} alt="" />
-      </button>
-      {rows.map((row, r) => (
-        <div key={r} className={`vp-row cols-${row.length}`}>
-          {row.map((p) => (
-            <button key={p.url} className="vp-cell" onClick={() => open(p.i)} aria-label={`View photo ${p.i + 1} full screen`}>
+      <div
+        className="vp-stage"
+        onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
+        onTouchEnd={(e) => {
+          if (touch.current == null) return;
+          const dx = e.changedTouches[0].clientX - touch.current;
+          if (Math.abs(dx) > 40) go(i + (dx < 0 ? 1 : -1));
+          touch.current = null;
+        }}
+      >
+        <button className="vp-main" onClick={() => open(i)} aria-label={`View photo ${i + 1} full screen`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photos[i].url} alt={`Photograph ${i + 1} of ${n}`} />
+        </button>
+        {n > 1 && (
+          <>
+            <button className="vp-arrow prev" onClick={() => go(i - 1)} aria-label="Previous photograph">‹</button>
+            <button className="vp-arrow next" onClick={() => go(i + 1)} aria-label="Next photograph">›</button>
+          </>
+        )}
+        {/* Neighbours decoded ahead of time so paging is instant. */}
+        <link rel="preload" as="image" href={next} />
+        <link rel="preload" as="image" href={prev} />
+      </div>
+
+      <div className="vp-bar">
+        <span className="vp-count">{i + 1} / {n}</span>
+        <div className="vp-strip" ref={stripRef} role="tablist" aria-label="Photographs">
+          {photos.map((p, k) => (
+            <button key={p.url} role="tab" aria-selected={k === i} className={k === i ? "on" : ""} onClick={() => go(k)} aria-label={`Photograph ${k + 1}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={p.url} alt="" loading="lazy" />
             </button>
           ))}
         </div>
-      ))}
-      <p className="vp-note">{photos.length} photographs, shown in the order they&rsquo;ll appear online. Tap any to view full screen.</p>
+      </div>
       {node}
     </div>
   );
