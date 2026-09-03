@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { killCaptions } from "@/lib/yt-captions";
 
 /**
  * Looping brand video with no YouTube chrome and a sound toggle.
@@ -45,12 +46,15 @@ export default function VideoEmbed({ id, title }: { id: string; title?: string }
               e.target.mute();
               e.target.playVideo();
             } catch {}
+            killCaptions(e.target);
           },
           onStateChange: (e: any) => {
             // 0 = ENDED. Restart explicitly; the loop param alone is unreliable.
             if (e.data === 0) {
               try { e.target.seekTo(0); e.target.playVideo(); } catch {}
             }
+            // 1 = PLAYING. Captions can come back when playback (re)starts.
+            if (e.data === 1) killCaptions(e.target);
           },
         },
       });

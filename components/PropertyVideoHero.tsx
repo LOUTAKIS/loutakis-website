@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { killCaptions } from "@/lib/yt-captions";
 
 /**
  * Full-width immersive property video. Autoplays muted (browsers block
@@ -27,6 +28,12 @@ export default function PropertyVideoHero({ id }: { id: string }) {
         events: {
           onReady: (e: any) => {
             try { e.target.mute(); e.target.playVideo(); } catch {}
+            killCaptions(e.target);
+          },
+          // YouTube can reload the captions module when playback starts, so
+          // once on ready isn't enough — kill them again on the first play.
+          onStateChange: (e: any) => {
+            if (e.data === w.YT?.PlayerState?.PLAYING) killCaptions(e.target);
           },
         },
       });
