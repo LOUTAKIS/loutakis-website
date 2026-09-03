@@ -103,16 +103,39 @@ async function write(items: Array<{ operation: "upsert" | "delete"; key: string;
   if (!res.ok) throw new Error(`campaign store write -> ${res.status} ${await res.text()}`);
 }
 
+/**
+ * Reads go through the REST API, not the SDK. The SDK is served from the edge
+ * and lags a write by up to ~10 seconds — fine for sign-in lookups, useless for
+ * "start a campaign, then open it". The docs are explicit that the REST API
+ * always returns the latest version. Staff traffic is tiny, so the extra hop
+ * costs nothing that matters.
+ */
+async function readItem<T>(itemKey: string): Promise<T | null> {
+  if (API_TOKEN) {
+    const res = await fetch(
+      `https://api.vercel.com/v1/global-config/${STORE_ID}/item/${encodeURIComponent(itemKey)}?teamId=${encodeURIComponent(TEAM_ID)}`,
+      { headers: { Authorization: `Bearer ${API_TOKEN}` }, cache: "no-store" }
+    );
+    if (res.ok) {
+      const json: any = await res.json();
+      return (json?.value ?? null) as T | null;
+    }
+    // 404 is "no such item" — or, if the item path ever moves again, "no such
+    // endpoint". Either way the SDK below is the tiebreaker.
+    if (res.status !== 404) console.error(`[campaigns] REST read ${itemKey} -> ${res.status}; falling back to SDK`);
+  }
+  if (!client) return null;
+  const v = await client.get<T>(itemKey).catch(() => undefined);
+  return v ?? null;
+}
+
 async function readIndex(): Promise<string[]> {
-  if (!client) return [];
-  const v = await client.get<string[]>(INDEX).catch(() => undefined);
+  const v = await readItem<string[]>(INDEX);
   return Array.isArray(v) ? v : [];
 }
 
 export async function getCampaign(id: string): Promise<Campaign | null> {
-  if (!client) return null;
-  const v = await client.get<Campaign>(key(id)).catch(() => undefined);
-  return v ?? null;
+  return readItem<Campaign>(key(id));
 }
 
 export async function listCampaigns(): Promise<Campaign[]> {
