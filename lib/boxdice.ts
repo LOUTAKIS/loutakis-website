@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { Listing, ListingStatus, ListingCategory, Agent } from "./types";
 import { MOCK_LISTINGS } from "./mock-data";
 
@@ -31,7 +32,14 @@ const USE_MOCK =
   (process.env.USE_MOCK_DATA === "true" || !API_KEY);
 const MAX_PAGES = 50;
 const MAX_RETRIES = 5;            // attempts after the first 429 before giving up
-const MAX_RETRY_WAIT_MS = 30_000; // never sleep longer than this, whatever the header says
+const MAX_RETRY_WAIT_MS = 8_000;  // never sleep longer than this, whatever the header says
+/**
+ * Total time this request may spend waiting out 429s before it gives up.
+ * Nobody waits 40 seconds for a web page: past this, failing fast and serving
+ * the cached page (or the error boundary) beats holding the visitor hostage.
+ */
+const RETRY_BUDGET_MS = 12_000;
+const REQUEST_TIMEOUT_MS = 10_000;
 
 function authHeaders() {
   return { Authorization: `Api-Key token=${API_KEY}`, Accept: "application/json" };
@@ -95,8 +103,13 @@ async function fetchPage(url: string, noStore = false): Promise<Response> {
   const cacheOpts = noStore
     ? { cache: "no-store" as RequestCache }
     : { next: { revalidate: REVALIDATE, tags: ["listings"] } };
+  let waited = 0;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const res: Response = await fetch(url, { headers: authHeaders(), ...cacheOpts });
+    const res: Response = await fetch(url, {
+      headers: authHeaders(),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      ...cacheOpts,
+    });
 
     if (res.status !== 429) return res;
 
@@ -106,11 +119,18 @@ async function fetchPage(url: string, noStore = false): Promise<Response> {
     }
 
     const wait = retryAfterMs(res);
+    if (waited + wait > RETRY_BUDGET_MS) {
+      console.error(
+        `[boxdice] 429 and out of retry budget after ${waited}ms — giving up: ${url}`
+      );
+      return res;
+    }
     console.warn(
       `[boxdice] 429 rate limited, waiting ${wait}ms then retrying ` +
         `(attempt ${attempt + 1}/${MAX_RETRIES}): ${url}`
     );
     await sleep(wait);
+    waited += wait;
   }
 
   throw new Error("[boxdice] fetchPage exhausted retries unexpectedly");
@@ -287,10 +307,34 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
   };
 }
 
+/**
+ * The two CRM reads the whole site is built on, cached server-side.
+ *
+ * `unstable_cache` rather than fetch options, because pages that declare
+ * `dynamic = "force-dynamic"` silently switch every fetch inside them to
+ * no-store. That turned each page view into a full re-fetch of every listing
+ * and consultant, and with rate limiting a single /properties request took 43
+ * seconds (3 Sep 2026). This cache sits above fetch, so it holds regardless of
+ * how the route renders, and one populated entry serves every visitor.
+ *
+ * Tagged so /api/revalidate can clear it the moment a listing changes.
+ */
+const cachedSalesListings = unstable_cache(
+  () => paginate("/sales_listings", "sales_listings"),
+  ["boxdice", "sales_listings"],
+  { revalidate: REVALIDATE, tags: ["listings"] }
+);
+
+const cachedConsultants = unstable_cache(
+  () => paginate("/consultants", "consultants"),
+  ["boxdice", "consultants"],
+  { revalidate: REVALIDATE, tags: ["listings"] }
+);
+
 async function getConsultants(): Promise<Map<number, Agent>> {
   const map = new Map<number, Agent>();
   try {
-    const list = await paginate("/consultants", "consultants");
+    const list = await cachedConsultants();
     for (const c of list) {
       map.set(Number(c.id), {
         name: [c.first_name, c.last_name].filter(Boolean).join(" "),
@@ -360,7 +404,7 @@ function isOffMarket(raw: any): boolean {
 export async function getOffMarketListings(): Promise<Listing[]> {
   if (USE_MOCK) return [];
   const consultants = await getConsultants();
-  const raw = await paginate("/sales_listings", "sales_listings");
+  const raw = await cachedSalesListings();
   const byId = new Map<string, any>();
   for (const r of raw) byId.set(String(r.id), r);
   return [...byId.values()]
@@ -373,7 +417,7 @@ export async function getListings(): Promise<Listing[]> {
   if (USE_MOCK) return MOCK_LISTINGS;
   try {
     const consultants = await getConsultants();
-    const raw = await paginate("/sales_listings", "sales_listings");
+    const raw = await cachedSalesListings();
     const listings = raw
       // show only what the agent has published via "My Website Status"
       .filter(isWebsiteVisible)
