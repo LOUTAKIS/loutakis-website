@@ -2,7 +2,13 @@ import "server-only";
 import { createContact } from "./boxdice-write";
 import { sendMail, officeRecipients, esc } from "./mail";
 import { createToken } from "./portal-token";
-import { rememberContact, rememberCriteria, takeCriteria } from "./portal-store";
+import {
+  rememberContact,
+  rememberCriteria,
+  takeCriteria,
+  addApprovedContact,
+  removeApprovedContact,
+} from "./portal-store";
 import { namesForIds } from "./suburbs";
 
 /**
@@ -347,6 +353,12 @@ export async function approveBuyer(contactId: string) {
   const pending = await takeCriteria(contactId).catch(() => null);
   if (pending) await createCriteria(contactId, pending);
 
+  // Add them to the new-listing alert list. Membership is still checked against
+  // the CRM category at send time, so revoking access there stops the emails.
+  await addApprovedContact(contactId).catch((err) =>
+    console.error("[portal] alert list add failed", err)
+  );
+
   if (contact?.email) {
     await sendMail({
       to: [contact.email],
@@ -375,6 +387,10 @@ export async function declineBuyer(contactId: string) {
 
   if (consultantId) await removeCategory(contactId, CATEGORY_PENDING, consultantId);
   await addNote(contactId, "Off-market access request declined via the website.");
+
+  // Declined people were never on the alert list, but a previously approved
+  // buyer might be declined later — make sure the emails stop either way.
+  await removeApprovedContact(contactId).catch(() => {});
 
   return { name };
 }

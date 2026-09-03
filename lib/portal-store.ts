@@ -120,6 +120,64 @@ export async function takeCriteria(contactId: number | string): Promise<PendingC
   return stored;
 }
 
+/* ── New-listing alerts ────────────────────────────────────────────────────
+   Three small lists, all keyed by contact id — no names or addresses.
+   `approved` is who to consider emailing, `seen` is which off-market listings
+   have already been announced, `optout` is who asked to stop. Access itself is
+   still governed by the CRM category; this is only about email. */
+
+const KEY_APPROVED = "alerts_approved";
+const KEY_SEEN = "alerts_seen_listings";
+const KEY_OPTOUT = "alerts_optout";
+
+async function readList(key: string): Promise<number[]> {
+  if (!client) return [];
+  try {
+    const v = await client.get<number[]>(key);
+    return Array.isArray(v) ? v.map(Number).filter(Number.isFinite) : [];
+  } catch (err) {
+    console.error(`[portal-store] ${key} read failed`, err);
+    return [];
+  }
+}
+
+export const listApprovedContacts = () => readList(KEY_APPROVED);
+export const listOptedOut = () => readList(KEY_OPTOUT);
+
+export async function addApprovedContact(contactId: number | string): Promise<void> {
+  const id = Number(contactId);
+  const current = await listApprovedContacts();
+  if (current.includes(id)) return;
+  await upsert([{ operation: "upsert", key: KEY_APPROVED, value: [...current, id] }]);
+}
+
+export async function removeApprovedContact(contactId: number | string): Promise<void> {
+  const id = Number(contactId);
+  const current = await listApprovedContacts();
+  if (!current.includes(id)) return;
+  await upsert([{ operation: "upsert", key: KEY_APPROVED, value: current.filter((x) => x !== id) }]);
+}
+
+/** Opting out stops the emails. It does NOT remove portal access. */
+export async function optOutOfAlerts(contactId: number | string): Promise<void> {
+  const id = Number(contactId);
+  const current = await listOptedOut();
+  if (current.includes(id)) return;
+  await upsert([{ operation: "upsert", key: KEY_OPTOUT, value: [...current, id] }]);
+}
+
+/** Listing ids already announced, so nobody is emailed about the same home twice. */
+export async function getAnnouncedListings(): Promise<number[]> {
+  return readList(KEY_SEEN);
+}
+
+export async function setAnnouncedListings(ids: Array<number | string>): Promise<void> {
+  // Keep the most recent 200 — enough that a listing untagged and retagged
+  // months later counts as new, without the key growing forever.
+  const trimmed = ids.map(Number).filter(Number.isFinite).slice(-200);
+  await upsert([{ operation: "upsert", key: KEY_SEEN, value: trimmed }]);
+}
+
 /** Look up a contact id by whatever the buyer typed — email or mobile. */
 export async function lookupContactId(identifier: string): Promise<number | null> {
   if (!client) return null;

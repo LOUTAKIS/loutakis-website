@@ -13,7 +13,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 const SECRET = process.env.PORTAL_TOKEN_SECRET;
 
-export type Action = "approve" | "decline" | "signin" | "session";
+export type Action = "approve" | "decline" | "signin" | "session" | "unsubscribe";
 
 type Payload = {
   a: Action;
