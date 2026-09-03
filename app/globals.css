@@ -417,7 +417,7 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 
 /* The page body scrolls over the sticky hero, so it needs to sit above it
    and paint its own background rather than letting the film show through. */
-.detail-body { position: relative; z-index: 1; background: var(--paper); }
+.detail-body { position: relative; z-index: 1; background: var(--paper); margin-top: 28px; }
 
 /* Phones: fit the film to the width instead of cropping to fill the height.
    On a 390px-wide screen the cover maths scaled the frame to ~1360px, slicing

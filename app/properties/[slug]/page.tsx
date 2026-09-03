@@ -66,9 +66,10 @@ export default async function PropertyPage({ params }: { params: { slug: string 
       {vid && <PropertyVideoHero id={vid} />}
       {/* detail-body sits above the sticky hero and paints its own background,
           so the content scrolls up over the film rather than through it. */}
+      <div className={vid ? "detail-body" : undefined}>
       <div
-        className={vid ? "wrap detail-body" : "wrap"}
-        style={vid ? { marginTop: 28, paddingTop: 8 } : undefined}
+        className="wrap"
+        style={vid ? { paddingTop: 36 } : undefined}
       >
         <Link href="/properties" className="backlink">← All properties</Link>
 
@@ -199,6 +200,7 @@ export default async function PropertyPage({ params }: { params: { slug: string 
             </div>
           </aside>
         </div>
+      </div>
       </div>
     </section>
   );
