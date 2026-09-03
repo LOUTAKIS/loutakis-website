@@ -11,6 +11,9 @@ import { useLightbox } from "./Lightbox";
 export default function Photos({ photos }: { photos: { url: string }[] }) {
   const { open, node } = useLightbox(photos.map((p) => ({ src: p.url })));
   const [i, setI] = useState(0);
+  // The frame takes the current photo's own proportions, so nothing is letterboxed.
+  const [ar, setAr] = useState<Record<string, number>>({});
+  const ratio = ar[photos[i]?.url] ?? 3 / 2;
   const stripRef = useRef<HTMLDivElement>(null);
   const touch = useRef<number | null>(null);
   const n = photos.length;
@@ -28,8 +31,11 @@ export default function Photos({ photos }: { photos: { url: string }[] }) {
 
   // Keep the current thumbnail in view.
   useEffect(() => {
-    const el = stripRef.current?.children[i] as HTMLElement | undefined;
-    el?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    // Scroll the strip itself, never the page (scrollIntoView would move the page on load).
+    const strip = stripRef.current;
+    const el = strip?.children[i] as HTMLElement | undefined;
+    if (!strip || !el) return;
+    strip.scrollTo({ left: el.offsetLeft - strip.clientWidth / 2 + el.offsetWidth / 2, behavior: "smooth" });
   }, [i]);
 
   if (!n) return null;
@@ -40,6 +46,7 @@ export default function Photos({ photos }: { photos: { url: string }[] }) {
     <div className="vp">
       <div
         className="vp-stage"
+        style={{ aspectRatio: String(ratio), width: `min(100%, calc((var(--fit) - var(--strip) - 14px) * ${ratio}))` }}
         onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
         onTouchEnd={(e) => {
           if (touch.current == null) return;
@@ -50,7 +57,14 @@ export default function Photos({ photos }: { photos: { url: string }[] }) {
       >
         <button className="vp-main" onClick={() => open(i)} aria-label={`View photo ${i + 1} full screen`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={photos[i].url} alt={`Photograph ${i + 1} of ${n}`} />
+          <img
+            src={photos[i].url}
+            alt={`Photograph ${i + 1} of ${n}`}
+            onLoad={(e) => {
+              const im = e.currentTarget, key = photos[i].url;
+              if (im.naturalWidth && im.naturalHeight) setAr((m) => (m[key] ? m : { ...m, [key]: im.naturalWidth / im.naturalHeight }));
+            }}
+          />
         </button>
         {n > 1 && (
           <>

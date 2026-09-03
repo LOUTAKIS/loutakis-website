@@ -13,16 +13,20 @@ export default function VendorApprovalForm({
   wording,
   preview,
   address,
+  vendorName,
+  items,
 }: {
   campaignId: string;
   token: string;
   wording: string;
   preview: boolean;
   address: string;
+  vendorName: string;
+  items: string[];
 }) {
   const [state, setState] = useState<"idle" | "sending" | "approved" | "changes" | "error">("idle");
   const [error, setError] = useState("");
-  const [name, setName] = useState("");
+  const [name, setName] = useState(vendorName ?? "");
   const [notes, setNotes] = useState("");
   const notesRef = useRef<HTMLTextAreaElement>(null);
 
@@ -94,6 +98,11 @@ export default function VendorApprovalForm({
 
   return (
     <form className="vform" onSubmit={(e) => { e.preventDefault(); submit("approve"); }} noValidate>
+      <ul className="vform-items" aria-label="What you are approving">
+        {items.map((t) => (
+          <li key={t}><i aria-hidden>✓</i>{t}</li>
+        ))}
+      </ul>
       <label>
         <span>Your full name</span>
         <input className="field" value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" />
@@ -109,8 +118,8 @@ export default function VendorApprovalForm({
         <button type="submit" className="btn vbtn-primary" disabled={state === "sending"}>
           {state === "sending" ? "One moment…" : "Approve the marketing"}
         </button>
-        <button type="button" className="btn ghost" disabled={state === "sending"} onClick={() => submit("changes")}>
-          Request changes first
+        <button type="button" className="vbtn-quiet" disabled={state === "sending"} onClick={() => submit("changes")}>
+          I&rsquo;d like something changed first
         </button>
       </div>
       {error && <p className="form-note" role="alert" style={{ color: "#b00020" }}>{error}</p>}

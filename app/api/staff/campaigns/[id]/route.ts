@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStaff } from "@/lib/staff-auth";
 import { getCampaign, updateCampaign, type Selection } from "@/lib/campaigns";
 import { sendVendorLink } from "@/lib/vendor";
+import { panelUrls } from "@/lib/brochure-render";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,6 +73,13 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   } catch (err) {
     console.error("[campaign] send failed", err);
     return NextResponse.json({ ok: false, error: "The email didn't send. Try again in a moment." }, { status: 502 });
+  }
+
+  // Warm the brochure panels on the CDN so the vendor's first open is instant. Never fatal.
+  if (c.selection.brochureId) {
+    const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://loutakis-website.vercel.app").replace(/\/$/, "");
+    const urls = panelUrls(c.id, c.selection.brochureId).flat();
+    await Promise.allSettled(urls.map((u) => fetch(base + u, { cache: "no-store" }).then((r) => r.arrayBuffer())));
   }
 
   const next = await updateCampaign(params.id, {

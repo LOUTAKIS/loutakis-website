@@ -4,7 +4,13 @@ const nextConfig = {
   // workers every property page fetches the same collections at the same
   // moment and the build degrades to mock data. Serial is a few seconds
   // slower and lets the first fetch feed the data cache for the rest.
-  experimental: { cpus: 1 },
+  experimental: {
+    cpus: 1,
+    // Brochure panels are rendered on the server with pdf.js + a prebuilt Skia
+    // canvas. Neither should be bundled by webpack: leave them as real Node
+    // packages so the native binary is traced into the function.
+    serverComponentsExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
+  },
   // A rate-limited fetch can legitimately wait 30s+ between retries. Next's
   // default 60s per-page limit restarts the page (and re-fetches), which is
   // exactly what makes the throttling worse.

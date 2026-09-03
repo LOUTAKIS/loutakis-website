@@ -11,6 +11,7 @@
   "dependencies": {
     "@vercel/global-config": "^1.5.1",
     "next": "14.2.5",
+    "@napi-rs/canvas": "0.1.56",
     "pdfjs-dist": "^4.6.82",
     "react": "18.3.1",
     "react-dom": "18.3.1",

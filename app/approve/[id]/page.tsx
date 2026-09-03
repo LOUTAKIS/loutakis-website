@@ -1,7 +1,7 @@
 import { getCampaign } from "@/lib/campaigns";
 import { getMarketingSource } from "@/lib/boxdice";
 import { verifyToken } from "@/lib/portal-token";
-import { getStaff, staffDisplayName } from "@/lib/staff-auth";
+import { getStaff } from "@/lib/staff-auth";
 import { recordOpen, AUTHORISATION_WORDING } from "@/lib/vendor";
 import VendorApprovalForm from "@/components/VendorApprovalForm";
 import VendorVideo from "@/components/VendorVideo";
@@ -11,6 +11,7 @@ import Zoomable from "@/components/vendor/Zoomable";
 import BrochureFold from "@/components/vendor/BrochureFold";
 import Board from "@/components/vendor/Board";
 import Copy from "@/components/vendor/Copy";
+import { panelUrls } from "@/lib/brochure-render";
 
 export const metadata = {
   title: "Review your marketing — Loutakis Real Estate",
@@ -63,8 +64,6 @@ export default async function ApprovePage({
   const fileQ = vendorOk ? `?t=${encodeURIComponent(token)}` : "";
   const hero = photos[0]?.url;
   const b = c.selection.blurbs;
-  const sender = staffDisplayName(c.sentBy ?? c.createdBy);
-  const senderIsMichael = /^michael/i.test(sender);
   const approved = c.status === "approved";
 
   type Chapter = { id: string; label: string; title: string; blurb: string; body: React.ReactNode; aside?: React.ReactNode };
@@ -84,7 +83,7 @@ export default async function ApprovePage({
       label: "Brochure",
       title: "The brochure",
       blurb: b.brochure,
-      body: <BrochureFold src={`/api/vendor/file/${c.id}/brochure${fileQ}`} name={c.selection.brochureName ?? "brochure.pdf"} />,
+      body: <BrochureFold src={`/api/vendor/file/${c.id}/brochure${fileQ}`} name={c.selection.brochureName ?? "brochure.pdf"} panels={panelUrls(c.id, c.selection.brochureId)} />,
       aside: <div id="bf-controls-slot" />,
     });
   if (c.selection.includeCopy && c.copyText)
@@ -123,7 +122,7 @@ export default async function ApprovePage({
       label: "Video",
       title: "The film",
       blurb: b.video,
-      body: <VendorVideo id={vid} />,
+      body: <VendorVideo id={vid} poster={hero} />,
     });
 
   const markers: Marker[] = [...chapters.map((ch) => ({ id: ch.id, label: ch.label })), { id: "approve", label: "Approve" }];
@@ -141,10 +140,9 @@ export default async function ApprovePage({
         <a href={`#${markers[0]?.id ?? "approve"}`} className="vh-scroll" aria-label="Scroll to begin"><i /></a>
       </section>
 
-      {chapters.map((ch, i) => (
+      {chapters.map((ch) => (
         <section key={ch.id} className={`vch vch-${ch.id}`} id={ch.id}>
           <div className="vch-head">
-            <div className="vch-num">{String(i + 1).padStart(2, "0")}<span> / {String(chapters.length).padStart(2, "0")}</span></div>
             <h2>{ch.title}</h2>
             {ch.blurb && <p className="vch-blurb">{ch.blurb}</p>}
             {ch.aside}
@@ -155,11 +153,10 @@ export default async function ApprovePage({
 
       <section className="vch vch-approve" id="approve">
         <div className="vch-head">
-          <div className="vch-num">Last</div>
           <h2>{approved ? "Approved" : "Your approval"}</h2>
           {!approved && (
             <p className="vch-blurb">
-              If it all looks right, put your name to it and we&rsquo;ll get moving. If something needs changing, say so here and it comes straight to {senderIsMichael ? "Michael" : sender}.
+              If it all looks right, put your name to it and we&rsquo;ll get moving. If something needs changing, say so here and it comes straight to Michael.
             </p>
           )}
         </div>
@@ -173,7 +170,7 @@ export default async function ApprovePage({
               </p>
             </div>
           ) : (
-            <VendorApprovalForm campaignId={c.id} token={vendorOk ? token : ""} wording={AUTHORISATION_WORDING} preview={isPreview} address={c.address} />
+            <VendorApprovalForm campaignId={c.id} token={vendorOk ? token : ""} wording={AUTHORISATION_WORDING} preview={isPreview} address={c.address} vendorName={c.vendorName} items={chapters.map((ch) => ch.title)} />
           )}
         </div>
       </section>

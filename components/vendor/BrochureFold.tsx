@@ -43,7 +43,10 @@ const PANELS: {
 
 type Slices = [string[], string[]]; // [outside panels, inside panels]
 
-export default function BrochureFold({ src, name }: { src: string; name: string }) {
+export default function BrochureFold({ src, name, panels }: { src: string; name: string; panels?: string[][] }) {
+  // Server-rendered panel JPEGs when we have them (instant); the PDF rendered
+  // in the browser is the fallback if any of those fail to load.
+  const [usePdf, setUsePdf] = useState(!panels);
   const [slices, setSlices] = useState<Slices | null>(null);
   const [ratio, setRatio] = useState(210 / 99); // panel height / width; DL until measured
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
@@ -103,6 +106,22 @@ export default function BrochureFold({ src, name }: { src: string; name: string 
   const { open, node } = useLightbox(lbImages);
 
   useEffect(() => {
+    if (!panels || usePdf) return;
+    let cancelled = false;
+    const probe = new Image();
+    probe.onload = () => {
+      if (cancelled) return;
+      if (probe.naturalWidth) setRatio(probe.naturalHeight / probe.naturalWidth);
+      setSlices([panels[0], panels[1]]);
+      setState("ready");
+    };
+    probe.onerror = () => { if (!cancelled) setUsePdf(true); };
+    probe.src = panels[0][2]; // the cover
+    return () => { cancelled = true; };
+  }, [panels, usePdf]);
+
+  useEffect(() => {
+    if (!usePdf) return;
     let cancelled = false;
     (async () => {
       try {
@@ -145,7 +164,7 @@ export default function BrochureFold({ src, name }: { src: string; name: string 
     return () => {
       cancelled = true;
     };
-  }, [src]);
+  }, [src, usePdf]);
 
   if (state === "failed") {
     return (
@@ -171,7 +190,7 @@ export default function BrochureFold({ src, name }: { src: string; name: string 
   const Face = ({ side, r, lb, label }: { side: "front" | "rear"; r: Ref; lb: number; label: string }) => (
     <button className={`bf-face ${side}`} onClick={() => open(lb)} aria-label={label}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={pick(r)} alt="" draggable={false} />
+      <img src={pick(r)} alt="" draggable={false} onError={() => { if (!usePdf) setUsePdf(true); }} />
     </button>
   );
 
