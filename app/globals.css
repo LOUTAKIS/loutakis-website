@@ -629,6 +629,7 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
   --wf: .25; --w: calc(var(--wf) * 100%);
   position: relative; width: 100%; aspect-ratio: calc(1 / (var(--wf) * var(--r, 2.12)));
   perspective: 2600px; perspective-origin: 50% 50%;
+  transform-style: preserve-3d; /* without this the cards paint in DOM order, not by depth, and the cover hides the left gate */
   transition: transform 1.1s cubic-bezier(.65,.05,.25,1);
   margin: 10px 0 22px;
 }
