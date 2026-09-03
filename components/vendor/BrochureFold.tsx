@@ -68,17 +68,22 @@ export default function BrochureFold({ src, name }: { src: string; name: string 
     let until = 0;
     const fit = () => {
       const cards = root.querySelectorAll<HTMLElement>(".bf-card");
+      const flat = root.querySelector<HTMLElement>(".bf-base");
+      if (!flat) return;
       const base = root.getBoundingClientRect();
-      let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+      // Height from the panel lying on the table; a swinging card projects taller
+      // (perspective) and must not stretch the shadow. Width follows every card.
+      const f = flat.getBoundingClientRect();
+      let l = Infinity, r = -Infinity;
       cards.forEach((c) => {
         const q = c.getBoundingClientRect();
-        l = Math.min(l, q.left); t = Math.min(t, q.top); r = Math.max(r, q.right); b = Math.max(b, q.bottom);
+        l = Math.min(l, q.left); r = Math.max(r, q.right);
       });
       if (!isFinite(l)) return;
       ground.style.left = `${l - base.left}px`;
-      ground.style.top = `${t - base.top}px`;
+      ground.style.top = `${f.top - base.top}px`;
       ground.style.width = `${r - l}px`;
-      ground.style.height = `${b - t}px`;
+      ground.style.height = `${f.height}px`;
     };
     const tick = () => {
       fit();
