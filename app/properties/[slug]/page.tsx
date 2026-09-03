@@ -64,7 +64,12 @@ export default async function PropertyPage({ params }: { params: { slug: string 
     <section style={{ paddingTop: vid ? 0 : 40 }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {vid && <PropertyVideoHero id={vid} />}
-      <div className="wrap" style={vid ? { marginTop: 28 } : undefined}>
+      {/* detail-body sits above the sticky hero and paints its own background,
+          so the content scrolls up over the film rather than through it. */}
+      <div
+        className={vid ? "wrap detail-body" : "wrap"}
+        style={vid ? { marginTop: 28, paddingTop: 8 } : undefined}
+      >
         <Link href="/properties" className="backlink">← All properties</Link>
 
         <div style={{ marginTop: 18 }}>

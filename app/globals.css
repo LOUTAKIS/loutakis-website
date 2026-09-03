@@ -118,7 +118,9 @@ section { padding: 96px 0; }
    so it never spills below the fold). The frame is scaled to COVER the box and
    centred, which crops YouTube's title bar (top) and control bar (bottom) out of
    view; pointer-events:none blocks the hover/click UI too. */
-.video-hero { position: relative; width: 100%; height: calc(100dvh - 79px); background: #000; overflow: hidden; }
+/* Sticky: the film holds its place while the content scrolls up over it.
+   z-index 0 keeps it behind the page body, which carries its own background. */
+.video-hero { position: sticky; top: 79px; width: 100%; height: calc(100dvh - 79px); background: #000; overflow: hidden; z-index: 0; }
 .video-hero iframe,
 .video-hero .video-hero-frame {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -380,3 +382,26 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .sk-card { width: 100%; aspect-ratio: 4 / 3; }
 .sk-line { height: 14px; margin-bottom: 12px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ── Property hero: wash + scroll cue ─────────────────────────────────────
+   --wash runs 0 → 1 over the first three-quarters of a screen of scrolling. */
+.video-hero-wash {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: var(--paper);
+  opacity: calc(var(--wash, 0) * 0.92);
+  backdrop-filter: saturate(calc(1 - var(--wash, 0) * 0.7));
+}
+.video-hero-cue {
+  position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%);
+  z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  color: #fff; font-size: 10px; letter-spacing: .28em; text-transform: uppercase;
+  opacity: calc(1 - var(--wash, 0) * 2.4); pointer-events: none;
+  text-shadow: 0 1px 12px rgba(0,0,0,.45);
+}
+.video-hero-cue i { display: block; width: 1px; height: 44px; background: currentColor; opacity: .8; animation: cue 2.1s ease-in-out infinite; transform-origin: top; }
+@keyframes cue { 0%, 100% { transform: scaleY(.35); opacity: .35; } 50% { transform: scaleY(1); opacity: .9; } }
+@media (prefers-reduced-motion: reduce) { .video-hero-cue i { animation: none; } }
+
+/* The page body scrolls over the sticky hero, so it needs to sit above it
+   and paint its own background rather than letting the film show through. */
+.detail-body { position: relative; z-index: 1; background: var(--paper); }
