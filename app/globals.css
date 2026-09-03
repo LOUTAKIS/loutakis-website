@@ -637,9 +637,11 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 }
 .bf-card { position: absolute; top: 0; width: 100%; height: 100%; transform-style: preserve-3d;
   transition: transform var(--dur) var(--ease), left .6s ease, width .6s ease; }
-.bf-base { left: calc(50% + var(--w) / 2); width: var(--w); transform: translateZ(0); }
+.bf-base { left: 50%; width: var(--w); transform: translateZ(0); }
+/* Only a crisp edge shadow here: soft, wide shadows inside a 3D context are rasterised
+   as textures and band. The soft ground shadow is a flat 2D element below the stage. */
 .bf-face { position: absolute; inset: 0; margin: 0; padding: 0; border: 0; background: #fff; backface-visibility: hidden; -webkit-backface-visibility: hidden; cursor: zoom-in; overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 22px 48px -12px rgba(0,0,0,.22); }
+  box-shadow: 0 0 0 .5px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.10); }
 .bf-face img { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; }
 .bf-face.front { transform: translateZ(.4px); }
 .bf-face.rear { transform: rotateY(180deg) translateZ(.4px); }
@@ -661,11 +663,17 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .bf-stage.s2 .bf-gateL { transform: rotateY(0) translateZ(0); }
 .bf-stage.s2 .bf-gateR { transform: rotateY(0) translateZ(0); }
 
-/* A little lift while a card is in motion reads as paper, not a screen. */
-.bf-stage.s1 .bf-cover .rear, .bf-stage.s2 .bf-gateL .front, .bf-stage.s2 .bf-gateR .front { box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 30px 60px -18px rgba(0,0,0,.28); }
+/* Ground shadow: flat, so it stays smooth; it widens with the sheet. */
+.bf { position: relative; isolation: isolate; }
+.bf-ground { position: absolute; z-index: -1; left: 50%; top: 10px; bottom: 22px; width: var(--gw, 25%); transform: translateX(-50%);
+  transition: width var(--dur, 1.05s) var(--ease, ease); pointer-events: none;
+  background: radial-gradient(ellipse 60% 50% at 50% 92%, rgba(0,0,0,.22), rgba(0,0,0,0) 100%); }
+.bf-stage.s0 + .bf-ground { --gw: 27%; } .bf-stage.s1 + .bf-ground { --gw: 52%; } .bf-stage.s2 + .bf-ground { --gw: 100%; }
+@media (max-width: 720px) { .bf-stage.s0 + .bf-ground { --gw: 46%; } .bf-stage.s1 + .bf-ground { --gw: 90%; } }
 
-.bf-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.bf-hint { color: var(--muted); font-size: 13.5px; }
+.bf-controls { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin-top: 28px; }
+.bf-controls .btn { min-width: 180px; text-align: center; }
+.bf-hint { color: var(--muted); font-size: 13.5px; margin-top: 4px; }
 
 @media (max-width: 720px) {
   .bf-stage { --wf: .44; }

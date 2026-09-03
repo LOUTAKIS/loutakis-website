@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLightbox } from "./Lightbox";
 
 /**
@@ -48,6 +49,9 @@ export default function BrochureFold({ src, name }: { src: string; name: string 
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
   const [stage, setStage] = useState<0 | 1 | 2>(0);
   const [showBack, setShowBack] = useState(false);
+  // The chapter head (left column) offers a slot for the controls, so they sit with the words, not under the object.
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => setSlot(document.getElementById("bf-controls-slot")), []);
 
   const pick = (r: Ref) => slices?.[r.page]?.[r.panel] ?? "";
   const lbImages = slices
@@ -134,6 +138,22 @@ export default function BrochureFold({ src, name }: { src: string; name: string 
     </button>
   );
 
+  const controls = (
+    <div className="bf-controls">
+      <button className="btn" onClick={advance}>{stepLabel}</button>
+      {stage === 0 && (
+        <button className="btn ghost" onClick={() => setShowBack((v) => !v)}>
+          {showBack ? "Show the front" : "Turn it over"}
+        </button>
+      )}
+      <span className="bf-hint">
+        {stage === 0 && "Tap any panel to see it up close."}
+        {stage === 1 && "The inside covers. Open fully for the spread."}
+        {stage === 2 && "The full inside spread, as it prints."}
+      </span>
+    </div>
+  );
+
   return (
     <div className="bf" style={{ ["--r" as any]: ratio }}>
       <div className={`bf-stage s${stage}${showBack ? " back" : ""}`}>
@@ -161,23 +181,9 @@ export default function BrochureFold({ src, name }: { src: string; name: string 
           </div>
         </div>
       </div>
+      <div className="bf-ground" aria-hidden />
 
-      <div className="bf-controls">
-        <button className="btn" onClick={advance}>{stepLabel}</button>
-        {stage === 0 && (
-          <button className="btn ghost" onClick={() => setShowBack((v) => !v)}>
-            {showBack ? "Show the front" : "Turn it over"}
-          </button>
-        )}
-        <span className="bf-hint">
-          {stage === 0 && "Tap any panel to see it up close."}
-          {stage === 1 && "The inside covers. Open fully for the spread."}
-          {stage === 2 && "The full inside spread, as it prints."}
-        </span>
-      </div>
-      <p className="vp-note">
-        Four panels, printed both sides. <a href={src} target="_blank" rel="noopener">Open the PDF</a> ({name}).
-      </p>
+      {slot ? createPortal(controls, slot) : controls}
       {node}
     </div>
   );

@@ -67,7 +67,7 @@ export default async function ApprovePage({
   const senderIsMichael = /^michael/i.test(sender);
   const approved = c.status === "approved";
 
-  type Chapter = { id: string; label: string; title: string; blurb: string; body: React.ReactNode };
+  type Chapter = { id: string; label: string; title: string; blurb: string; body: React.ReactNode; aside?: React.ReactNode };
   const chapters: Chapter[] = [];
 
   if (c.selection.boardId)
@@ -85,6 +85,7 @@ export default async function ApprovePage({
       title: "The brochure",
       blurb: b.brochure,
       body: <BrochureFold src={`/api/vendor/file/${c.id}/brochure${fileQ}`} name={c.selection.brochureName ?? "brochure.pdf"} />,
+      aside: <div id="bf-controls-slot" />,
     });
   if (c.selection.includeCopy && c.copyText)
     chapters.push({
@@ -146,6 +147,7 @@ export default async function ApprovePage({
             <div className="vch-num">{String(i + 1).padStart(2, "0")}<span> / {String(chapters.length).padStart(2, "0")}</span></div>
             <h2>{ch.title}</h2>
             {ch.blurb && <p className="vch-blurb">{ch.blurb}</p>}
+            {ch.aside}
           </div>
           <div className="vch-body">{ch.body}</div>
         </section>
