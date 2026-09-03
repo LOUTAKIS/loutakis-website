@@ -351,8 +351,10 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .nav-toggle .bar.top.open { transform: translateY(3.5px) rotate(45deg); }
 .nav-toggle .bar.bottom.open { transform: translateY(-3.5px) rotate(-45deg); }
 
+/* Portalled to <body>, so this is positioned against the viewport. Starts
+   below the 78px header bar, which stays visible and clickable above it. */
 .mobile-nav {
-  position: fixed; inset: 78px 0 0; z-index: 55;
+  position: fixed; inset: 78px 0 0; z-index: 45;
   background: var(--paper); padding: 44px 26px 40px;
   display: flex; flex-direction: column; justify-content: space-between;
 }
