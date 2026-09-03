@@ -119,53 +119,46 @@ export default function BrochureFold({ src, name }: { src: string; name: string 
   const LB = { cover: 0, back: 1, gateLeft: 2, gateRight: 3, inner: (i: number) => 4 + i };
 
   const stepLabel = stage === 0 ? "Open it" : stage === 1 ? "Open fully" : "Fold it up";
-  const advance = () => setStage((s) => (s === 2 ? 0 : ((s + 1) as 1 | 2)));
+  const advance = () => {
+    if (stage === 2) {
+      // Fold the way paper folds: gates in first, then the cover — never both at once.
+      setStage(1);
+      setTimeout(() => setStage(0), 950);
+    } else setStage((stage + 1) as 1 | 2);
+  };
+
+  const Face = ({ side, r, lb, label }: { side: "front" | "rear"; r: Ref; lb: number; label: string }) => (
+    <button className={`bf-face ${side}`} onClick={() => open(lb)} aria-label={label}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={pick(r)} alt="" draggable={false} />
+    </button>
+  );
 
   return (
     <div className="bf" style={{ ["--r" as any]: ratio }}>
       <div className={`bf-stage s${stage}${showBack ? " back" : ""}`}>
-        {/* The base: the panel that is only ever revealed. */}
-        <div className="bf-card bf-in2">
-          <button className="bf-face" onClick={() => open(LB.inner(2))} aria-label="Inside spread, third panel">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={pick(PANELS.inner[2])} alt="" />
-          </button>
-        </div>
+        {/* The sheet, built as it is folded: each panel hinged to the one it folds onto.
+            base (P2)  ── gateR (P3) hinged on its right edge
+                       └─ cover (P1) hinged on its left edge
+                             └─ gateL (P0) hinged on the cover's left edge */}
+        <div className="bf-card bf-base">
+          <Face side="front" r={PANELS.inner[2]} lb={LB.inner(2)} label="Inside spread, third panel" />
+          <Face side="rear" r={PANELS.back} lb={LB.back} label="Back cover" />
 
-        {/* Right gate: shows "Vendors' Story"; swings right to expose the spread's last panel. */}
-        <div className="bf-card bf-gateR">
-          <button className="bf-face front" onClick={() => open(LB.gateRight)} aria-label="Inside right">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={pick(PANELS.gateRight)} alt="" />
-          </button>
-          <button className="bf-face rear" onClick={() => open(LB.inner(3))} aria-label="Inside spread, last panel">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={pick(PANELS.inner[3])} alt="" />
-          </button>
-        </div>
+          <div className="bf-card bf-gateR">
+            <Face side="front" r={PANELS.inner[3]} lb={LB.inner(3)} label="Inside spread, last panel" />
+            <Face side="rear" r={PANELS.gateRight} lb={LB.gateRight} label="Inside right" />
+          </div>
 
-        {/* Left gate: shows "LOUTAKIS / address"; swings left to expose the floorplan panel. */}
-        <div className="bf-card bf-gateL">
-          <button className="bf-face front" onClick={() => open(LB.gateLeft)} aria-label="Inside left">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={pick(PANELS.gateLeft)} alt="" />
-          </button>
-          <button className="bf-face rear" onClick={() => open(LB.inner(0))} aria-label="Inside spread, first panel">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={pick(PANELS.inner[0])} alt="" />
-          </button>
-        </div>
+          <div className="bf-card bf-cover">
+            <Face side="front" r={PANELS.inner[1]} lb={LB.inner(1)} label="Inside spread, second panel" />
+            <Face side="rear" r={PANELS.cover} lb={LB.cover} label="Front cover" />
 
-        {/* The cover, on top of everything when closed. Opens like a book; its inside is the second panel of the spread. */}
-        <div className="bf-card bf-cover">
-          <button className="bf-face front" onClick={() => open(showBack ? LB.back : LB.cover)} aria-label={showBack ? "Back cover" : "Front cover"}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={pick(showBack ? PANELS.back : PANELS.cover)} alt="" />
-          </button>
-          <button className="bf-face rear" onClick={() => open(LB.inner(1))} aria-label="Inside spread, second panel">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={pick(PANELS.inner[1])} alt="" />
-          </button>
+            <div className="bf-card bf-gateL">
+              <Face side="front" r={PANELS.inner[0]} lb={LB.inner(0)} label="Inside spread, first panel" />
+              <Face side="rear" r={PANELS.gateLeft} lb={LB.gateLeft} label="Inside left" />
+            </div>
+          </div>
         </div>
       </div>
 

@@ -621,45 +621,48 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 }
 
 /* ── Brochure: four-panel closed gatefold in 3D ────────────────────────────
-   --wf is a panel's width as a fraction of the stage; --r is a panel's
-   height/width from the PDF. Cards hinge on their edges; rear faces are
-   pre-turned so a 180° swing shows the other side. Positions derive from --wf
-   so phones can show the closed brochure large and shrink for the spread. */
+   Built like the paper: the base panel sits still; the right gate hinges on
+   its right edge, the cover on its left edge, and the left gate on the
+   cover's far edge. Folded cards are rotated 180° onto their parent and
+   lifted a few px so faces never share a plane. --wf is a panel's width as a
+   fraction of the stage; --r is a panel's height/width from the PDF. */
 .bf-stage {
   --wf: .25; --w: calc(var(--wf) * 100%);
+  --ease: cubic-bezier(.7,0,.2,1); --dur: 1.05s;
   position: relative; width: 100%; aspect-ratio: calc(1 / (var(--wf) * var(--r, 2.12)));
-  perspective: 2600px; perspective-origin: 50% 50%;
-  transform-style: preserve-3d; /* without this the cards paint in DOM order, not by depth, and the cover hides the left gate */
-  transition: transform 1.1s cubic-bezier(.65,.05,.25,1);
+  perspective: 2400px; perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+  transition: transform var(--dur) var(--ease);
   margin: 10px 0 22px;
 }
-.bf-card { position: absolute; top: 0; width: var(--w); height: 100%; transform-style: preserve-3d;
-  transition: transform 1.1s cubic-bezier(.65,.05,.25,1), opacity .4s, left .6s ease, width .6s ease; }
-.bf-face { position: absolute; inset: 0; margin: 0; padding: 0; border: 0; background: #fff; backface-visibility: hidden; -webkit-backface-visibility: hidden; cursor: zoom-in; box-shadow: 0 18px 44px rgba(0,0,0,.14); overflow: hidden; }
-.bf-face img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.bf-face.rear { transform: rotateY(180deg); }
+.bf-card { position: absolute; top: 0; width: 100%; height: 100%; transform-style: preserve-3d;
+  transition: transform var(--dur) var(--ease), left .6s ease, width .6s ease; }
+.bf-base { left: calc(50% + var(--w) / 2); width: var(--w); transform: translateZ(0); }
+.bf-face { position: absolute; inset: 0; margin: 0; padding: 0; border: 0; background: #fff; backface-visibility: hidden; -webkit-backface-visibility: hidden; cursor: zoom-in; overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 22px 48px -12px rgba(0,0,0,.22); }
+.bf-face img { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; }
+.bf-face.front { transform: translateZ(.4px); }
+.bf-face.rear { transform: rotateY(180deg) translateZ(.4px); }
 .bf-face:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
-/* Base positions: the centre panel, and one to its left for the left gate. */
-.bf-in2   { left: calc(50% - var(--w) / 2); transform: translateZ(-3px); }
-.bf-gateR { left: calc(50% - var(--w) / 2); transform-origin: 100% 50%; transform: translateZ(-1px); }
-.bf-gateL { left: calc(50% - var(--w) * 1.5); transform-origin: 0 50%; opacity: 0; transform: translateZ(-2px); }
-.bf-cover { left: calc(50% - var(--w) / 2); transform-origin: 0 50%; transform: translateZ(2px); }
+/* Hinges. Each folded card is rotated onto its parent; translateZ is negative so the 180° turn lands it in front. */
+.bf-gateR { left: 100%; transform-origin: 0 50%;    transform: rotateY(-180deg) translateZ(-1.5px); }
+.bf-cover { left: -100%; transform-origin: 100% 50%; transform: rotateY(180deg) translateZ(-4px); }
+.bf-gateL { left: -100%; transform-origin: 100% 50%; transform: rotateY(180deg) translateZ(-1.5px); }
 
-/* Closed, turned over: the cover card spins to show the back. */
-.bf-stage.s0.back .bf-cover { transform: translateZ(2px) rotateY(180deg); }
-.bf-stage.s0.back .bf-cover .rear { visibility: hidden; }
+/* Closed: the packet sits on the base's slot; slide it to centre. Turned over: spin the lot. */
+.bf-stage.s0 { transform: translateX(calc(var(--w) * -.5)); }
+.bf-stage.s0.back .bf-base { transform: rotateY(180deg); }
 
-/* Stage 1: the middle opens. Cover swings left on its left edge, showing its inside (spread panel 2);
-   the left gate lies on top of it; the right gate is now exposed. */
-.bf-stage.s1 .bf-cover { transform: translateZ(2px) rotateY(-180deg); }
-.bf-stage.s1 .bf-gateL { opacity: 1; transform: translateZ(4px); transition-delay: .55s, .55s, 0s, 0s; }
+/* Open the middle: the cover swings out flat to the left, the left gate still lying on it. */
+.bf-stage.s1 .bf-cover, .bf-stage.s2 .bf-cover { transform: rotateY(0) translateZ(0); }
 
-/* Stage 2: both gates swing out; everything slides right half a panel so the four sit centred. */
-.bf-stage.s2 { transform: translateX(calc(var(--w) / 2)); }
-.bf-stage.s2 .bf-cover { transform: translateZ(2px) rotateY(-180deg); }
-.bf-stage.s2 .bf-gateL { opacity: 1; transform: translateZ(4px) rotateY(-180deg); }
-.bf-stage.s2 .bf-gateR { transform: translateZ(-1px) rotateY(180deg); }
+/* Open fully: both gates swing out. */
+.bf-stage.s2 .bf-gateL { transform: rotateY(0) translateZ(0); }
+.bf-stage.s2 .bf-gateR { transform: rotateY(0) translateZ(0); }
+
+/* A little lift while a card is in motion reads as paper, not a screen. */
+.bf-stage.s1 .bf-cover .rear, .bf-stage.s2 .bf-gateL .front, .bf-stage.s2 .bf-gateR .front { box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 30px 60px -18px rgba(0,0,0,.28); }
 
 .bf-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .bf-hint { color: var(--muted); font-size: 13.5px; }
