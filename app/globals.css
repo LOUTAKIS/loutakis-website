@@ -411,3 +411,15 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 /* The page body scrolls over the sticky hero, so it needs to sit above it
    and paint its own background rather than letting the film show through. */
 .detail-body { position: relative; z-index: 1; background: var(--paper); }
+
+/* Phones: fit the film to the width instead of cropping to fill the height.
+   On a 390px-wide screen the cover maths scaled the frame to ~1360px, slicing
+   the sides off — including the address and specs burned into the video. */
+@media (max-width: 760px) {
+  .video-hero { height: calc(100vw * 9 / 16); }
+  .video-hero iframe,
+  .video-hero .video-hero-frame { width: 100vw; height: calc(100vw * 9 / 16); }
+  .video-hero-cue { bottom: 12px; }
+  .video-hero-cue i { height: 22px; }
+  .video-hero-sound { bottom: 10px; right: 10px; padding: 7px 12px; font-size: 10px; }
+}
