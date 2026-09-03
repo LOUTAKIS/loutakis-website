@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStaff } from "@/lib/staff-auth";
-import { getCampaign, updateCampaign, type Selection } from "@/lib/campaigns";
+import { getCampaign, updateCampaign, deleteCampaign, type Selection } from "@/lib/campaigns";
 import { sendVendorLink } from "@/lib/vendor";
 import { panelUrls } from "@/lib/brochure-render";
 
@@ -88,4 +88,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     sentBy: staff.email,
   });
   return NextResponse.json({ ok: true, campaign: next });
+}
+
+/** Delete a campaign that hasn't been approved. The approved ones are the record. */
+export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+  const staff = getStaff();
+  if (!staff) return NextResponse.json({ ok: false, error: "Sign in first" }, { status: 401 });
+  const c = await getCampaign(params.id);
+  if (!c) return NextResponse.json({ ok: true });
+  if (c.status === "approved") return NextResponse.json({ ok: false, error: "Approved campaigns are kept as the record." }, { status: 400 });
+  await deleteCampaign(params.id);
+  return NextResponse.json({ ok: true });
 }

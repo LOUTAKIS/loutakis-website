@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getStaff } from "@/lib/staff-auth";
 import { getMarketingSource } from "@/lib/boxdice";
 import { findPropertyFolder, listMediaSection } from "@/lib/sharepoint";
-import { newCampaignId, saveCampaign, DEFAULT_BLURBS, type Campaign } from "@/lib/campaigns";
+import { newCampaignId, saveCampaign, listCampaigns, DEFAULT_BLURBS, type Campaign } from "@/lib/campaigns";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +23,10 @@ export async function POST(req: Request) {
     /* fall through */
   }
   if (!listingId) return NextResponse.json({ ok: false, error: "listingId required" }, { status: 400 });
+
+  // One live approval per listing: if one is already in flight, open that.
+  const open = (await listCampaigns()).find((c) => c.listingId === listingId && c.status !== "approved");
+  if (open) return NextResponse.json({ ok: true, id: open.id, existing: true });
 
   const source = await getMarketingSource(listingId);
   if (!source) return NextResponse.json({ ok: false, error: "Listing not found in Box & Dice" }, { status: 404 });

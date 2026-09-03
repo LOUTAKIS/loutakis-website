@@ -17,7 +17,8 @@ export default async function NewApprovalPage({ searchParams }: { searchParams?:
 
   const showAll = searchParams?.all === "1";
   const [sources, campaigns] = await Promise.all([getMarketingSources(showAll), listCampaigns()]);
-  const existing = new Map(campaigns.map((c) => [c.listingId, c]));
+  // The live (unapproved) campaign per listing, if any.
+  const existing = new Map(campaigns.filter((c) => c.status !== "approved").map((c) => [c.listingId, c]));
 
   return (
     <section className="portal-page">
@@ -59,14 +60,15 @@ export default async function NewApprovalPage({ searchParams }: { searchParams?:
                       {s.videoUrl ? " · video" : ""}
                       {!ready && <span className="vc-warn"> · not loaded in the CRM yet</span>}
                     </div>
-                    {c && (
-                      <div className="vc-meta">
-                        Already has an approval ({c.status}) —{" "}
-                        <Link href={`/staff/${c.id}`}>open it</Link>
-                      </div>
+                    {c && c.status !== "approved" && (
+                      <div className="vc-meta">Already in flight ({c.status === "draft" ? "not sent" : c.status}).</div>
                     )}
                   </div>
-                  <StartCampaign listingId={s.id} disabled={!ready} />
+                  {c && c.status !== "approved" ? (
+                    <Link href={`/staff/${c.id}`} className="btn">Open</Link>
+                  ) : (
+                    <StartCampaign listingId={s.id} disabled={!ready} />
+                  )}
                 </li>
               );
             })}

@@ -3,6 +3,7 @@ import { getStaff } from "@/lib/staff-auth";
 import { listCampaigns, type Campaign, type CampaignStatus } from "@/lib/campaigns";
 import StaffSignInForm from "@/components/StaffSignInForm";
 import StaffSignOut from "@/components/StaffSignOut";
+import DeleteCampaign from "@/components/DeleteCampaign";
 
 export const metadata = {
   title: "Vendor approvals — Loutakis Real Estate",
@@ -92,18 +93,20 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
             {live.length > 0 && (
               <ul className="vc-list">
                 {live.map((c) => (
-                  <li key={c.id}>
+                  <li key={c.id} className="vc-row">
                     <Link href={`/staff/${c.id}`}>
                       <div className="vc-addr">{c.address}</div>
-                      <div className="vc-meta">
-                        {c.vendorName} · {c.vendorEmail}
-                        {c.sentBy ? ` · sent by ${c.sentBy.split("@")[0]}` : ""}
-                      </div>
+                      {(c.vendorName || c.vendorEmail || c.sentBy) && (
+                        <div className="vc-meta">
+                          {[c.vendorName, c.vendorEmail, c.sentBy ? `sent by ${c.sentBy.split("@")[0]}` : ""].filter(Boolean).join(" · ")}
+                        </div>
+                      )}
                       <StatusLine c={c} />
                       {c.status === "changes" && c.amendments.at(-1) && (
                         <blockquote className="vc-quote">{c.amendments.at(-1)!.text}</blockquote>
                       )}
                     </Link>
+                    <DeleteCampaign id={c.id} address={c.address} />
                   </li>
                 ))}
               </ul>

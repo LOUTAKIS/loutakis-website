@@ -170,3 +170,12 @@ export async function updateCampaign(id: string, patch: Partial<Campaign>): Prom
   await write([{ operation: "upsert", key: key(id), value: next }]);
   return next;
 }
+
+/** Remove a campaign. Approved ones are the record and stay; the caller enforces that. */
+export async function deleteCampaign(id: string): Promise<void> {
+  const ids = await readIndex();
+  await write([
+    { operation: "delete", key: key(id) },
+    { operation: "upsert", key: INDEX, value: ids.filter((x) => x !== id) },
+  ]);
+}
