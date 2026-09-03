@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { registerBuyer } from "@/lib/portal";
+import { validSuburbIds } from "@/lib/suburbs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -70,7 +71,9 @@ export async function POST(req: Request) {
       mobile,
       situation,
       budget: clean(body?.budget, 40) || undefined,
-      suburbs: clean(body?.suburbs, 200) || undefined,
+      // Ids are re-validated against the suburb map — never trust the client
+      // with something that ends up written into the CRM.
+      suburbIds: validSuburbIds(body?.suburbIds),
       beds: clean(body?.beds, 20) || undefined,
       timeframe: clean(body?.timeframe, 40) || undefined,
       // Never inferred. Only true if they actually ticked it.

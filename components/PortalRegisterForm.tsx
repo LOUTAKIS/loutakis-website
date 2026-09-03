@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import SuburbPicker, { type PickedSuburb } from "./SuburbPicker";
 
 const SITUATIONS = [
   "Buying my first home",
@@ -25,6 +26,9 @@ const TIMEFRAMES = ["Ready now", "Within 3 months", "3–6 months", "6–12 mont
 export default function PortalRegisterForm() {
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState("");
+  // Held in React rather than the form, because each pick carries a CRM
+  // suburb id that a plain text input couldn't preserve.
+  const [suburbs, setSuburbs] = useState<PickedSuburb[]>([]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -45,7 +49,8 @@ export default function PortalRegisterForm() {
           mobile: f.get("mobile"),
           situation: f.get("situation"),
           budget: f.get("budget"),
-          suburbs: f.get("suburbs"),
+          suburbIds: suburbs.map((s) => s.id),
+          suburbNames: suburbs.map((s) => s.name),
           beds: f.get("beds"),
           timeframe: f.get("timeframe"),
           confidentiality: f.get("confidentiality") === "on",
@@ -150,10 +155,10 @@ export default function PortalRegisterForm() {
       </div>
 
       <div className="pf-row">
-        <label>
-          <span>Suburbs you&rsquo;re looking in</span>
-          <input className="field" name="suburbs" placeholder="Yarraville, Seddon, Kingsville…" />
-        </label>
+        <div>
+          <span className="pf-label">Suburbs you&rsquo;re looking in</span>
+          <SuburbPicker selected={suburbs} onChange={setSuburbs} />
+        </div>
         <label>
           <span>Timeframe</span>
           <select className="field" name="timeframe" defaultValue="">

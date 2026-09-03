@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Logo from "./Logo";
+import MobileNav from "./MobileNav";
 
 export default function SiteHeader() {
   return (
@@ -15,6 +16,7 @@ export default function SiteHeader() {
           <Link href="/about">About</Link>
           <Link href="/contact">Contact</Link>
         </nav>
+        <MobileNav />
       </div>
     </header>
   );

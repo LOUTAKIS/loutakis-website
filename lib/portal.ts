@@ -2,7 +2,8 @@ import "server-only";
 import { createContact } from "./boxdice-write";
 import { sendMail, officeRecipients, esc } from "./mail";
 import { createToken } from "./portal-token";
-import { rememberContact } from "./portal-store";
+import { rememberContact, rememberCriteria, takeCriteria } from "./portal-store";
+import { namesForIds } from "./suburbs";
 
 /**
  * Off-market portal — Box & Dice operations.
@@ -37,7 +38,8 @@ export type Registration = {
   mobile: string;
   situation: string;
   budget?: string;
-  suburbs?: string;
+  /** Box & Dice suburb ids, already validated against lib/suburbs-vic.json. */
+  suburbIds?: number[];
   beds?: string;
   timeframe?: string;
   /** Explicitly ticked. Never assumed — see the consent note below. */
@@ -116,13 +118,84 @@ export async function addNote(contactId: number | string, text: string) {
   return { ok: false };
 }
 
+/**
+ * The form's budget bands, as CRM price bounds. Deliberately a lookup rather
+ * than parsing the label: the labels are display copy and will get reworded,
+ * and a regex quietly returning nothing would be worse than a missing entry.
+ */
+const BUDGET_BOUNDS: Record<string, { from?: number; to?: number }> = {
+  "Under $600,000": { to: 600_000 },
+  "$600,000 – $800,000": { from: 600_000, to: 800_000 },
+  "$800,000 – $1m": { from: 800_000, to: 1_000_000 },
+  "$1m – $1.5m": { from: 1_000_000, to: 1_500_000 },
+  "$1.5m – $2m": { from: 1_500_000, to: 2_000_000 },
+  "Over $2m": { from: 2_000_000 },
+};
+
+/**
+ * Write real buying criteria, so the buyer turns up in CRM searches — a
+ * timeline note doesn't. Never fatal: someone approved with no criteria is a
+ * smaller problem than an approval that failed halfway.
+ */
+export async function createCriteria(
+  contactId: number | string,
+  c: {
+    suburbIds?: number[];
+    budget?: string;
+    beds?: string;
+    timeframe?: string;
+    situation?: string;
+  }
+): Promise<void> {
+  const bounds = c.budget ? BUDGET_BOUNDS[c.budget] : undefined;
+  // "5+" means five or more, so it's a floor, not an exact count.
+  const beds = c.beds ? Number(String(c.beds).replace("+", "")) : undefined;
+
+  const criteria: Record<string, unknown> = { type: "sales" };
+  if (c.suburbIds?.length) criteria.suburb_ids = c.suburbIds;
+  if (Number.isFinite(beds) && beds) criteria.beds_from = beds;
+  if (bounds?.from) criteria.price_from = String(bounds.from);
+  if (bounds?.to) criteria.price_to = String(bounds.to);
+
+  // Timeframe and situation have no field of their own in the criteria schema,
+  // and they're exactly what you want to see when the search result comes up.
+  const notes = [
+    c.situation ? `Situation: ${c.situation}` : null,
+    c.timeframe ? `Timeframe: ${c.timeframe}` : null,
+    "Source: website off-market registration",
+  ].filter(Boolean);
+  criteria.notes = notes.join(" · ");
+
+  // Only the marker fields would be sent if the buyer skipped every optional
+  // question — an empty criteria record is clutter, so don't create one.
+  const hasSubstance =
+    criteria.suburb_ids || criteria.beds_from || criteria.price_from || criteria.price_to;
+  if (!hasSubstance) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/contacts/${contactId}/criteria`, {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ criteria }),
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      console.error(`[portal] criteria write -> ${res.status} ${await res.text()}`);
+      return;
+    }
+    console.log(`[portal] criteria created for contact ${contactId}`, criteria);
+  } catch (err) {
+    console.error("[portal] criteria write failed", err);
+  }
+}
+
 /** Human-readable summary of the answers, for the CRM timeline. */
 function summarise(r: Registration): string {
   const lines = [
     "Registered for the off-market list on the website.",
     `Situation: ${r.situation}`,
     r.budget ? `Budget: ${r.budget}` : null,
-    r.suburbs ? `Suburbs: ${r.suburbs}` : null,
+    r.suburbIds?.length ? `Suburbs: ${namesForIds(r.suburbIds).join(", ")}` : null,
     r.beds ? `Minimum bedrooms: ${r.beds}` : null,
     r.timeframe ? `Timeframe: ${r.timeframe}` : null,
     `Marketing consent: ${r.marketingConsent ? "YES — ticked on the form" : "no"}`,
@@ -178,6 +251,17 @@ export async function registerBuyer(r: Registration) {
     console.error("[portal] store write failed", err)
   );
 
+  // Their answers, held until approval — criteria are only written into the CRM
+  // for buyers you've actually approved, so declined requests never pollute
+  // your searches.
+  await rememberCriteria(contactId, {
+    suburbIds: r.suburbIds,
+    budget: r.budget,
+    beds: r.beds,
+    timeframe: r.timeframe,
+    situation: r.situation,
+  }).catch((err) => console.error("[portal] criteria stash failed", err));
+
   // Tell the office. A registration nobody hears about is a lead lost — this
   // must not depend on anyone remembering to look in the CRM.
   await notifyOffice(contactId, r).catch((err) =>
@@ -201,7 +285,7 @@ export async function notifyOffice(contactId: number | string, r: Registration) 
     ["Email", r.email],
     ["Situation", r.situation],
     ["Budget", r.budget || "—"],
-    ["Suburbs", r.suburbs || "—"],
+    ["Suburbs", r.suburbIds?.length ? namesForIds(r.suburbIds).join(", ") : "—"],
     ["Min bedrooms", r.beds || "—"],
     ["Timeframe", r.timeframe || "—"],
     ["Marketing consent", r.marketingConsent ? "Yes" : "No"],
@@ -257,6 +341,11 @@ export async function approveBuyer(contactId: string) {
   await assignCategory(contactId, CATEGORY_APPROVED, consultantId);
   await removeCategory(contactId, CATEGORY_PENDING, consultantId);
   await addNote(contactId, "Approved for the off-market list via the website.");
+
+  // Now that they're a real buyer, record what they're after as searchable
+  // criteria. takeCriteria clears the stash, so re-approving won't duplicate.
+  const pending = await takeCriteria(contactId).catch(() => null);
+  if (pending) await createCriteria(contactId, pending);
 
   if (contact?.email) {
     await sendMail({

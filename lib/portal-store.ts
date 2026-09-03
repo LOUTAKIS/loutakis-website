@@ -26,6 +26,40 @@ export function storeConfigured(): { read: boolean; write: boolean } {
   return { read: Boolean(client), write: Boolean(API_TOKEN) };
 }
 
+type Write =
+  | { operation: "upsert"; key: string; value: unknown }
+  | { operation: "delete"; key: string };
+
+/**
+ * One PATCH to the Global Config items endpoint.
+ *
+ * `/v1/global-config/` — the pre-rename `/v1/edge-config/` path still answers,
+ * but with a misleading 404 "Edge Config Item not found" (2 Sep 2026).
+ */
+async function upsert(items: Write[]): Promise<void> {
+  if (!API_TOKEN) {
+    console.error("[portal-store] VERCEL_API_TOKEN not set — cannot write");
+    return;
+  }
+  if (!items.length) return;
+
+  const res = await fetch(
+    `https://api.vercel.com/v1/global-config/${STORE_ID}/items?teamId=${encodeURIComponent(TEAM_ID)}`,
+    {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${API_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ items }),
+      cache: "no-store",
+    }
+  );
+
+  if (!res.ok) {
+    // Loud, but not fatal: the buyer is still registered in the CRM. What they
+    // lose is self-service sign-in, which the office can repair by hand.
+    console.error(`[portal-store] write failed: ${res.status} ${await res.text()}`);
+  }
+}
+
 /** lower-case, trimmed. */
 export function normaliseEmail(email: string): string {
   return String(email ?? "").trim().toLowerCase();
@@ -40,6 +74,51 @@ const hash = (s: string) => createHash("sha256").update(s).digest("hex").slice(0
 
 export const emailKey = (email: string) => `e_${hash(normaliseEmail(email))}`;
 export const mobileKey = (mobile: string) => `m_${hash(normaliseMobile(mobile))}`;
+
+/**
+ * Pending buying criteria, held between registration and approval.
+ *
+ * Criteria are only written into Box & Dice once you approve someone, so the
+ * answers have to live somewhere in the meantime — the approval email carries
+ * only a signed contact id. Keyed by contact id, cleared the moment it's used.
+ * Nothing here identifies anyone: it's budget, beds, suburb ids, timeframe.
+ */
+export type PendingCriteria = {
+  suburbIds?: number[];
+  budget?: string;
+  beds?: string;
+  timeframe?: string;
+  situation?: string;
+};
+
+const criteriaKey = (contactId: number | string) => `c_${Number(contactId)}`;
+
+export async function rememberCriteria(
+  contactId: number | string,
+  criteria: PendingCriteria
+): Promise<void> {
+  const hasAnything =
+    criteria.suburbIds?.length || criteria.budget || criteria.beds || criteria.timeframe;
+  if (!hasAnything) return;
+  await upsert([{ operation: "upsert", key: criteriaKey(contactId), value: criteria as any }]);
+}
+
+/** Read the stored criteria and forget them. Safe to call when there are none. */
+export async function takeCriteria(contactId: number | string): Promise<PendingCriteria | null> {
+  if (!client) return null;
+  let stored: PendingCriteria | undefined;
+  try {
+    stored = await client.get<PendingCriteria>(criteriaKey(contactId));
+  } catch (err) {
+    console.error("[portal-store] criteria read failed", err);
+    return null;
+  }
+  if (!stored) return null;
+
+  // Best effort: if the delete fails the only cost is a stale key.
+  await upsert([{ operation: "delete", key: criteriaKey(contactId) }]).catch(() => {});
+  return stored;
+}
 
 /** Look up a contact id by whatever the buyer typed — email or mobile. */
 export async function lookupContactId(identifier: string): Promise<number | null> {
@@ -62,39 +141,13 @@ export async function rememberContact(opts: {
   email?: string;
   mobile?: string;
 }): Promise<void> {
-  if (!API_TOKEN) {
-    console.error("[portal-store] VERCEL_API_TOKEN not set — cannot write lookup entry");
-    return;
-  }
-
   const id = Number(opts.contactId);
-  const items: Array<{ operation: "upsert"; key: string; value: number }> = [];
+  const items: Write[] = [];
   if (opts.email && normaliseEmail(opts.email)) {
     items.push({ operation: "upsert", key: emailKey(opts.email), value: id });
   }
   if (opts.mobile && normaliseMobile(opts.mobile)) {
     items.push({ operation: "upsert", key: mobileKey(opts.mobile), value: id });
   }
-  if (!items.length) return;
-
-  // `/v1/global-config/` — the pre-rename `/v1/edge-config/` path still
-  // answers, but with a misleading 404 "Edge Config Item not found" (2 Sep 2026).
-  const res = await fetch(
-    `https://api.vercel.com/v1/global-config/${STORE_ID}/items?teamId=${encodeURIComponent(TEAM_ID)}`,
-    {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ items }),
-      cache: "no-store",
-    }
-  );
-
-  if (!res.ok) {
-    // Loud, but not fatal: the buyer is still registered in the CRM. What they
-    // lose is self-service sign-in, which the office can repair by hand.
-    console.error(`[portal-store] write failed: ${res.status} ${await res.text()}`);
-  }
+  await upsert(items);
 }
