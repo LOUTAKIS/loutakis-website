@@ -1,10 +1,16 @@
 import { getCampaign } from "@/lib/campaigns";
 import { getMarketingSource } from "@/lib/boxdice";
 import { verifyToken } from "@/lib/portal-token";
-import { getStaff } from "@/lib/staff-auth";
+import { getStaff, staffDisplayName } from "@/lib/staff-auth";
 import { recordOpen, AUTHORISATION_WORDING } from "@/lib/vendor";
 import VendorApprovalForm from "@/components/VendorApprovalForm";
 import VendorVideo from "@/components/VendorVideo";
+import VendorFrame, { type Marker } from "@/components/vendor/VendorFrame";
+import Photos from "@/components/vendor/Photos";
+import Zoomable from "@/components/vendor/Zoomable";
+import BrochurePages from "@/components/vendor/BrochurePages";
+import Board from "@/components/vendor/Board";
+import Copy from "@/components/vendor/Copy";
 
 export const metadata = {
   title: "Review your marketing — Loutakis Real Estate",
@@ -12,7 +18,6 @@ export const metadata = {
 };
 export const dynamic = "force-dynamic";
 
-/** Extract a YouTube id from whatever form the link takes. */
 function youTubeId(url?: string | null): string | null {
   if (!url) return null;
   const m = url.match(/(?:youtu\.be\/|[?&]v=|\/embed\/|\/shorts\/)([\w-]{11})/);
@@ -21,17 +26,17 @@ function youTubeId(url?: string | null): string | null {
 
 function Expired() {
   return (
-    <section className="portal-page">
-      <div className="wrap" style={{ maxWidth: 560 }}>
+    <section className="va-expired">
+      <div>
         <div className="eyebrow">Loutakis Real Estate</div>
         <h2>That link isn&rsquo;t valid</h2>
-        <p className="portal-intro">
-          It may have expired. Call Michael on <a href="tel:0409438025">0409&nbsp;438&nbsp;025</a> and we&rsquo;ll send a fresh one.
-        </p>
+        <p>It may have expired. Call Michael on <a href="tel:0409438025">0409&nbsp;438&nbsp;025</a> and we&rsquo;ll send a fresh one.</p>
       </div>
     </section>
   );
 }
+
+const first = (name: string) => name.trim().split(/\s+/)[0] || "";
 
 export default async function ApprovePage({
   params,
@@ -43,13 +48,11 @@ export default async function ApprovePage({
   const token = searchParams?.t ?? "";
   const payload = verifyToken(token);
   const vendorOk = payload?.a === "vendor" && payload.c === params.id;
-  // Staff can preview without a token — that never counts as an open.
   const isPreview = !vendorOk && searchParams?.preview === "1" && Boolean(getStaff());
   if (!vendorOk && !isPreview) return <Expired />;
 
   const c = await getCampaign(params.id);
   if (!c) return <Expired />;
-  // A draft has no business being seen by a vendor; staff can still preview it.
   if (c.status === "draft" && !isPreview) return <Expired />;
 
   const source = await getMarketingSource(c.listingId);
@@ -62,131 +65,133 @@ export default async function ApprovePage({
   const fileQ = vendorOk ? `?t=${encodeURIComponent(token)}` : "";
   const hero = photos[0]?.url;
   const b = c.selection.blurbs;
+  const sender = staffDisplayName(c.sentBy ?? c.createdBy);
+  const senderIsMichael = /^michael/i.test(sender);
+  const vendorFirst = first(c.vendorName);
+  const approved = c.status === "approved";
 
-  const sections: Array<{ key: string; title: string; blurb: string; body: React.ReactNode } | null> = [
-    c.selection.boardId
-      ? {
-          key: "board",
-          title: "Board",
-          blurb: b.board,
-          body: (
-            <a className="va-file" href={`/api/vendor/file/${c.id}/board${fileQ}`} target="_blank" rel="noopener">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/api/vendor/file/${c.id}/board${fileQ}`} alt="Signboard artwork" />
-              <span>Open full size ↗</span>
-            </a>
-          ),
-        }
-      : null,
-    c.selection.brochureId
-      ? {
-          key: "brochure",
-          title: "Brochure",
-          blurb: b.brochure,
-          body: (
-            <a className="btn" href={`/api/vendor/file/${c.id}/brochure${fileQ}`} target="_blank" rel="noopener">
-              View the brochure ↗
-            </a>
-          ),
-        }
-      : null,
-    c.selection.includeCopy && c.copyText
-      ? {
-          key: "copy",
-          title: "Copy",
-          blurb: b.copy,
-          body: (
-            <div className="va-copy">
-              {c.copyHeading && <h4>{c.copyHeading}</h4>}
-              {c.copyText.split(/\n{2,}/).map((p, i) => (
-                <p key={i}>{p}</p>
-              ))}
-            </div>
-          ),
-        }
-      : null,
-    floorplans.length
-      ? {
-          key: "floorplan",
-          title: "Floorplan",
-          blurb: b.floorplan,
-          body: (
-            <div className="va-plans">
-              {floorplans.map((f) => (
-                <a key={f.url} href={f.url} target="_blank" rel="noopener">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={f.url} alt="Floorplan" />
-                </a>
-              ))}
-            </div>
-          ),
-        }
-      : null,
-    photos.length
-      ? {
-          key: "images",
-          title: "Images",
-          blurb: b.images,
-          body: (
-            <div className="va-gallery">
-              {photos.map((p) => (
-                <a key={p.url} href={p.url} target="_blank" rel="noopener">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.url} alt="" loading="lazy" />
-                </a>
-              ))}
-            </div>
-          ),
-        }
-      : null,
-    vid ? { key: "video", title: "Video", blurb: b.video, body: <VendorVideo id={vid} /> } : null,
-  ];
+  type Chapter = { id: string; label: string; title: string; blurb: string; body: React.ReactNode };
+  const chapters: Chapter[] = [];
+
+  if (c.selection.boardId)
+    chapters.push({
+      id: "board",
+      label: "Board",
+      title: "The board",
+      blurb: b.board,
+      body: <Board src={`/api/vendor/file/${c.id}/board${fileQ}`} />,
+    });
+  if (c.selection.brochureId)
+    chapters.push({
+      id: "brochure",
+      label: "Brochure",
+      title: "The brochure",
+      blurb: b.brochure,
+      body: <BrochurePages src={`/api/vendor/file/${c.id}/brochure${fileQ}`} name={c.selection.brochureName ?? "brochure.pdf"} />,
+    });
+  if (c.selection.includeCopy && c.copyText)
+    chapters.push({
+      id: "copy",
+      label: "Copy",
+      title: "The words",
+      blurb: b.copy,
+      body: <Copy heading={c.copyHeading} text={c.copyText} />,
+    });
+  if (floorplans.length)
+    chapters.push({
+      id: "floorplan",
+      label: "Floorplan",
+      title: "The floorplan",
+      blurb: b.floorplan,
+      body: (
+        <div className="vplans">
+          {floorplans.map((f, i) => (
+            <Zoomable key={f.url} src={f.url} alt={`Floorplan${floorplans.length > 1 ? ` ${i + 1}` : ""}`} className="vz vz-plan" />
+          ))}
+        </div>
+      ),
+    });
+  if (photos.length)
+    chapters.push({
+      id: "photos",
+      label: "Photos",
+      title: "The photographs",
+      blurb: b.images,
+      body: <Photos photos={photos} />,
+    });
+  if (vid)
+    chapters.push({
+      id: "video",
+      label: "Video",
+      title: "The film",
+      blurb: b.video,
+      body: <VendorVideo id={vid} />,
+    });
+
+  const markers: Marker[] = [...chapters.map((ch) => ({ id: ch.id, label: ch.label })), { id: "approve", label: "Approve" }];
+  const minutes = Math.max(3, Math.round(chapters.length * 0.8 + (vid ? 1.5 : 0)));
 
   return (
-    <div className="va">
-      {isPreview && <div className="va-preview">Preview — this is what the vendor sees. Opens aren&rsquo;t counted.</div>}
+    <div className="va2">
+      <VendorFrame address={c.address} markers={markers} approved={approved} />
+      {isPreview && <div className="va-preview">Preview — this is what {c.vendorName || "the vendor"} will see. Opens aren&rsquo;t counted.</div>}
 
-      <section className="va-hero" style={hero ? { backgroundImage: `url(${hero})` } : undefined}>
-        <div className="wrap">
-          <h1>Take a minute, the way we tell your story online can make all the difference.</h1>
-          <p>{c.address}</p>
+      {/* Opening */}
+      <section className="vh" style={hero ? { backgroundImage: `url(${hero})` } : undefined}>
+        <div className="vh-inner">
+          <div className="eyebrow">Your marketing, ready to review</div>
+          <h1>{c.address}</h1>
+          <p className="vh-line">
+            {vendorFirst ? `${vendorFirst}, ` : ""}here&rsquo;s how we&rsquo;ll tell the story of your home.
+            {senderIsMichael ? " Take a minute with it — the way it's told makes all the difference." : ` ${sender} has put this together for you.`}
+          </p>
+          <p className="vh-cue">
+            {chapters.length} things to look at · about {minutes} minutes · then one tap to approve
+          </p>
         </div>
+        <a href={`#${markers[0]?.id ?? "approve"}`} className="vh-scroll" aria-label="Scroll to begin"><i /></a>
       </section>
 
-      <section className="va-intro">
-        <div className="wrap">
-          <h2>Make it stand out.</h2>
-        </div>
-      </section>
-
-      {sections.filter(Boolean).map((s) => (
-        <section key={s!.key} className="va-section" id={s!.key}>
-          <div className="wrap">
-            <div className="eyebrow">{s!.title}</div>
-            {s!.blurb && <p className="va-blurb">{s!.blurb}</p>}
-            {s!.body}
+      {chapters.map((ch, i) => (
+        <section key={ch.id} className={`vch vch-${ch.id}`} id={ch.id}>
+          <div className="vch-head">
+            <div className="vch-num">{String(i + 1).padStart(2, "0")}<span> / {String(chapters.length).padStart(2, "0")}</span></div>
+            <h2>{ch.title}</h2>
+            {ch.blurb && <p className="vch-blurb">{ch.blurb}</p>}
           </div>
+          <div className="vch-body">{ch.body}</div>
         </section>
       ))}
 
-      <section className="va-approve">
-        <div className="wrap" style={{ maxWidth: 680 }}>
-          <div className="eyebrow">Approval</div>
-          <h2>it&rsquo;s time to move.</h2>
-          {c.status === "approved" ? (
-            <div className="portal-done">
-              <h3>Approved</h3>
+      <section className="vch vch-approve" id="approve">
+        <div className="vch-head">
+          <div className="vch-num">Last</div>
+          <h2>{approved ? "Approved" : "Your approval"}</h2>
+          {!approved && (
+            <p className="vch-blurb">
+              If it all looks right, put your name to it and we&rsquo;ll get moving. If something needs changing, say so here and it comes straight to {senderIsMichael ? "Michael" : sender}.
+            </p>
+          )}
+        </div>
+        <div className="vch-body">
+          {approved ? (
+            <div className="vdone">
+              <div className="vdone-mark">✓</div>
+              <h3>Approved by {c.approvedName}</h3>
               <p>
-                {c.approvedName} approved this marketing on{" "}
-                {new Date(c.approvedAt!).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "Australia/Melbourne" })}.
-                Production is under way.
+                On {new Date(c.approvedAt!).toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Australia/Melbourne" })}. Production is under way.
               </p>
             </div>
           ) : (
-            <VendorApprovalForm campaignId={c.id} token={vendorOk ? token : ""} wording={AUTHORISATION_WORDING} preview={isPreview} />
+            <VendorApprovalForm campaignId={c.id} token={vendorOk ? token : ""} wording={AUTHORISATION_WORDING} preview={isPreview} address={c.address} />
           )}
         </div>
       </section>
+
+      <footer className="vfoot">
+        <span>Loutakis Real Estate · 0409 438 025</span>
+        <span>It&rsquo;s time to move.</span>
+      </footer>
     </div>
   );
 }
