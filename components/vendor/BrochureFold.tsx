@@ -54,54 +54,41 @@ export default function BrochureFold({ src, name }: { src: string; name: string 
   useEffect(() => setSlot(document.getElementById("bf-controls-slot")), []);
 
   /**
-   * The shadow. A soft box-shadow on a panel inside the 3D scene is rasterised
-   * and bands, so the shadow is one flat element under the sheet instead. To
-   * make it follow the paper exactly, every frame while the sheet is moving we
-   * measure where the cards really are and fit the shadow to their footprint.
+   * The shadow, baked into a bitmap at the panel's real pixel size (re-baked
+   * on resize). A live CSS blur on a panel inside the 3D scene is rasterised
+   * at low quality and bands; a bitmap is sampled smoothly. Each panel wears
+   * it as a background on ::after (see .bf-card::after), so it turns and lifts
+   * with the paper. 0 18px 44px rgba(0,0,0,.14): pad 80 each side, 62 top, 98 bottom.
    */
   const rootRef = useRef<HTMLDivElement>(null);
-  const groundRef = useRef<HTMLDivElement>(null);
+  const [shadowUrl, setShadowUrl] = useState<string>("");
   useEffect(() => {
-    const root = rootRef.current, ground = groundRef.current;
-    if (!root || !ground) return;
-    let raf = 0;
-    let until = 0;
-    const fit = () => {
-      const cards = root.querySelectorAll<HTMLElement>(".bf-card");
-      const flat = root.querySelector<HTMLElement>(".bf-base");
-      if (!flat) return;
-      const base = root.getBoundingClientRect();
-      // Height from the panel lying on the table; a swinging card projects taller
-      // (perspective) and must not stretch the shadow. Width follows every card.
-      const f = flat.getBoundingClientRect();
-      let l = Infinity, r = -Infinity;
-      cards.forEach((c) => {
-        const q = c.getBoundingClientRect();
-        l = Math.min(l, q.left); r = Math.max(r, q.right);
-      });
-      if (!isFinite(l)) return;
-      ground.style.left = `${l - base.left}px`;
-      ground.style.top = `${f.top - base.top}px`;
-      ground.style.width = `${r - l}px`;
-      ground.style.height = `${f.height}px`;
+    const base = rootRef.current?.querySelector<HTMLElement>(".bf-base");
+    if (!base) return;
+    const bake = () => {
+      const w = base.clientWidth, h = base.clientHeight;
+      if (!w || !h) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const c = document.createElement("canvas");
+      c.width = (w + 160) * dpr; c.height = (h + 160) * dpr;
+      const ctx = c.getContext("2d")!;
+      ctx.scale(dpr, dpr);
+      ctx.shadowColor = "rgba(0,0,0,.14)";
+      ctx.shadowBlur = 44;
+      ctx.shadowOffsetY = 18;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(80, 62, w, h);
+      // Erase the box itself; only its shadow remains.
+      ctx.shadowColor = "transparent";
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.fillRect(80, 62, w, h);
+      setShadowUrl(c.toDataURL("image/png"));
     };
-    const tick = () => {
-      fit();
-      if (performance.now() < until) raf = requestAnimationFrame(tick);
-    };
-    const run = (ms: number) => {
-      until = performance.now() + ms;
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(tick);
-    };
-    run(1500); // the current change: transition length plus a margin
-    const onResize = () => run(700);
-    window.addEventListener("resize", onResize);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onResize);
-    };
-  }, [stage, showBack, slices]);
+    bake();
+    const ro = new ResizeObserver(bake);
+    ro.observe(base);
+    return () => ro.disconnect();
+  }, [slices]);
 
   const pick = (r: Ref) => slices?.[r.page]?.[r.panel] ?? "";
   const lbImages = slices
@@ -205,7 +192,7 @@ export default function BrochureFold({ src, name }: { src: string; name: string 
   );
 
   return (
-    <div className="bf" ref={rootRef} style={{ ["--r" as any]: ratio }}>
+    <div className="bf" ref={rootRef} style={{ ["--r" as any]: ratio, ["--shadow" as any]: shadowUrl ? `url(${shadowUrl})` : "none" }}>
       <div className={`bf-stage s${stage}${showBack ? " back" : ""}`}>
         {/* The sheet, built as it is folded: each panel hinged to the one it folds onto.
             base (P2)  ── gateR (P3) hinged on its right edge
@@ -231,7 +218,6 @@ export default function BrochureFold({ src, name }: { src: string; name: string 
           </div>
         </div>
       </div>
-      <div className="bf-ground" ref={groundRef} aria-hidden />
 
       {slot ? createPortal(controls, slot) : controls}
       {node}
