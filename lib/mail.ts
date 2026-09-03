@@ -39,7 +39,8 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-async function getAccessToken(): Promise<string> {
+/** App-only Graph token. Shared with lib/sharepoint.ts — same app, same tenant. */
+export async function getAccessToken(): Promise<string> {
   const res = await fetch(
     `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`,
     {
