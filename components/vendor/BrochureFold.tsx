@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLightbox } from "./Lightbox";
 
@@ -52,6 +52,51 @@ export default function BrochureFold({ src, name }: { src: string; name: string 
   // The chapter head (left column) offers a slot for the controls, so they sit with the words, not under the object.
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   useEffect(() => setSlot(document.getElementById("bf-controls-slot")), []);
+
+  /**
+   * The shadow. A soft box-shadow on a panel inside the 3D scene is rasterised
+   * and bands, so the shadow is one flat element under the sheet instead. To
+   * make it follow the paper exactly, every frame while the sheet is moving we
+   * measure where the cards really are and fit the shadow to their footprint.
+   */
+  const rootRef = useRef<HTMLDivElement>(null);
+  const groundRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = rootRef.current, ground = groundRef.current;
+    if (!root || !ground) return;
+    let raf = 0;
+    let until = 0;
+    const fit = () => {
+      const cards = root.querySelectorAll<HTMLElement>(".bf-card");
+      const base = root.getBoundingClientRect();
+      let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+      cards.forEach((c) => {
+        const q = c.getBoundingClientRect();
+        l = Math.min(l, q.left); t = Math.min(t, q.top); r = Math.max(r, q.right); b = Math.max(b, q.bottom);
+      });
+      if (!isFinite(l)) return;
+      ground.style.left = `${l - base.left}px`;
+      ground.style.top = `${t - base.top}px`;
+      ground.style.width = `${r - l}px`;
+      ground.style.height = `${b - t}px`;
+    };
+    const tick = () => {
+      fit();
+      if (performance.now() < until) raf = requestAnimationFrame(tick);
+    };
+    const run = (ms: number) => {
+      until = performance.now() + ms;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(tick);
+    };
+    run(1500); // the current change: transition length plus a margin
+    const onResize = () => run(700);
+    window.addEventListener("resize", onResize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [stage, showBack, slices]);
 
   const pick = (r: Ref) => slices?.[r.page]?.[r.panel] ?? "";
   const lbImages = slices
@@ -155,7 +200,7 @@ export default function BrochureFold({ src, name }: { src: string; name: string 
   );
 
   return (
-    <div className="bf" style={{ ["--r" as any]: ratio }}>
+    <div className="bf" ref={rootRef} style={{ ["--r" as any]: ratio }}>
       <div className={`bf-stage s${stage}${showBack ? " back" : ""}`}>
         {/* The sheet, built as it is folded: each panel hinged to the one it folds onto.
             base (P2)  ── gateR (P3) hinged on its right edge
@@ -181,7 +226,7 @@ export default function BrochureFold({ src, name }: { src: string; name: string 
           </div>
         </div>
       </div>
-      <div className="bf-ground" aria-hidden />
+      <div className="bf-ground" ref={groundRef} aria-hidden />
 
       {slot ? createPortal(controls, slot) : controls}
       {node}
