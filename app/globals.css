@@ -663,13 +663,15 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .bf-stage.s2 .bf-gateL { transform: rotateY(0) translateZ(0); }
 .bf-stage.s2 .bf-gateR { transform: rotateY(0) translateZ(0); }
 
-/* Ground shadow: flat, so it stays smooth; it widens with the sheet. */
+/* The shadow the panels had before, drawn on a flat 2D rectangle exactly under the
+   sheet's footprint instead of on the 3D faces (where it was rasterised and banded).
+   It widens with the sheet; while a card swings, the shadow stays on the ground. */
 .bf { position: relative; isolation: isolate; }
 .bf-ground { position: absolute; z-index: -1; left: 50%; top: 10px; bottom: 22px; width: var(--gw, 25%); transform: translateX(-50%);
   transition: width var(--dur, 1.05s) var(--ease, ease); pointer-events: none;
-  background: radial-gradient(ellipse 60% 50% at 50% 92%, rgba(0,0,0,.22), rgba(0,0,0,0) 100%); }
-.bf-stage.s0 + .bf-ground { --gw: 27%; } .bf-stage.s1 + .bf-ground { --gw: 52%; } .bf-stage.s2 + .bf-ground { --gw: 100%; }
-@media (max-width: 720px) { .bf-stage.s0 + .bf-ground { --gw: 46%; } .bf-stage.s1 + .bf-ground { --gw: 90%; } }
+  box-shadow: 0 18px 44px rgba(0,0,0,.14); }
+.bf-stage.s0 + .bf-ground { --gw: 25%; } .bf-stage.s1 + .bf-ground { --gw: 50%; } .bf-stage.s2 + .bf-ground { --gw: 100%; }
+@media (max-width: 720px) { .bf-stage.s0 + .bf-ground { --gw: 44%; } .bf-stage.s1 + .bf-ground { --gw: 88%; } }
 
 .bf-controls { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin-top: 28px; }
 .bf-controls .btn { min-width: 180px; text-align: center; }
