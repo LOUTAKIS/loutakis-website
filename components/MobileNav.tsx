@@ -64,8 +64,9 @@ export default function MobileNav() {
         sliver with the links spilling over the page.
       */}
       {mounted &&
+        open &&
         createPortal(
-          <div id="mobile-nav" className={open ? "mobile-nav open" : "mobile-nav"} hidden={!open}>
+          <div id="mobile-nav" className="mobile-nav">
             <nav>
               {LINKS.map((l) => (
                 <Link

@@ -353,6 +353,10 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 
 /* Portalled to <body>, so this is positioned against the viewport. Starts
    below the 78px header bar, which stays visible and clickable above it. */
+/* Belt and braces: an author `display: flex` beats the hidden attribute's
+   UA `display: none`, which left this panel permanently on screen. The panel
+   is only rendered while open, and this guarantees it either way. */
+.mobile-nav[hidden] { display: none !important; }
 .mobile-nav {
   position: fixed; inset: 78px 0 0; z-index: 45;
   background: var(--paper); padding: 44px 26px 40px;
