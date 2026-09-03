@@ -53,30 +53,13 @@ export default function VendorFrame({
         <div className="vf-inner">
           <div className="vf-brand">
             <Logo height={14} variant="black" />
-            <span className="vf-addr">{address}</span>
           </div>
-          <nav className="vf-nav" aria-label="Sections">
-            {markers.map((m) => (
-              <a key={m.id} href={`#${m.id}`} onClick={jump(m.id)} className={active === m.id ? "on" : undefined}>
-                {m.label}
-              </a>
-            ))}
-          </nav>
           <a href="#approve" onClick={jump("approve")} className={approved ? "vf-cta done" : "vf-cta"}>
             {approved ? "Approved" : "Approve"}
           </a>
         </div>
       </header>
 
-      {/* Phone: markers become a slim bar along the bottom. */}
-      <nav className="vf-bottom" aria-label="Sections">
-        {markers.map((m) => (
-          <a key={m.id} href={`#${m.id}`} onClick={jump(m.id)} className={active === m.id ? "on" : undefined}>
-            <i />
-            <span>{m.label}</span>
-          </a>
-        ))}
-      </nav>
     </>
   );
 }

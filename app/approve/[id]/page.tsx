@@ -36,8 +36,6 @@ function Expired() {
   );
 }
 
-const first = (name: string) => name.trim().split(/\s+/)[0] || "";
-
 export default async function ApprovePage({
   params,
   searchParams,
@@ -67,7 +65,6 @@ export default async function ApprovePage({
   const b = c.selection.blurbs;
   const sender = staffDisplayName(c.sentBy ?? c.createdBy);
   const senderIsMichael = /^michael/i.test(sender);
-  const vendorFirst = first(c.vendorName);
   const approved = c.status === "approved";
 
   type Chapter = { id: string; label: string; title: string; blurb: string; body: React.ReactNode };
@@ -129,7 +126,6 @@ export default async function ApprovePage({
     });
 
   const markers: Marker[] = [...chapters.map((ch) => ({ id: ch.id, label: ch.label })), { id: "approve", label: "Approve" }];
-  const minutes = Math.max(3, Math.round(chapters.length * 0.8 + (vid ? 1.5 : 0)));
 
   return (
     <div className="va2">
@@ -139,15 +135,7 @@ export default async function ApprovePage({
       {/* Opening */}
       <section className="vh" style={hero ? { backgroundImage: `url(${hero})` } : undefined}>
         <div className="vh-inner">
-          <div className="eyebrow">Your marketing, ready to review</div>
           <h1>{c.address}</h1>
-          <p className="vh-line">
-            {vendorFirst ? `${vendorFirst}, ` : ""}here&rsquo;s how we&rsquo;ll tell the story of your home.
-            {senderIsMichael ? " Take a minute with it — the way it's told makes all the difference." : ` ${sender} has put this together for you.`}
-          </p>
-          <p className="vh-cue">
-            {chapters.length} things to look at · about {minutes} minutes · then one tap to approve
-          </p>
         </div>
         <a href={`#${markers[0]?.id ?? "approve"}`} className="vh-scroll" aria-label="Scroll to begin"><i /></a>
       </section>
