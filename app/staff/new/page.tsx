@@ -11,11 +11,12 @@ export const metadata = {
 };
 export const dynamic = "force-dynamic";
 
-export default async function NewApprovalPage() {
+export default async function NewApprovalPage({ searchParams }: { searchParams?: { all?: string } }) {
   const staff = getStaff();
   if (!staff) redirect("/staff");
 
-  const [sources, campaigns] = await Promise.all([getMarketingSources(), listCampaigns()]);
+  const showAll = searchParams?.all === "1";
+  const [sources, campaigns] = await Promise.all([getMarketingSources(showAll), listCampaigns()]);
   const existing = new Map(campaigns.map((c) => [c.listingId, c]));
 
   return (
@@ -25,9 +26,16 @@ export default async function NewApprovalPage() {
         <div className="eyebrow" style={{ marginTop: 18 }}>New approval</div>
         <h2>Which property?</h2>
         <p className="portal-intro">
-          Current listings from Box &amp; Dice. Photos, floorplan, copy and video come from the
+          {showAll ? "Every listing with photos" : "Current listings"} from Box &amp; Dice. Photos, floorplan, copy and video come from the
           listing; board and brochure from its SharePoint folder. You review everything before
           anything is sent.
+        </p>
+        <p className="form-note">
+          {showAll ? (
+            <Link href="/staff/new">Show current listings only</Link>
+          ) : (
+            <Link href="/staff/new?all=1">Show all listings, including sold</Link>
+          )}
         </p>
 
         {sources.length === 0 ? (

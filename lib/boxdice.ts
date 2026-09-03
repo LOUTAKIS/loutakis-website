@@ -496,15 +496,23 @@ function toMarketingSource(raw: any, consultants: Map<number, Agent>): Marketing
   };
 }
 
-/** Listings that could be sent for approval: status "current" in the CRM. Newest first. */
-export async function getMarketingSources(): Promise<MarketingSource[]> {
+/**
+ * Listings that could be sent for approval: status "current" in the CRM,
+ * newest first. `includeAll` widens it to any listing with photos — for
+ * re-opening a past campaign, or testing against a finished one.
+ */
+export async function getMarketingSources(includeAll = false): Promise<MarketingSource[]> {
   if (USE_MOCK) return [];
   const consultants = await getConsultants();
   const raw = await cachedSalesListings();
   const byId = new Map<string, any>();
   for (const r of raw) byId.set(String(r.id), r);
   return [...byId.values()]
-    .filter((r) => String(r.status ?? "").toLowerCase() === "current")
+    .filter((r) =>
+      includeAll
+        ? (r.images ?? []).length > 0
+        : String(r.status ?? "").toLowerCase() === "current"
+    )
     .map((r) => toMarketingSource(r, consultants))
     .sort((a, b) => +new Date(b.dateListed ?? 0) - +new Date(a.dateListed ?? 0));
 }
