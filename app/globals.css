@@ -370,3 +370,13 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
    strip that's easy to miss — especially on a phone. Pad it out to a full
    tap target without moving the logo. */
 .nav-inner > a[aria-label] { display: flex; align-items: center; padding: 16px 8px; margin: -16px -8px; }
+
+/* ── Loading skeletons ────────────────────────────────────────────────────
+   Listing pages fetch from Box & Dice on demand, so a click can wait a few
+   seconds. These paint immediately so the click never feels ignored. */
+.sk { background: linear-gradient(90deg, var(--paper-2) 25%, #ededed 37%, var(--paper-2) 63%); background-size: 400% 100%; animation: sk 1.4s ease infinite; }
+@keyframes sk { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+.sk-hero { width: 100%; aspect-ratio: 16 / 9; }
+.sk-card { width: 100%; aspect-ratio: 4 / 3; }
+.sk-line { height: 14px; margin-bottom: 12px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
