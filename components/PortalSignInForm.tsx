@@ -1,10 +1,20 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+/**
+ * Sign in by email. Once the email is sent the page turns into a code box, so
+ * someone reading the email on their phone can finish here on the computer in
+ * front of them — the link in the same email is for people already on the
+ * device they want to browse on.
+ */
 export default function PortalSignInForm({ expired = false }: { expired?: boolean }) {
+  const router = useRouter();
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState("");
+  const [code, setCode] = useState("");
+  const [checking, setChecking] = useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -31,16 +41,66 @@ export default function PortalSignInForm({ expired = false }: { expired?: boolea
     }
   }
 
+  async function submitCode(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (checking) return;
+    setChecking(true);
+    setError("");
+    try {
+      const res = await fetch("/api/portal/code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json?.ok) {
+        router.push("/portal");
+        return;
+      }
+      setError(json?.error || "That code doesn't match.");
+    } catch {
+      setError("Couldn't reach us just now — check your connection.");
+    }
+    setChecking(false);
+  }
+
   if (state === "sent") {
     return (
-      <div className="portal-done" role="status">
+      <div className="portal-code" role="status">
         <h3>Check your email</h3>
         <p>
-          If those details are registered with us, a sign-in link is on its way. It works for fifteen
-          minutes.
+          If those details are registered with us, we&rsquo;ve sent a six-digit code. Enter it here,
+          or tap the button in the email if you&rsquo;re on the device you want to browse on.
         </p>
+        <form className="portal-form" onSubmit={submitCode} noValidate>
+          <label>
+            <span>Six-digit code</span>
+            <input
+              className="field code-field"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              autoFocus
+              required
+            />
+          </label>
+          <button className="btn" disabled={checking || code.length !== 6}>
+            {checking ? "Checking…" : "Sign in"}
+          </button>
+          {error && (
+            <p className="form-note" role="alert" style={{ color: "#b00020" }}>
+              {error}
+            </p>
+          )}
+        </form>
         <p className="form-note">
-          Nothing arrived? Check spam, or make sure you used the email or mobile you registered with.
+          Nothing arrived? Check spam, or{" "}
+          <button type="button" className="linkish" onClick={() => { setState("idle"); setCode(""); setError(""); }}>
+            try another email or mobile
+          </button>
+          . The code works for fifteen minutes.
         </p>
       </div>
     );
@@ -58,7 +118,7 @@ export default function PortalSignInForm({ expired = false }: { expired?: boolea
         <input className="field" name="identifier" required autoComplete="email" autoFocus />
       </label>
       <button className="btn" disabled={state === "sending"}>
-        {state === "sending" ? "Sending…" : "Email me a sign-in link"}
+        {state === "sending" ? "Sending…" : "Email me a sign-in code"}
       </button>
       {state === "error" && (
         <p className="form-note" role="alert" style={{ color: "#b00020" }}>

@@ -4,6 +4,8 @@ import { sendMail, officeRecipients, esc } from "./mail";
 import { createToken } from "./portal-token";
 import {
   rememberContact,
+  rememberRegisteredEmail,
+  getRegisteredEmail,
   rememberCriteria,
   takeCriteria,
   addApprovedContact,
@@ -256,6 +258,10 @@ export async function registerBuyer(r: Registration) {
   await rememberContact({ contactId, email: r.email, mobile: r.mobile }).catch((err) =>
     console.error("[portal] store write failed", err)
   );
+  // The inbox they used. Box & Dice may have matched an existing contact whose
+  // primary email is something else (the office's copy); everything we send
+  // them afterwards goes here instead.
+  await rememberRegisteredEmail(contactId, r.email);
 
   // Their answers, held until approval — criteria are only written into the CRM
   // for buyers you've actually approved, so declined requests never pollute
@@ -359,9 +365,10 @@ export async function approveBuyer(contactId: string) {
     console.error("[portal] alert list add failed", err)
   );
 
-  if (contact?.email) {
+  const registered = (await getRegisteredEmail(contactId).catch(() => null)) || contact?.email;
+  if (registered) {
     await sendMail({
-      to: [contact.email],
+      to: [registered],
       subject: "Your off-market access is open",
       html: `
         <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111">
@@ -371,12 +378,11 @@ export async function approveBuyer(contactId: string) {
             <a href="${siteUrl()}/portal" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">View properties</a>
           </p>
           <p style="color:#666">These aren't publicly advertised, so please keep them to yourself — that's the basis on which the owners agreed to be listed.</p>
-          <p style="color:#666">Michael Loutakis &middot; 0409 438 025</p>
         </div>`,
     }).catch((err) => console.error("[portal] approval email failed", err));
   }
 
-  return { name, email: contact?.email ?? null };
+  return { name, email: registered ?? null };
 }
 
 /** Decline: clear the pending marker and note it. No email — a silent no. */

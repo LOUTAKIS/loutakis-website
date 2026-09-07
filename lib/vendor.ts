@@ -54,7 +54,6 @@ export async function sendVendorLink(c: Campaign, sentBy: string): Promise<void>
           <a href="${vendorLink(c.id)}" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">Review and approve</a>
         </p>
         <p style="color:#666">Take a minute with it — the way we tell your story online makes all the difference. If anything needs changing, there's a box for that on the page.</p>
-        <p style="color:#666">Michael Loutakis &middot; 0409 438 025</p>
       </div>
     `,
     replyTo: { address: sentBy, name: "Loutakis Real Estate" },

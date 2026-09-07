@@ -8,6 +8,7 @@ import {
   listOptedOut,
   getAnnouncedListings,
   setAnnouncedListings,
+  getRegisteredEmail,
 } from "./portal-store";
 
 /**
@@ -95,7 +96,7 @@ export async function runOffMarketAlerts(dryRun = false): Promise<AlertResult> {
 
     try {
       await sendMail({
-        to: [contact.email],
+        to: [(await getRegisteredEmail(contact.id).catch(() => null)) || contact.email],
         subject:
           fresh.length === 1
             ? "A new off-market property is available"
@@ -130,7 +131,6 @@ function teaserHtml(firstName: string | undefined, count: number, contactId: num
         You'll need to sign in — we keep the detail off email so nothing about a
         private campaign travels further than it should.
       </p>
-      <p style="color:#666">Michael Loutakis &middot; 0409 438 025</p>
       <p style="margin-top:30px;color:#999;font-size:12px;border-top:1px solid #eee;padding-top:16px">
         You're getting this because you asked to be on the Loutakis off-market list.
         <a href="${unsub}" style="color:#999">Stop these emails</a> — you'll keep your access to the list itself.

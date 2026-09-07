@@ -680,6 +680,12 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .listing-copy { color: var(--muted); white-space: pre-line; margin: 0 0 18px; max-width: 72ch; }
 .listing-copy:last-of-type { margin-bottom: 0; }
 
+/* Sign-in code */
+.portal-code h3 { font-family: var(--serif); font-weight: 400; font-size: clamp(22px, 2.4vw, 28px); margin: 0 0 12px; }
+.portal-code > p { color: var(--muted); max-width: 46ch; margin-bottom: 26px; }
+.code-field { font-size: 26px; letter-spacing: .34em; text-align: center; font-variant-numeric: tabular-nums; max-width: 260px; }
+.linkish { background: none; border: 0; padding: 0; font: inherit; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+
 /* ── Brochure: four-panel closed gatefold in 3D ────────────────────────────
    Built like the paper: the base panel sits still; the right gate hinges on
    its right edge, the cover on its left edge, and the left gate on the

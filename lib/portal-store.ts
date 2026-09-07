@@ -228,3 +228,70 @@ export async function shouldSendNotRegistered(email: string, hours = 24): Promis
   await upsert([{ operation: "upsert", key, value: Date.now() }]).catch(() => {});
   return true;
 }
+
+/**
+ * Sign-in codes: the six digits printed in the email beside the button, so a
+ * buyer reading their phone can finish signing in on the computer in front of
+ * them. Held in the store, not in a token, because a code must be usable once
+ * and then gone — and must stop working after a few wrong guesses.
+ *
+ * `device` is a random id set on the browser that asked for the code; the code
+ * only works there, so a forwarded email is useless on someone else's machine.
+ */
+export type SignInCode = {
+  contactId: number;
+  code: string;
+  device: string;
+  expires: number;
+  tries: number;
+};
+
+const codeKey = (device: string) => `sic_${hash(device)}`;
+
+export async function saveSignInCode(c: SignInCode): Promise<void> {
+  await upsert([{ operation: "upsert", key: codeKey(c.device), value: c as any }]);
+}
+
+export async function readSignInCode(device: string): Promise<SignInCode | null> {
+  if (!client) return null;
+  try {
+    return (await client.get<SignInCode>(codeKey(device))) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function clearSignInCode(device: string): Promise<void> {
+  await upsert([{ operation: "delete", key: codeKey(device) }]).catch(() => {});
+}
+
+/** Note a wrong guess; the caller throws the code away once tries run out. */
+export async function bumpSignInTries(c: SignInCode): Promise<void> {
+  await upsert([{ operation: "upsert", key: codeKey(c.device), value: { ...c, tries: c.tries + 1 } as any }]).catch(
+    () => {}
+  );
+}
+
+/**
+ * The address a person actually registered with. The CRM's primary email may
+ * be something else entirely (an existing contact matched on name and mobile),
+ * and portal mail must go where they expect it, not to the office's copy.
+ */
+const registeredKey = (contactId: number | string) => `re_${Number(contactId)}`;
+
+export async function rememberRegisteredEmail(contactId: number | string, email: string): Promise<void> {
+  const clean = normaliseEmail(email);
+  if (!clean) return;
+  await upsert([{ operation: "upsert", key: registeredKey(contactId), value: clean }]).catch((err) =>
+    console.error("[portal-store] registered email write failed", err)
+  );
+}
+
+export async function getRegisteredEmail(contactId: number | string): Promise<string | null> {
+  if (!client) return null;
+  try {
+    return (await client.get<string>(registeredKey(contactId))) ?? null;
+  } catch {
+    return null;
+  }
+}

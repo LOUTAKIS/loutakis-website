@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
-import { lookupContactId, storeConfigured, shouldSendNotRegistered } from "@/lib/portal-store";
+import {
+  lookupContactId,
+  storeConfigured,
+  shouldSendNotRegistered,
+  getRegisteredEmail,
+  saveSignInCode,
+} from "@/lib/portal-store";
+import { randomBytes, randomInt } from "node:crypto";
+import { cookies } from "next/headers";
 import { getContact, CATEGORY_APPROVED, CATEGORY_PENDING } from "@/lib/portal";
 import { createSignInToken } from "@/lib/portal-token";
 import { sendMail, esc } from "@/lib/mail";
@@ -34,6 +42,24 @@ export async function POST(req: Request) {
   }
 
   const neutral = NextResponse.json({ ok: true });
+
+  /**
+   * The browser that asked for the code. The code only works here, so an email
+   * that is forwarded (or read on a shared screen) is of no use to anyone else
+   * — they would need the link itself, which lands in the same inbox.
+   */
+  const jar = cookies();
+  let device = jar.get("lre_dev")?.value ?? "";
+  if (!/^[a-f0-9]{32}$/.test(device)) {
+    device = randomBytes(16).toString("hex");
+    neutral.cookies.set("lre_dev", device, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+    });
+  }
 
   if (!storeConfigured().read) {
     console.error("[portal] sign-in requested but the store isn't configured");
@@ -72,7 +98,10 @@ export async function POST(req: Request) {
     }
 
     const contact = await getContact(contactId);
-    const email = String(contact?.email ?? "").trim();
+    // Write to the address they registered with; the CRM's primary may be the
+    // office's own copy of an existing contact (see rememberRegisteredEmail).
+    const registered = await getRegisteredEmail(contactId).catch(() => null);
+    const email = String(registered || contact?.email || "").trim();
     if (!email) {
       await inviteToRegister();
       return neutral;
@@ -95,8 +124,7 @@ export async function POST(req: Request) {
           subject: "Your off-market request is still being reviewed",
           html: `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111">
             <p>Hi ${esc(contact.first_name || "there")},</p>
-            <p>Your request for off-market access hasn't been approved yet. Michael reviews each one personally, and you'll get an email the moment it's done.</p>
-            <p style="color:#666">Michael Loutakis &middot; 0409 438 025</p></div>`,
+            <p>Your request for off-market access hasn't been approved yet. Michael reviews each one personally, and you'll get an email the moment it's done.</p></div>`,
         });
       }
       return neutral;
@@ -104,17 +132,30 @@ export async function POST(req: Request) {
 
     const link = `${siteUrl()}/api/portal/session?t=${createSignInToken(contactId)}`;
 
+    // Six digits for whoever is reading this on a phone with the site open on
+    // another screen. Same fifteen minutes as the link, single use.
+    const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
+    await saveSignInCode({
+      contactId: Number(contactId),
+      code,
+      device,
+      expires: Date.now() + 15 * 60_000,
+      tries: 0,
+    }).catch((err) => console.error("[portal] code save failed", err));
+
     await sendMail({
       to: [email],
-      subject: "Sign in to the off-market list",
-      html: `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111">
+      subject: `${code} is your sign-in code`,
+      html: `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
         <p>Hi ${esc(contact.first_name || "there")},</p>
-        <p>Tap below to view what's available. The link works for fifteen minutes.</p>
-        <p style="margin:24px 0">
+        <p>Enter this code on the sign-in page:</p>
+        <p style="margin:22px 0;font-size:34px;letter-spacing:.28em;font-weight:600">${code}</p>
+        <p>Or, if you're reading this on the device you want to browse on:</p>
+        <p style="margin:22px 0">
           <a href="${link}" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">Sign in</a>
         </p>
-        <p style="color:#999;font-size:13px">Didn't ask for this? Someone may have entered your details by mistake — you can ignore it, nothing has been shared.</p>
-        <p style="color:#666">Michael Loutakis &middot; 0409 438 025</p></div>`,
+        <p style="color:#666;font-size:13px">Both work for fifteen minutes, once.</p>
+        <p style="color:#999;font-size:13px">Didn't ask for this? Someone may have entered your details by mistake — you can ignore it, nothing has been shared.</p></div>`,
     });
   } catch (err) {
     console.error("[portal] sign-in failed", err);
