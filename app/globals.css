@@ -766,7 +766,10 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 
 /* "Trust, not transactions": the testimonial beside the words. */
 /* Words on the left, the testimonial on the right. */
-.trust-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 380px); gap: clamp(28px, 4vw, 64px); align-items: center; }
+/* The words and the testimonial are one pair, so the block is capped and
+   centred: on a wide monitor a full-width grid throws them to opposite edges
+   of the screen and they stop reading as a pair. */
+.trust-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 380px); gap: clamp(28px, 4vw, 64px); align-items: center; max-width: 1080px; margin-inline: auto; }
 @media (max-width: 760px) { .trust-grid { grid-template-columns: 1fr; } .sv-portrait { max-width: 100%; } }
 .trust-grid .sv-portrait { justify-self: end; }
 
