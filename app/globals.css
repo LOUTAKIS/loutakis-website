@@ -201,7 +201,7 @@ section { padding: 96px 0; }
 .hover-cta { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,.86); opacity: 0; transition: opacity .35s ease; }
 .card:hover .hover-cta { opacity: 1; }
 .card .sold-mark { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.card .sold-mark em { font-style: normal; font-size: 11px; letter-spacing: .5em; text-indent: .5em; text-transform: uppercase; color: var(--muted); }
+.card .sold-mark em { font-style: normal; font-size: clamp(13px, 1.15vw, 18px); letter-spacing: .5em; text-indent: .5em; text-transform: uppercase; color: var(--ink); }
 /* Same voice as the hero line: Gotham, lower case, no full stop. */
 .hover-cta span { font-family: var(--sans); font-weight: 400; letter-spacing: .01em; text-transform: none; font-size: clamp(16px, 1.6vw, 22px); color: #000; }
 
