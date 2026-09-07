@@ -32,7 +32,7 @@ export default async function HomePage() {
           />
         </div>
         <div className="wrap hero-content">
-          <h1>it&rsquo;s time to move.</h1>
+          <h1>it&rsquo;s time to move</h1>
         </div>
       </section>
 

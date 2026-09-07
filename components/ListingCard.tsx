@@ -21,7 +21,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
           />
         )}
         <div className="hover-cta">
-          <span>{sold ? listing.priceDisplay : "It\u2019s time to move."}</span>
+          <span>{sold ? listing.priceDisplay : "it\u2019s time to move"}</span>
         </div>
       </div>
       <h3>{listing.address.street}, {listing.address.suburb}</h3>

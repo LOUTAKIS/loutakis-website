@@ -184,7 +184,8 @@ section { padding: 96px 0; }
 /* hover: "It's time to move" washes over the image */
 .hover-cta { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.6); opacity: 0; transition: opacity .35s ease; }
 .card:hover .hover-cta { opacity: 1; }
-.hover-cta span { font-family: var(--display); letter-spacing: .06em; text-transform: uppercase; font-size: clamp(15px, 1.5vw, 20px); color: #000; }
+/* Same voice as the hero line: Gotham, lower case, no full stop. */
+.hover-cta span { font-family: var(--sans); font-weight: 400; letter-spacing: .01em; text-transform: none; font-size: clamp(16px, 1.6vw, 22px); color: #000; }
 
 /* Properties page: two big columns (the wider container comes from .layout.wide) */
 .properties-page .grid { grid-template-columns: repeat(3, 1fr); gap: 52px 40px; }
