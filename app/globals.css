@@ -203,6 +203,9 @@ section { padding: 96px 0; }
 .gf-hero, .gf-thumb { display: block; padding: 0; border: 0; background: none; cursor: pointer; min-height: 0; }
 .gf-hero { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; }
 .gf-hero img { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; }
+/* The row's height is solved in Gallery.tsx once the photos' shapes are known,
+   so the three thumbnails come to exactly the hero's width. The clamp here is
+   only what shows in the instant before that measurement. */
 .gf-strip { flex: 0 0 auto; height: clamp(88px, 16svh, 190px); display: flex; justify-content: center; gap: 10px; }
 .gf-thumb { position: relative; height: 100%; }
 .gf-thumb img { height: 100%; width: auto; display: block; }

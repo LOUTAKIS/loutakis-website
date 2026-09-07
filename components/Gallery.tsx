@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 type Img = { url: string; alt: string };
 
@@ -33,9 +33,52 @@ export default function Gallery({ images }: { images: Img[] }) {
     };
   }, [open, close, prev, next]);
 
-  if (images.length === 0) return null;
   const openAt = (n: number) => { setI(n); setOpen(true); };
   const thumbs = images.slice(1, 4); // the next 3 after the main
+
+  /**
+   * A justified row, the way a picture editor would set it: every photograph
+   * keeps its own proportions, the row's height is solved so the three
+   * thumbnails plus their gaps come to exactly the width of the hero above,
+   * and hero + row together fill the height available. Nothing is cropped and
+   * no edge is left ragged.
+   */
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [ratios, setRatios] = useState<Record<string, number>>({});
+  const [size, setSize] = useState<{ hero: number; strip: number } | null>(null);
+  const GAP = 10;
+
+  const noteRatio = (url: string) => (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const im = e.currentTarget;
+    if (!im.naturalWidth || !im.naturalHeight) return;
+    const r = im.naturalWidth / im.naturalHeight;
+    setRatios((m) => (m[url] ? m : { ...m, [url]: r }));
+  };
+
+  useEffect(() => {
+    const rHero = ratios[images[0]?.url];
+    const rs = thumbs.map((t) => ratios[t.url]);
+    if (!rHero || rs.some((r) => !r)) return; // wait until every shape is known
+
+    const measure = () => {
+      const total = boxRef.current?.clientHeight ?? 0;
+      if (!total) return;
+      if (!thumbs.length) return setSize({ hero: total, strip: 0 });
+      const S = rs.reduce((a, r) => a + (r as number), 0);
+      const gaps = GAP * (thumbs.length - 1);
+      // heroWidth = rHero * heroHeight, and stripHeight * S + gaps = heroWidth,
+      // with heroHeight + GAP + stripHeight = total. Solve for stripHeight:
+      const strip = (rHero * (total - GAP) - gaps) / (S + rHero);
+      const hero = total - GAP - strip;
+      if (strip > 24 && hero > 80) setSize({ hero, strip });
+    };
+
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [ratios, images, thumbs]);
+
+  if (images.length === 0) return null;
 
   return (
     <>
@@ -46,18 +89,23 @@ export default function Gallery({ images }: { images: Img[] }) {
        * overlay sits exactly on the picture rather than on a larger box.
        * The hero and the row together are capped to the window height.
        */}
-      <div className="gallery-fit">
-        <button className="gf-hero" onClick={() => openAt(0)} aria-label="View photographs full screen">
+      <div className="gallery-fit" ref={boxRef} style={{ gap: GAP }}>
+        <button
+          className="gf-hero"
+          onClick={() => openAt(0)}
+          aria-label="View photographs full screen"
+          style={size ? { height: size.hero, flex: "0 0 auto" } : undefined}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={images[0].url} alt={images[0].alt} />
+          <img src={images[0].url} alt={images[0].alt} onLoad={noteRatio(images[0].url)} />
         </button>
 
         {thumbs.length > 0 && (
-          <div className="gf-strip">
+          <div className="gf-strip" style={size ? { height: size.strip, gap: GAP } : { gap: GAP }}>
             {thumbs.map((img, n) => (
               <button className="gf-thumb" key={n} onClick={() => openAt(n + 1)} aria-label={`View photograph ${n + 2}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img.url} alt={img.alt} />
+                <img src={img.url} alt={img.alt} onLoad={noteRatio(img.url)} />
                 {n === thumbs.length - 1 && images.length > 4 && (
                   <span className="more-overlay">+{images.length - 4} more</span>
                 )}
