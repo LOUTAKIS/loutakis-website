@@ -48,7 +48,18 @@ export default async function NewApprovalPage({ searchParams }: { searchParams?:
           <ul className="vc-pick">
             {sources.map((s) => {
               const c = existing.get(s.id);
-              const ready = s.photos.length > 0 && s.copyText.length > 0;
+              /**
+               * A campaign can't start until the CRM holds the three things
+               * every vendor page is built from. Board, brochure and video are
+               * optional — they simply don't appear when they're absent.
+               * Name what's missing: "not ready" tells nobody what to fix.
+               */
+              const missing = [
+                s.photos.length === 0 ? "photos" : "",
+                s.copyText.length === 0 ? "advertising copy" : "",
+                s.floorplans.length === 0 ? "a floorplan" : "",
+              ].filter(Boolean);
+              const ready = missing.length === 0;
               return (
                 <li key={s.id}>
                   <div>
@@ -58,8 +69,12 @@ export default async function NewApprovalPage({ searchParams }: { searchParams?:
                       {s.floorplans.length ? ` · ${s.floorplans.length} floorplan${s.floorplans.length === 1 ? "" : "s"}` : ""}
                       {s.copyText ? " · copy" : ""}
                       {s.videoUrl ? " · video" : ""}
-                      {!ready && <span className="vc-warn"> · not loaded in the CRM yet</span>}
                     </div>
+                    {!ready && (
+                      <div className="vc-meta vc-warn">
+                        Add {missing.join(" and ")} in Box &amp; Dice, then reload this page.
+                      </div>
+                    )}
                     {c && c.status !== "approved" && (
                       <div className="vc-meta">Already in flight ({c.status === "draft" ? "not sent" : c.status}).</div>
                     )}
