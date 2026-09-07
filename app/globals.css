@@ -200,6 +200,12 @@ section { padding: 96px 0; }
    window, and never a cropped or padded photograph. Heights are fixed and
    widths follow each image's own proportions, so there are no gaps to fill. */
 .gallery-fit { display: flex; flex-direction: column; gap: 10px; height: calc(100svh - 190px); max-height: 760px; }
+/* Wide screens: the hero fills the height on the left, the other three stacked
+   beside it in a single column (widths and heights solved in Gallery.tsx). */
+.gallery-fit.gf-side { flex-direction: row; align-items: flex-start; justify-content: center; height: calc(100svh - 150px); max-height: none; }
+.gallery-fit.gf-side .gf-strip { flex-direction: column; height: 100%; }
+.gallery-fit.gf-side .gf-thumb { height: auto; width: 100%; }
+.gallery-fit.gf-side .gf-thumb img { width: 100%; height: auto; }
 .gf-hero, .gf-thumb { display: block; padding: 0; border: 0; background: none; cursor: pointer; min-height: 0; }
 .gf-hero { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; }
 .gf-hero img { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; }

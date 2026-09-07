@@ -37,16 +37,26 @@ export default function Gallery({ images }: { images: Img[] }) {
   const thumbs = images.slice(1, 4); // the next 3 after the main
 
   /**
-   * A justified row, the way a picture editor would set it: every photograph
-   * keeps its own proportions, the row's height is solved so the three
-   * thumbnails plus their gaps come to exactly the width of the hero above,
-   * and hero + row together fill the height available. Nothing is cropped and
-   * no edge is left ragged.
+   * The gallery is set the way a picture editor would set it: every photograph
+   * keeps its own proportions, nothing is cropped, and no edge is left ragged.
+   *
+   *   Wide screens  — the hero fills the height on the left, with the three
+   *                   others stacked beside it, all sharing one width so the
+   *                   right-hand edge is straight.
+   *   Narrower      — the hero on top, the three justified into a row that
+   *                   comes to exactly the hero's width.
+   *
+   * Either way the whole block fits inside the window.
    */
   const boxRef = useRef<HTMLDivElement>(null);
   const [ratios, setRatios] = useState<Record<string, number>>({});
-  const [size, setSize] = useState<{ hero: number; strip: number } | null>(null);
+  const [size, setSize] = useState<
+    | { mode: "row"; hero: number; strip: number }
+    | { mode: "side"; heroW: number; heroH: number; thumbW: number }
+    | null
+  >(null);
   const GAP = 10;
+  const SIDE_AT = 1180; // wide enough for the hero and a column beside it
 
   const noteRatio = (url: string) => (e: React.SyntheticEvent<HTMLImageElement>) => {
     const im = e.currentTarget;
@@ -57,20 +67,39 @@ export default function Gallery({ images }: { images: Img[] }) {
 
   useEffect(() => {
     const rHero = ratios[images[0]?.url];
-    const rs = thumbs.map((t) => ratios[t.url]);
+    const rs = thumbs.map((t) => ratios[t.url]) as number[];
     if (!rHero || rs.some((r) => !r)) return; // wait until every shape is known
 
     const measure = () => {
-      const total = boxRef.current?.clientHeight ?? 0;
-      if (!total) return;
-      if (!thumbs.length) return setSize({ hero: total, strip: 0 });
-      const S = rs.reduce((a, r) => a + (r as number), 0);
+      const box = boxRef.current;
+      const H = box?.clientHeight ?? 0;
+      const W = box?.clientWidth ?? 0;
+      if (!H || !W) return;
+      if (!thumbs.length) return setSize({ mode: "row", hero: H, strip: 0 });
+
+      if (window.innerWidth >= SIDE_AT) {
+        // Stacked beside the hero: every thumbnail shares one width, so their
+        // heights differ and their right edges line up. heights sum to H.
+        const gaps = GAP * (thumbs.length - 1);
+        let thumbW = (H - gaps) / rs.reduce((a, r) => a + 1 / r, 0);
+        let heroH = H;
+        let heroW = rHero * heroH;
+        const totalW = heroW + GAP + thumbW;
+        if (totalW > W) {
+          // Too wide for the page: shrink everything by the same factor.
+          const k = W / totalW;
+          heroH *= k; heroW *= k; thumbW *= k;
+        }
+        return setSize({ mode: "side", heroW, heroH, thumbW });
+      }
+
+      const S = rs.reduce((a, r) => a + r, 0);
       const gaps = GAP * (thumbs.length - 1);
       // heroWidth = rHero * heroHeight, and stripHeight * S + gaps = heroWidth,
-      // with heroHeight + GAP + stripHeight = total. Solve for stripHeight:
-      const strip = (rHero * (total - GAP) - gaps) / (S + rHero);
-      const hero = total - GAP - strip;
-      if (strip > 24 && hero > 80) setSize({ hero, strip });
+      // with heroHeight + GAP + stripHeight = H. Solve for stripHeight:
+      const strip = (rHero * (H - GAP) - gaps) / (S + rHero);
+      const hero = H - GAP - strip;
+      if (strip > 24 && hero > 80) setSize({ mode: "row", hero, strip });
     };
 
     measure();
@@ -89,19 +118,38 @@ export default function Gallery({ images }: { images: Img[] }) {
        * overlay sits exactly on the picture rather than on a larger box.
        * The hero and the row together are capped to the window height.
        */}
-      <div className="gallery-fit" ref={boxRef} style={{ gap: GAP }}>
+      <div
+        className={`gallery-fit${size?.mode === "side" ? " gf-side" : ""}`}
+        ref={boxRef}
+        style={{ gap: GAP }}
+      >
         <button
           className="gf-hero"
           onClick={() => openAt(0)}
           aria-label="View photographs full screen"
-          style={size ? { height: size.hero, flex: "0 0 auto" } : undefined}
+          style={
+            size?.mode === "side"
+              ? { width: size.heroW, height: size.heroH, flex: "0 0 auto" }
+              : size?.mode === "row"
+                ? { height: size.hero, flex: "0 0 auto" }
+                : undefined
+          }
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={images[0].url} alt={images[0].alt} onLoad={noteRatio(images[0].url)} />
         </button>
 
         {thumbs.length > 0 && (
-          <div className="gf-strip" style={size ? { height: size.strip, gap: GAP } : { gap: GAP }}>
+          <div
+            className="gf-strip"
+            style={
+              size?.mode === "side"
+                ? { width: size.thumbW, gap: GAP }
+                : size?.mode === "row"
+                  ? { height: size.strip, gap: GAP }
+                  : { gap: GAP }
+            }
+          >
             {thumbs.map((img, n) => (
               <button className="gf-thumb" key={n} onClick={() => openAt(n + 1)} aria-label={`View photograph ${n + 2}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
