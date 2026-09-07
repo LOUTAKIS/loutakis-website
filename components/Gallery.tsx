@@ -163,11 +163,7 @@ export default function Gallery({ images }: { images: Img[] }) {
         )}
       </div>
 
-      {images.length > 1 && (
-        <button className="btn" style={{ marginTop: 16 }} onClick={() => openAt(0)}>
-          View all {images.length} photos
-        </button>
-      )}
+      {/* No "view all" button: the "+N more" on the last thumbnail is the way in. */}
 
       {open && (
         <div className="lightbox" onClick={close}>
