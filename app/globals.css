@@ -200,10 +200,10 @@ section { padding: 96px 0; }
 /* The gallery: hero above a row of three, the whole block always inside the
    window, and never a cropped or padded photograph. Heights are fixed and
    widths follow each image's own proportions, so there are no gaps to fill. */
-.gallery-fit { display: flex; flex-direction: column; gap: 10px; height: calc(100svh - 190px); max-height: 760px; }
+.gallery-fit { display: flex; flex-direction: column; gap: 10px; height: calc(100svh - 150px); max-height: none; }
 /* Wide screens: the hero fills the height on the left, the other three stacked
    beside it in a single column (widths and heights solved in Gallery.tsx). */
-.gallery-fit.gf-side { flex-direction: row; align-items: flex-start; justify-content: center; height: calc(100svh - 150px); max-height: none; }
+.gallery-fit.gf-side { flex-direction: row; align-items: flex-start; justify-content: center; max-height: none; }
 .gallery-fit.gf-side .gf-strip { justify-content: space-between; }
 .gallery-fit.gf-side .gf-strip { flex-direction: column; height: 100%; }
 .gallery-fit.gf-side .gf-thumb { height: auto; width: 100%; }

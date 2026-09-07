@@ -72,9 +72,18 @@ export default function Gallery({ images }: { images: Img[] }) {
 
     const measure = () => {
       const box = boxRef.current;
-      const H = box?.clientHeight ?? 0;
-      const W = box?.clientWidth ?? 0;
-      if (!H || !W) return;
+      if (!box) return;
+      /**
+       * Fill from where the gallery starts to the bottom of the screen, less a
+       * small breath. Measuring the real position beats guessing at the header
+       * and the back-link in CSS, and keeps the photographs as large as the
+       * window allows.
+       */
+      const rect = box.getBoundingClientRect();
+      const top = rect.top + window.scrollY;
+      const H = Math.max(320, window.innerHeight - top - 24);
+      const W = box.clientWidth;
+      if (!W) return;
       if (!thumbs.length) return setSize({ mode: "row", hero: H, strip: 0 });
 
       if (window.innerWidth >= SIDE_AT) {
@@ -125,7 +134,13 @@ export default function Gallery({ images }: { images: Img[] }) {
         className={`gallery-fit${size?.mode === "side" ? " gf-side" : ""}`}
         ref={boxRef}
         // In side mode the block is exactly as tall as the hero — no dead space.
-        style={size?.mode === "side" ? { gap: GAP, height: size.heroH } : { gap: GAP }}
+        style={
+          size?.mode === "side"
+            ? { gap: GAP, height: size.heroH }
+            : size?.mode === "row"
+              ? { gap: GAP, height: size.hero + GAP + size.strip }
+              : { gap: GAP }
+        }
       >
         <button
           className="gf-hero"
