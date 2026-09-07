@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/staff-auth";
 import { getMarketingSources } from "@/lib/boxdice";
 import { listCampaigns } from "@/lib/campaigns";
-import StartCampaign from "@/components/StartCampaign";
+import CampaignPicker from "@/components/CampaignPicker";
 
 export const metadata = {
   title: "New approval — Loutakis Real Estate",
@@ -46,49 +46,21 @@ export default async function NewApprovalPage({ searchParams }: { searchParams?:
             <p>Nothing in Box &amp; Dice has status “current” right now.</p>
           </div>
         ) : (
-          <ul className="vc-pick">
-            {sources.map((s) => {
+          <CampaignPicker
+            items={sources.map((s) => {
               const c = existing.get(s.id);
-              /**
-               * A campaign can't start until the CRM holds the three things
-               * every vendor page is built from. Board, brochure and video are
-               * optional — they simply don't appear when they're absent.
-               * Name what's missing: "not ready" tells nobody what to fix.
-               */
-              const missing = [
-                s.photos.length === 0 ? "photos" : "",
-                s.copyText.length === 0 ? "advertising copy" : "",
-                s.floorplans.length === 0 ? "a floorplan" : "",
-              ].filter(Boolean);
-              const ready = missing.length === 0;
-              return (
-                <li key={s.id}>
-                  <div>
-                    <div className="vc-addr">{s.address}</div>
-                    <div className="vc-meta">
-                      {s.photos.length} photo{s.photos.length === 1 ? "" : "s"}
-                      {s.floorplans.length ? ` · ${s.floorplans.length} floorplan${s.floorplans.length === 1 ? "" : "s"}` : ""}
-                      {s.copyText ? " · copy" : ""}
-                      {s.videoUrl ? " · video" : ""}
-                    </div>
-                    {!ready && (
-                      <div className="vc-meta vc-warn">
-                        Add {missing.length > 1 ? missing.slice(0, -1).join(", ") + " and " + missing[missing.length - 1] : missing[0]} in Box &amp; Dice, then reload this page.
-                      </div>
-                    )}
-                    {c && c.status !== "approved" && (
-                      <div className="vc-meta">Already in flight ({c.status === "draft" ? "not sent" : c.status}).</div>
-                    )}
-                  </div>
-                  {c && c.status !== "approved" ? (
-                    <Link href={`/staff/${c.id}`} className="btn">Open</Link>
-                  ) : (
-                    <StartCampaign listingId={s.id} disabled={!ready} />
-                  )}
-                </li>
-              );
+              return {
+                id: s.id,
+                address: s.address,
+                suburb: s.suburb,
+                photos: s.photos.length,
+                floorplans: s.floorplans.length,
+                hasCopy: s.copyText.length > 0,
+                hasVideo: Boolean(s.videoUrl),
+                campaign: c ? { id: c.id, status: c.status } : null,
+              };
             })}
-          </ul>
+          />
         )}
       </div>
     </section>
