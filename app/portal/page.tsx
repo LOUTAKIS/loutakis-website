@@ -118,7 +118,7 @@ export default async function PortalPage() {
                       <div><span className="n">{l.bed}</span>{plural(l.bed, "Bed")}</div>
                       <div><span className="n">{l.bath}</span>{plural(l.bath, "Bath")}</div>
                       <div><span className="n">{l.car}</span>{plural(l.car, "Car")}</div>
-                      {l.landSize && <div><span className="n">{l.landSize}</span>Land</div>}
+                      {l.landSize && <div><span className="n">{l.landSize}</span>Land approx.</div>}
                     </div>
 
                     {l.description && (

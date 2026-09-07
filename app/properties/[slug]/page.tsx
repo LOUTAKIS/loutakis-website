@@ -130,7 +130,8 @@ export default async function PropertyPage({ params }: { params: { slug: string 
               <div><span className="n">{l.bed}</span><span className="l">{plural(l.bed, "Bed")}</span></div>
               <div><span className="n">{l.bath}</span><span className="l">{plural(l.bath, "Bath")}</span></div>
               <div><span className="n">{l.car}</span><span className="l">{plural(l.car, "Car")}</span></div>
-              {l.landSize && <div><span className="n">{l.landSize}</span><span className="l">Land</span></div>}
+              {/* Never state a land size as fact: the measurement is indicative. */}
+              {l.landSize && <div><span className="n">{l.landSize}</span><span className="l">Land approx.</span></div>}
             </div>
 
             {/* The advertising copy exactly as it is written in Box & Dice:
