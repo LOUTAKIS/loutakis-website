@@ -241,6 +241,13 @@ section { padding: 96px 0; }
 .features-list { columns: 2; gap: 30px; color: var(--muted); margin-top: 16px; }
 .features-list li { margin-bottom: 8px; }
 .agent { background: var(--paper-2); padding: 28px; border: 1px solid var(--line); position: sticky; top: 100px; }
+/* Consultants sit side by side whenever the column is wide enough, aligned to
+   the right edge of the panel — the same margin the enquiry form ends on. */
+.agent-people { display: flex; flex-wrap: wrap; gap: 28px 34px; justify-content: flex-end; text-align: right; margin-bottom: 8px; }
+.agent-person { flex: 1 1 190px; min-width: 0; }
+.agent-person .agent-photo { margin-left: auto; margin-right: 0; }
+.agent-person .agent-contact a { overflow-wrap: anywhere; }
+@media (max-width: 980px) and (min-width: 761px) { .agent-people { flex-direction: column; align-items: flex-end; } }
 .agent .nm { font-family: var(--serif); font-size: 20px; }
 .agent .ttl { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); margin: 4px 0 14px; }
 .agent-photo { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; display: block; margin-bottom: 16px; }
@@ -283,7 +290,7 @@ footer.site .legal-line p { margin: 0; }
 footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2px; }
 
 /* Second and subsequent agents on a listing */
-.agent .agent-extra { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
+
 .agent-pick { display: block; margin-bottom: 14px; }
 .agent-pick span { display: block; font-size: 11px; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }
 
