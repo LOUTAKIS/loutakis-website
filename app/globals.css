@@ -196,8 +196,12 @@ section { padding: 96px 0; }
 .card .price { margin-top: 10px; font-size: 13px; color: var(--ink); }
 .card .status-line { margin-top: 10px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
 /* hover: "It's time to move" washes over the image */
-.hover-cta { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.6); opacity: 0; transition: opacity .35s ease; }
+/* The white veil sits under the words, so a price is legible over any photo —
+   pale kitchens included. Sold cards show theirs at rest, not on hover. */
+.hover-cta { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,.86); opacity: 0; transition: opacity .35s ease; }
 .card:hover .hover-cta { opacity: 1; }
+.card .sold-mark { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.card .sold-mark em { font-style: normal; font-size: 11px; letter-spacing: .5em; text-indent: .5em; text-transform: uppercase; color: var(--muted); }
 /* Same voice as the hero line: Gotham, lower case, no full stop. */
 .hover-cta span { font-family: var(--sans); font-weight: 400; letter-spacing: .01em; text-transform: none; font-size: clamp(16px, 1.6vw, 22px); color: #000; }
 
