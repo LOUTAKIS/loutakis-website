@@ -196,23 +196,23 @@ section { padding: 96px 0; }
 @media (max-width: 760px) { .properties-page .grid { grid-template-columns: 1fr; } }
 
 /* Property detail */
-.detail-hero { aspect-ratio: 16/9; position: relative; overflow: hidden; background: var(--paper); }
-.detail-hero img { width: 100%; height: 100%; object-fit: contain; }
-.gallery-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
-.gallery-strip .g { position: relative; aspect-ratio: 4/3; overflow: hidden; background: var(--paper); }
-.gallery-strip img { width: 100%; height: 100%; object-fit: contain; }
-.more-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.55); color: #fff; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; }
-
-/* Gallery fills the screen: hero + 3 thumbnails together fit the viewport,
-   so the bottom of the thumbnails always lands at the bottom of the screen. */
-/* Hero and thumbnails together always fit the window — on a laptop, a phone or
-   a short window — so the gallery is never cut off at the bottom. min-height
-   would break that promise, so there isn't one. */
-.gallery-fit { display: flex; flex-direction: column; gap: 8px; height: calc(100svh - 168px); max-height: calc(100svh - 168px); }
-.gallery-fit .detail-hero { flex: 1 1 auto; min-height: 0; aspect-ratio: auto; }
-.gallery-fit .gallery-strip { flex: 0 1 auto; height: clamp(80px, 18vh, 220px); min-height: 0; margin-top: 0; }
-.gallery-fit .gallery-strip .g { aspect-ratio: auto; height: 100%; }
-@media (max-width: 600px) { .gallery-fit { height: calc(100svh - 140px); max-height: calc(100svh - 140px); } }
+/* The gallery: hero above a row of three, the whole block always inside the
+   window, and never a cropped or padded photograph. Heights are fixed and
+   widths follow each image's own proportions, so there are no gaps to fill. */
+.gallery-fit { display: flex; flex-direction: column; gap: 10px; height: calc(100svh - 190px); max-height: 760px; }
+.gf-hero, .gf-thumb { display: block; padding: 0; border: 0; background: none; cursor: pointer; min-height: 0; }
+.gf-hero { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; }
+.gf-hero img { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; }
+.gf-strip { flex: 0 0 auto; height: clamp(88px, 16svh, 190px); display: flex; justify-content: center; gap: 10px; }
+.gf-thumb { position: relative; height: 100%; }
+.gf-thumb img { height: 100%; width: auto; display: block; }
+.gf-hero:focus-visible, .gf-thumb:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.more-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.45); color: #fff; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+@media (max-width: 600px) {
+  .gallery-fit { height: calc(100svh - 150px); gap: 8px; }
+  .gf-strip { gap: 8px; height: clamp(64px, 12svh, 120px); }
+}
 
 /* Lightbox gallery */
 /* Gallery viewer on paper, not black. A black surround reads as a stock photo

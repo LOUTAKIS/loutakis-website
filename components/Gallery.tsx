@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
 
 type Img = { url: string; alt: string };
 
@@ -40,21 +39,29 @@ export default function Gallery({ images }: { images: Img[] }) {
 
   return (
     <>
+      {/*
+       * Every photograph is shown whole. Each frame takes the photo's own
+       * shape — plain <img> with the height fixed and the width free — so
+       * there is never a band of empty space beside it, and the "+N more"
+       * overlay sits exactly on the picture rather than on a larger box.
+       * The hero and the row together are capped to the window height.
+       */}
       <div className="gallery-fit">
-        <div className="detail-hero" style={{ cursor: "pointer" }} onClick={() => openAt(0)}>
-          {/* contain, never cover: the whole photograph, whatever shape it is. */}
-          <Image src={images[0].url} alt={images[0].alt} fill priority sizes="100vw" style={{ objectFit: "contain" }} />
-        </div>
+        <button className="gf-hero" onClick={() => openAt(0)} aria-label="View photographs full screen">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={images[0].url} alt={images[0].alt} />
+        </button>
 
         {thumbs.length > 0 && (
-          <div className="gallery-strip">
+          <div className="gf-strip">
             {thumbs.map((img, n) => (
-              <div className="g" key={n} style={{ cursor: "pointer" }} onClick={() => openAt(n + 1)}>
-                <Image src={img.url} alt={img.alt} fill sizes="33vw" style={{ objectFit: "contain" }} />
-                {n === 2 && images.length > 4 && (
-                  <div className="more-overlay">+{images.length - 4} more</div>
+              <button className="gf-thumb" key={n} onClick={() => openAt(n + 1)} aria-label={`View photograph ${n + 2}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={img.url} alt={img.alt} />
+                {n === thumbs.length - 1 && images.length > 4 && (
+                  <span className="more-overlay">+{images.length - 4} more</span>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         )}
