@@ -30,7 +30,10 @@ export default function PropertyFilters({ listings }: { listings: Listing[] }) {
 
   return (
     <>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16 }}>
+      {/* Three tracks so the tabs sit dead centre of the page rather than
+          centred in whatever space the suburb menu leaves them. */}
+      <div className="filter-bar">
+        <span aria-hidden />
         <div className="tabs" style={{ margin: "30px 0 0" }}>
           {TABS.map((t) => (
             <button

@@ -177,6 +177,9 @@ section { padding: 96px 0; }
 
 /* Tabs */
 .tabs { display: flex; gap: 26px; border-bottom: 1px solid var(--line); margin: 30px 0 40px; }
+.filter-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 16px; }
+.filter-bar > .field { justify-self: end; }
+@media (max-width: 700px) { .filter-bar { grid-template-columns: 1fr; justify-items: center; } .filter-bar > .field { justify-self: center; } }
 .tab { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; padding: 0 0 14px; color: var(--muted); cursor: pointer; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; font-family: var(--sans); }
 .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
 
@@ -211,6 +214,9 @@ section { padding: 96px 0; }
 .properties-page .card h3 { font-size: 24px; margin-top: 24px; }
 .properties-page .meta-row { font-size: 13px; }
 .properties-page .hover-cta span { font-size: clamp(18px, 2vw, 30px); }
+/* The sale price is the message on a sold card, so it carries more weight
+   than the "it's time to move" line does on a current one. */
+.card .sold-mark { font-size: clamp(26px, 2.9vw, 44px); }
 @media (max-width: 1100px) { .properties-page .grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 760px) { .properties-page .grid { grid-template-columns: 1fr; } }
 
