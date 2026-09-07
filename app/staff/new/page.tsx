@@ -27,9 +27,10 @@ export default async function NewApprovalPage({ searchParams }: { searchParams?:
         <div className="eyebrow" style={{ marginTop: 18 }}>New approval</div>
         <h2>Which property?</h2>
         <p className="portal-intro">
-          {showAll ? "Every listing with photos" : "Current listings"} from Box &amp; Dice. Photos, floorplan, copy and video come from the
-          listing; board and brochure from its SharePoint folder. You review everything before
-          anything is sent.
+          {showAll ? "Every listing with photos" : "Current listings"} from Box &amp; Dice. Photos,
+          floorplan, copy and video come from the listing; board and brochure from its SharePoint
+          folder. A campaign needs photos, copy and a floorplan before it can start. You review
+          everything before anything is sent.
         </p>
         <p className="form-note">
           {showAll ? (
@@ -72,7 +73,7 @@ export default async function NewApprovalPage({ searchParams }: { searchParams?:
                     </div>
                     {!ready && (
                       <div className="vc-meta vc-warn">
-                        Add {missing.join(" and ")} in Box &amp; Dice, then reload this page.
+                        Add {missing.length > 1 ? missing.slice(0, -1).join(", ") + " and " + missing[missing.length - 1] : missing[0]} in Box &amp; Dice, then reload this page.
                       </div>
                     )}
                     {c && c.status !== "approved" && (
