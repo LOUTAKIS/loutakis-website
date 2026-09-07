@@ -45,6 +45,18 @@ function authHeaders() {
   return { Authorization: `Api-Key token=${API_KEY}`, Accept: "application/json" };
 }
 
+/**
+ * Box & Dice writes the land measure as "Sqm" (and occasionally "sqm" or "m2").
+ * On the page it should read as the unit does everywhere else: m². Anything we
+ * don't recognise is passed through untouched — hectares and acres exist.
+ */
+function landUnit(measure: unknown): string {
+  const m = String(measure ?? "").trim();
+  if (!m) return "";
+  if (/^(sq\s?m|sqm|m2|m²)$/i.test(m)) return "m\u00B2";
+  return m;
+}
+
 function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
@@ -286,7 +298,7 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
     bed: Number(p.beds ?? 0),
     bath: Number(p.baths ?? 0),
     car: Number(p.cars ?? p.garages ?? 0),
-    landSize: p.land_size ? `${p.land_size}${p.land_measure ?? ""}` : undefined,
+    landSize: p.land_size ? `${p.land_size}${landUnit(p.land_measure)}` : undefined,
     description: raw.advertising_copy?.text ?? raw.description ?? "",
     features: p.property_features ?? [],
     images,
