@@ -202,13 +202,13 @@ section { padding: 96px 0; }
 /* hover: "It's time to move" washes over the image */
 /* The white veil sits under the words, so a price is legible over any photo —
    pale kitchens included. Sold cards show theirs at rest, not on hover. */
-.hover-cta { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,.86); opacity: 0; transition: opacity .35s ease; }
+.hover-cta { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,.93); opacity: 0; transition: opacity .35s ease; }
 .card:hover .hover-cta { opacity: 1; }
 /* The two lines read as one mark, so the leading is closed right up: at 44px
    the price's default line box is what was holding SOLD away from it, not the
    gap. */
 .card .sold-mark { display: flex; flex-direction: column; align-items: center; gap: 22px; line-height: 1; }
-.card .sold-mark em { font-style: normal; font-weight: 700; line-height: 1; font-size: clamp(11px, .95vw, 15px); letter-spacing: .5em; text-indent: .5em; text-transform: uppercase; color: var(--ink); }
+.card .sold-mark em { font-style: normal; font-weight: 700; line-height: 1; font-size: clamp(13px, 1.1vw, 18px); letter-spacing: .5em; text-indent: .5em; text-transform: uppercase; color: var(--ink); }
 /* Same voice as the hero line: Gotham, lower case, no full stop. */
 .hover-cta span { font-family: var(--sans); font-weight: 400; letter-spacing: .01em; text-transform: none; font-size: clamp(16px, 1.6vw, 22px); color: #000; }
 
@@ -220,7 +220,7 @@ section { padding: 96px 0; }
 .properties-page .hover-cta span { font-size: clamp(18px, 2vw, 30px); }
 /* The sale price is the message on a sold card, so it carries more weight
    than the "it's time to move" line does on a current one. */
-.card .sold-mark { font-size: clamp(26px, 2.9vw, 44px); }
+.card .sold-mark { font-size: clamp(30px, 3.4vw, 52px); }
 @media (max-width: 1100px) { .properties-page .grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 760px) { .properties-page .grid { grid-template-columns: 1fr; } }
 
