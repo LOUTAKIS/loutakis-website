@@ -204,6 +204,7 @@ section { padding: 96px 0; }
 /* Wide screens: the hero fills the height on the left, the other three stacked
    beside it in a single column (widths and heights solved in Gallery.tsx). */
 .gallery-fit.gf-side { flex-direction: row; align-items: flex-start; justify-content: center; height: calc(100svh - 150px); max-height: none; }
+.gallery-fit.gf-side .gf-strip { justify-content: space-between; }
 .gallery-fit.gf-side .gf-strip { flex-direction: column; height: 100%; }
 .gallery-fit.gf-side .gf-thumb { height: auto; width: 100%; }
 .gallery-fit.gf-side .gf-thumb img { width: 100%; height: auto; }

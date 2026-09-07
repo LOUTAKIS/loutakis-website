@@ -78,19 +78,22 @@ export default function Gallery({ images }: { images: Img[] }) {
       if (!thumbs.length) return setSize({ mode: "row", hero: H, strip: 0 });
 
       if (window.innerWidth >= SIDE_AT) {
-        // Stacked beside the hero: every thumbnail shares one width, so their
-        // heights differ and their right edges line up. heights sum to H.
+        /**
+         * Hero on the left, the other three stacked on the right. All three
+         * share one width, so their right edges line up and their heights sum
+         * to the hero's height exactly. If that arrangement is wider than the
+         * page, everything shrinks by the same factor and the block's own
+         * height comes down with it — otherwise the container keeps its full
+         * height and leaves a band of empty space underneath.
+         */
         const gaps = GAP * (thumbs.length - 1);
-        let thumbW = (H - gaps) / rs.reduce((a, r) => a + 1 / r, 0);
-        let heroH = H;
-        let heroW = rHero * heroH;
-        const totalW = heroW + GAP + thumbW;
-        if (totalW > W) {
-          // Too wide for the page: shrink everything by the same factor.
-          const k = W / totalW;
-          heroH *= k; heroW *= k; thumbW *= k;
-        }
-        return setSize({ mode: "side", heroW, heroH, thumbW });
+        const inverse = rs.reduce((a, r) => a + 1 / r, 0);
+        const heroH0 = H;
+        const thumbW0 = (heroH0 - gaps) / inverse;
+        const total = rHero * heroH0 + GAP + thumbW0;
+        const heroH = total > W ? heroH0 * (W / total) : heroH0;
+        const thumbW = (heroH - gaps) / inverse;
+        return setSize({ mode: "side", heroW: rHero * heroH, heroH, thumbW });
       }
 
       const S = rs.reduce((a, r) => a + r, 0);
@@ -121,7 +124,8 @@ export default function Gallery({ images }: { images: Img[] }) {
       <div
         className={`gallery-fit${size?.mode === "side" ? " gf-side" : ""}`}
         ref={boxRef}
-        style={{ gap: GAP }}
+        // In side mode the block is exactly as tall as the hero — no dead space.
+        style={size?.mode === "side" ? { gap: GAP, height: size.heroH } : { gap: GAP }}
       >
         <button
           className="gf-hero"
@@ -144,7 +148,7 @@ export default function Gallery({ images }: { images: Img[] }) {
             className="gf-strip"
             style={
               size?.mode === "side"
-                ? { width: size.thumbW, gap: GAP }
+                ? { width: size.thumbW, height: size.heroH, gap: GAP }
                 : size?.mode === "row"
                   ? { height: size.strip, gap: GAP }
                   : { gap: GAP }
