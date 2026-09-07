@@ -67,7 +67,7 @@ export default function ServicesPage() {
       </section>
 
       {SERVICES.map((s, i) => (
-        <section key={s.n} className={i % 2 === 0 ? "services" : undefined}>
+        <section key={s.n} className={`service-row${i % 2 === 0 ? " services" : ""}`}>
           <div className="wrap intro-grid">
             <div className={`img-ph${i % 2 === 1 ? " order-last" : ""}`} aria-label="Image placeholder">
               <span>Image placeholder</span>
