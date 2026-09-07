@@ -8,7 +8,6 @@ export const metadata = {
 
 const SERVICES = [
   {
-    n: "01",
     title: "Residential Sales",
     blurb:
       "Selling your home is a significant moment, and we take it personally. We bring strategy, energy, and the right advice to ensure your property is positioned to achieve the best possible result.",
@@ -22,7 +21,6 @@ const SERVICES = [
     foot: "We don't just list homes, we represent them with purpose, care, and ambition.",
   },
   {
-    n: "02",
     title: "Auctioneering",
     blurb:
       "Not all auctioneers are equal. What separates a win from a missed opportunity is often invisible — until it's too late. We read the room, control the pace, and bring confidence under pressure.",
@@ -36,7 +34,6 @@ const SERVICES = [
     foot: "When it matters most, we know how to hold the room — and when to let it go.",
   },
   {
-    n: "03",
     title: "Sale Prep & Advice",
     blurb:
       "You don't need to be selling right now, or even own a home, to ask questions and get honest answers. We're part of the community, here to help long before any paperwork is signed.",
@@ -67,13 +64,12 @@ export default function ServicesPage() {
       </section>
 
       {SERVICES.map((s, i) => (
-        <section key={s.n} className={`service-row${i % 2 === 0 ? " services" : ""}`}>
+        <section key={s.title} className={`service-row${i % 2 === 0 ? " services" : ""}`}>
           <div className="wrap intro-grid">
             <div className={`img-ph${i % 2 === 1 ? " order-last" : ""}`} aria-label="Image placeholder">
               <span>Image placeholder</span>
             </div>
             <div>
-              <div className="eyebrow">{s.n}</div>
               <h2 className="lead">{s.title}</h2>
               <p style={{ color: "var(--muted)" }}>{s.blurb}</p>
               <ul className="features-list" style={{ columns: 1, marginTop: 18 }}>
