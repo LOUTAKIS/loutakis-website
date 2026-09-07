@@ -9,11 +9,10 @@ import SelfVideo from "@/components/SelfVideo";
 export default function AboutPage() {
   return (
     <>
-      {/* TRUST, NOT TRANSACTIONS — the section from loutakis.com.au */}
+      {/* TRUST, NOT TRANSACTIONS — the section from loutakis.com.au: the
+          testimonial on the left, the words beside it, never stacked. */}
       <section>
         <div className="wrap">
-          <div className="eyebrow">About</div>
-          <h1 className="lead">Real Estate built on trust, not transactions.</h1>
           <div className="trust-grid">
             <SelfVideo
               src="/video/testimonial-fourth-ave.mp4"
@@ -23,11 +22,13 @@ export default function AboutPage() {
               className="sv-portrait"
             />
             <div>
-              <p style={{ color: "var(--muted)", maxWidth: "34ch" }}>
+              <div className="eyebrow">About</div>
+              <h1 className="lead">Real Estate built on trust, not transactions.</h1>
+              <p style={{ color: "var(--muted)", maxWidth: "40ch", marginTop: 20 }}>
                 Hear from the locals who have trusted Michael to guide them through some of
                 life&rsquo;s biggest moments.
               </p>
-              <a href="/contact" className="btn" style={{ marginTop: 26 }}>
+              <a href="/contact" className="btn" style={{ marginTop: 28 }}>
                 Feel the movement
               </a>
             </div>
