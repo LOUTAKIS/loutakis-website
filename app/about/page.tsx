@@ -7,19 +7,18 @@ export const metadata = {
 export default function AboutPage() {
   return (
     <>
-      {/* WHO WE ARE */}
+      {/* TRUST, NOT TRANSACTIONS — the section from loutakis.com.au */}
       <section>
         <div className="wrap">
           <div className="eyebrow">About</div>
-          <h1 className="lead">Who we are</h1>
-          <p style={{ maxWidth: 760, color: "var(--muted)", marginTop: 18 }}>
-            We are real estate with soul. Run by a dedicated local with an extremely sharp eye for
-            detail, high-impact marketing, and a deep understanding of sales negotiations, we bring a
-            fresh, authentic energy to every transaction. It&rsquo;s about elevating the experience,
-            building real, raw relationships, and representing your home with precision, pride and
-            personality. A passionate professional doing things properly &mdash; and a little
-            differently.
+          <h1 className="lead">Real Estate built on trust, not transactions.</h1>
+          <p style={{ maxWidth: 620, color: "var(--muted)", marginTop: 18 }}>
+            Hear from the locals who have trusted Michael to guide them through some of life&rsquo;s
+            biggest moments.
           </p>
+          <a href="https://www.loutakis.com.au/" className="btn" style={{ marginTop: 30 }}>
+            Feel the movement
+          </a>
         </div>
       </section>
 

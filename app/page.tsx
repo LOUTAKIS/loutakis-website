@@ -61,8 +61,8 @@ export default async function HomePage() {
           <div className="grid" style={{ marginTop: 44 }}>
             {featured.map((l) => <ListingCard key={l.id} listing={l} />)}
           </div>
-          <div style={{ marginTop: 44 }}>
-            <Link href="/properties" className="btn">View all properties</Link>
+          <div style={{ marginTop: 44, textAlign: "center" }}>
+            <Link href="/properties" className="btn">View all</Link>
           </div>
         </div>
       </section>

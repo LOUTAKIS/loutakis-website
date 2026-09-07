@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -69,13 +68,13 @@ export default function MobileNav() {
           <div id="mobile-nav" className="mobile-nav">
             <nav>
               {LINKS.map((l) => (
-                <Link
+                <a
                   key={l.href}
                   href={l.href}
                   className={pathname === l.href ? "current" : undefined}
                 >
                   {l.label}
-                </Link>
+                </a>
               ))}
             </nav>
             <div className="mobile-nav-foot">
