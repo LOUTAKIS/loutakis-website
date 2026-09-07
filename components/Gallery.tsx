@@ -72,6 +72,19 @@ export default function Gallery({ images }: { images: Img[] }) {
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  /**
+   * The gallery's rendered width, published as a CSS variable so the rest of
+   * the page can line up with the photographs' edges rather than the page
+   * gutter. Cleared on unmount so no other page inherits it.
+   */
+  const publishWidth = (w: number) =>
+    document.documentElement.style.setProperty("--gallery-width", `${Math.round(w)}px`);
+  useEffect(() => {
+    return () => {
+      document.documentElement.style.removeProperty("--gallery-width");
+    };
+  }, []);
+
   const noteRatio = (url: string) => (e: React.SyntheticEvent<HTMLImageElement>) => {
     const im = e.currentTarget;
     if (!im.naturalWidth || !im.naturalHeight) return;
@@ -116,7 +129,9 @@ export default function Gallery({ images }: { images: Img[] }) {
         const total = rHero * heroH0 + GAP + thumbW0;
         const heroH = total > W ? heroH0 * (W / total) : heroH0;
         const thumbW = (heroH - gaps) / inverse;
-        return setSize({ mode: "side", heroW: rHero * heroH, heroH, thumbW });
+        const heroW = rHero * heroH;
+        publishWidth(heroW + GAP + thumbW);
+        return setSize({ mode: "side", heroW, heroH, thumbW });
       }
 
       const S = rs.reduce((a, r) => a + r, 0);
@@ -125,7 +140,10 @@ export default function Gallery({ images }: { images: Img[] }) {
       // with heroHeight + GAP + stripHeight = H. Solve for stripHeight:
       const strip = (rHero * (H - GAP) - gaps) / (S + rHero);
       const hero = H - GAP - strip;
-      if (strip > 24 && hero > 80) setSize({ mode: "row", hero, strip });
+      if (strip > 24 && hero > 80) {
+        publishWidth(rHero * hero);
+        setSize({ mode: "row", hero, strip });
+      }
     };
 
     measure();

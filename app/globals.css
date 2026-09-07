@@ -242,7 +242,10 @@ section { padding: 96px 0; }
 /* The enquiry panel is deliberately narrow — it is a form, not a second column
    of content — and the consultants sit side by side inside it, each centred
    under their photograph. */
-.detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) clamp(360px, 28vw, 500px); gap: 48px; margin-top: 44px; }
+/* Everything below the gallery lines up with the photographs: the same width,
+   centred the same way. --gallery-width is published by Gallery.tsx once the
+   photographs are measured; before that the content simply fills the page. */
+.detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) clamp(360px, 28vw, 500px); gap: 48px; margin: 44px auto 0; width: 100%; max-width: var(--gallery-width, 100%); }
 @media (max-width: 760px) { .detail-grid { grid-template-columns: 1fr; } }
 .price-row { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; margin: 10px 0 4px; }
 .price-row .price-big { font-family: var(--serif); font-size: 24px; }
