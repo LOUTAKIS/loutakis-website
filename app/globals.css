@@ -205,7 +205,9 @@ section { padding: 96px 0; }
    beside it in a single column (widths and heights solved in Gallery.tsx). */
 .gallery-fit.gf-side { flex-direction: row; align-items: flex-start; justify-content: center; max-height: none; }
 .gallery-fit.gf-side .gf-strip { justify-content: space-between; }
-.gallery-fit.gf-side .gf-strip { flex-direction: column; height: 100%; }
+.gallery-fit.gf-side { height: calc(100svh - 174px); }
+.gallery-fit.gf-side .gf-hero { flex: 1 1 auto; }
+.gallery-fit.gf-side .gf-strip { flex-direction: column; height: 100%; width: 26%; }
 .gallery-fit.gf-side .gf-thumb { height: auto; width: 100%; }
 .gallery-fit.gf-side .gf-thumb img { width: 100%; height: auto; }
 .gf-hero, .gf-thumb { display: block; padding: 0; border: 0; background: none; cursor: pointer; min-height: 0; }

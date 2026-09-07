@@ -58,6 +58,20 @@ export default function Gallery({ images }: { images: Img[] }) {
   const GAP = 10;
   const SIDE_AT = 1180; // wide enough for the hero and a column beside it
 
+  /**
+   * Which arrangement, decided on the width alone and settled before the
+   * photographs load. The exact sizes still wait for each image's shape, but
+   * the direction must not: otherwise the gallery paints stacked and then
+   * jumps sideways once the pictures arrive.
+   */
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    const check = () => setWide(window.innerWidth >= SIDE_AT);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   const noteRatio = (url: string) => (e: React.SyntheticEvent<HTMLImageElement>) => {
     const im = e.currentTarget;
     if (!im.naturalWidth || !im.naturalHeight) return;
@@ -86,7 +100,7 @@ export default function Gallery({ images }: { images: Img[] }) {
       if (!W) return;
       if (!thumbs.length) return setSize({ mode: "row", hero: H, strip: 0 });
 
-      if (window.innerWidth >= SIDE_AT) {
+      if (wide) {
         /**
          * Hero on the left, the other three stacked on the right. All three
          * share one width, so their right edges line up and their heights sum
@@ -117,7 +131,7 @@ export default function Gallery({ images }: { images: Img[] }) {
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [ratios, images, thumbs]);
+  }, [ratios, images, thumbs, wide]);
 
   if (images.length === 0) return null;
 
@@ -131,13 +145,13 @@ export default function Gallery({ images }: { images: Img[] }) {
        * The hero and the row together are capped to the window height.
        */}
       <div
-        className={`gallery-fit${size?.mode === "side" ? " gf-side" : ""}`}
+        className={`gallery-fit${wide ? " gf-side" : ""}`}
         ref={boxRef}
         // In side mode the block is exactly as tall as the hero — no dead space.
         style={
-          size?.mode === "side"
+          size?.mode === "side" && wide
             ? { gap: GAP, height: size.heroH }
-            : size?.mode === "row"
+            : size?.mode === "row" && !wide
               ? { gap: GAP, height: size.hero + GAP + size.strip }
               : { gap: GAP }
         }
@@ -147,9 +161,9 @@ export default function Gallery({ images }: { images: Img[] }) {
           onClick={() => openAt(0)}
           aria-label="View photographs full screen"
           style={
-            size?.mode === "side"
+            size?.mode === "side" && wide
               ? { width: size.heroW, height: size.heroH, flex: "0 0 auto" }
-              : size?.mode === "row"
+              : size?.mode === "row" && !wide
                 ? { height: size.hero, flex: "0 0 auto" }
                 : undefined
           }
@@ -162,9 +176,9 @@ export default function Gallery({ images }: { images: Img[] }) {
           <div
             className="gf-strip"
             style={
-              size?.mode === "side"
+              size?.mode === "side" && wide
                 ? { width: size.thumbW, height: size.heroH, gap: GAP }
-                : size?.mode === "row"
+                : size?.mode === "row" && !wide
                   ? { height: size.strip, gap: GAP }
                   : { gap: GAP }
             }
