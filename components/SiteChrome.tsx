@@ -18,16 +18,8 @@ export default function SiteChrome({
 }) {
   const pathname = usePathname() ?? "";
   const bare = pathname.startsWith("/approve/");
-  /**
-   * The header wordmark and the footer must start on the same left margin as
-   * the page's own content, and end on the same right margin. Since a page can
-   * widen its container (the listings grid does), the width belongs to the
-   * whole layout, not to the page: `wide` sets it for header, content and
-   * footer at once. Add a route here if it needs the wider container.
-   */
-  const wide = pathname === "/properties";
   return (
-    <div className={wide ? "layout wide" : "layout"}>
+    <div className="layout">
       {!bare && header}
       <main>{children}</main>
       {!bare && footer}
