@@ -8,7 +8,10 @@ import { NextResponse } from "next/server";
  * end_time) — there is no separate endpoint. Empty fields are omitted from the
  * payload entirely, so a missing "inspections" key means none are published.
  *
- *   /api/staff/diag/listing?key=…&q=herbert
+ *   /api/staff/diag/listing?key=…&q=herbert&since=24
+ *
+ * `since` (hours) uses the documented `after` cursor so we read only recently
+ * updated records rather than crawling the whole rate-limited collection.
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,20 +27,43 @@ export async function GET(req: Request) {
   const auth = { Authorization: `Api-Key token=${process.env.BOXDICE_API_KEY}`, Accept: "application/json" };
   const base = (process.env.BOXDICE_API_BASE ?? "https://loutakis.boxdice.com.au/website_api").replace(/\/$/, "");
 
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
   /**
-   * The collection is paginated oldest-first by update timestamp (per the
-   * Website API docs), so a listing edited a moment ago is on the LAST page.
-   * Read every page and keep the last version of each record — anything less
-   * and we would be reading a stale copy and drawing conclusions from it.
+   * Respect Retry-After, as the docs require: the collection is rate limited
+   * per endpoint (10s between 200s by default) and answers 429 if you push.
    */
+  async function get(u: string): Promise<Response> {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const r = await fetch(u, { headers: auth, cache: "no-store" });
+      if (r.status !== 429) return r;
+      const wait = Math.min(15, Number(r.headers.get("retry-after") ?? 10)) * 1000;
+      await sleep(wait);
+    }
+    return fetch(u, { headers: auth, cache: "no-store" });
+  }
+
+  /**
+   * The collection is paginated oldest-first by update timestamp, so a listing
+   * edited a moment ago sits on the LAST page. Rather than crawl every page
+   * (slow, and rate limited), ask for everything updated since a point in time
+   * — `after` is the documented cursor parameter. `since` is in hours.
+   */
+  const sinceHours = Number(url.searchParams.get("since") ?? 24);
+  const afterISO = new Date(Date.now() - sinceHours * 3600_000).toISOString();
+
   const all: any[] = [];
-  let next: string | null = `${base}/sales_listings`;
+  let next: string | null = `${base}/sales_listings?after=${encodeURIComponent(afterISO)}`;
   let pages = 0;
-  while (next && pages < 60) {
-    const r: Response = await fetch(next, { headers: auth, cache: "no-store" });
-    if (r.status === 204) break; // no further records
+  const deadline = Date.now() + 40_000;
+  while (next && pages < 25 && Date.now() < deadline) {
+    const r: Response = await get(next);
+    if (r.status === 204) break; // caught up: no newer records
     if (!r.ok) {
-      return NextResponse.json({ ok: false, page: pages, status: r.status, body: (await r.text()).slice(0, 300) }, { status: 502 });
+      return NextResponse.json(
+        { ok: false, page: pages, status: r.status, body: (await r.text()).slice(0, 300), hint: "Wait a minute and retry — the feed is rate limited per endpoint." },
+        { status: 502 }
+      );
     }
     const j: any = await r.json();
     all.push(...(j.sales_listings ?? j.data ?? []));
@@ -58,13 +84,16 @@ export async function GET(req: Request) {
   if (!hit) {
     return NextResponse.json({
       ok: false,
-      error: `no listing matching "${q}"`,
+      error: `no listing matching "${q}" was updated in the last ${sinceHours}h`,
+      updatedSince: afterISO,
+      pagesRead: pages,
       available: records.map((l) => `${l?.property?.number ?? ""} ${l?.property?.street_name ?? ""}, ${l?.property?.suburb ?? ""}`),
     });
   }
 
   return NextResponse.json({
     ok: true,
+    updatedSince: afterISO,
     pagesRead: pages,
     listingsSeen: records.length,
     matched: matches.map((l) => ({ id: l.id, status: l.status, website_status: l.website_status, address: `${l?.property?.number ?? ""} ${l?.property?.street_name ?? ""}` })),
