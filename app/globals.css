@@ -229,7 +229,10 @@ section { padding: 96px 0; }
 .lb-nav:hover { opacity: .9; }
 .lb-prev { left: 0; } .lb-next { right: 0; }
 .lb-count { position: absolute; bottom: 22px; left: 0; right: 0; text-align: center; color: var(--muted); font-size: 11px; letter-spacing: .22em; }
-.detail-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 48px; margin-top: 44px; }
+/* The enquiry panel is deliberately narrow — it is a form, not a second column
+   of content — and the consultants sit side by side inside it, each centred
+   under their photograph. */
+.detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 24vw, 420px); gap: 48px; margin-top: 44px; }
 @media (max-width: 760px) { .detail-grid { grid-template-columns: 1fr; } }
 .price-row { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; margin: 10px 0 4px; }
 .price-row .price-big { font-family: var(--serif); font-size: 24px; }
@@ -241,13 +244,20 @@ section { padding: 96px 0; }
 .features-list { columns: 2; gap: 30px; color: var(--muted); margin-top: 16px; }
 .features-list li { margin-bottom: 8px; }
 .agent { background: var(--paper-2); padding: 28px; border: 1px solid var(--line); position: sticky; top: 100px; }
-.agent .nm { font-family: var(--serif); font-size: 20px; }
+.agent-people { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 20px; text-align: center; margin-bottom: 26px; }
+.agent-people:has(> :only-child) { grid-template-columns: minmax(0, 1fr); }
+.agent-person { min-width: 0; }
+.agent-person .agent-photo { margin: 0 auto 14px; }
+.agent-person .agent-contact { margin-bottom: 0; font-size: 13px; }
+.agent-person .agent-contact a { overflow-wrap: anywhere; }
+@media (max-width: 760px) { .agent-people { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.agent .nm { font-family: var(--serif); font-size: 18px; }
 .agent .ttl { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); margin: 4px 0 14px; }
 .agent-photo { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; display: block; margin-bottom: 16px; }
 .agent-contact { margin: 0 0 20px; font-size: 14px; }
 .agent-contact a { display: block; color: var(--ink); margin-bottom: 4px; letter-spacing: .01em; }
 .agent-contact a:hover { color: var(--accent); }
-.agent .agent-extra { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
+
 .field { width: 100%; padding: 12px 14px; border: 1px solid var(--line); background: var(--paper); margin-bottom: 10px; font-family: var(--sans); font-size: 14px; }
 textarea.field { min-height: 90px; resize: vertical; }
 .backlink { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }

@@ -17,19 +17,34 @@ export async function GET(req: Request) {
   }
 
   const q = (url.searchParams.get("q") ?? "").toLowerCase();
+  const auth = { Authorization: `Api-Key token=${process.env.BOXDICE_API_KEY}`, Accept: "application/json" };
   const base = (process.env.BOXDICE_API_BASE ?? "https://loutakis.boxdice.com.au/website_api").replace(/\/$/, "");
-  const res = await fetch(`${base}/sales_listings`, {
-    headers: { Authorization: `Api-Key token=${process.env.BOXDICE_API_KEY}`, Accept: "application/json" },
-    cache: "no-store",
-  });
+  const res = await fetch(`${base}/sales_listings`, { headers: auth, cache: "no-store" });
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: false, status: res.status, body: text.slice(0, 400) }, { status: 502 });
 
   const json = JSON.parse(text);
   const all: any[] = json.sales_listings ?? json.data ?? [];
-  const hit = q
-    ? all.find((l) => `${l?.property?.street_name ?? ""} ${l?.property?.suburb ?? ""}`.toLowerCase().includes(q))
-    : all[0];
+  const matches = q
+    ? all.filter((l) => `${l?.property?.street_name ?? ""} ${l?.property?.suburb ?? ""}`.toLowerCase().includes(q))
+    : all.slice(0, 1);
+  // Prefer a live campaign over an old settled one when a street has both.
+  const hit = matches.find((l) => String(l.status).toLowerCase() === "current") ?? matches[0];
+
+  /**
+   * Inspections are not on the listing record. Try the endpoints Box & Dice
+   * might publish them under, so we know whether they exist at all.
+   */
+  const probes: Record<string, string> = {};
+  for (const path of ["/inspections", "/open_homes", "/inspection_times", `/sales_listings/${hit?.id}/inspections`]) {
+    try {
+      const r = await fetch(base + path, { headers: auth, cache: "no-store" });
+      const body = await r.text();
+      probes[path] = `${r.status} ${body.slice(0, 160)}`;
+    } catch (err) {
+      probes[path] = `error ${String(err)}`;
+    }
+  }
 
   if (!hit) {
     return NextResponse.json({
@@ -41,6 +56,8 @@ export async function GET(req: Request) {
 
   return NextResponse.json({
     ok: true,
+    matched: matches.map((l) => ({ id: l.id, status: l.status, website_status: l.website_status, address: `${l?.property?.number ?? ""} ${l?.property?.street_name ?? ""}` })),
+    inspectionEndpoints: probes,
     id: hit.id,
     status: hit.status,
     address: `${hit?.property?.number ?? ""} ${hit?.property?.street_name ?? ""}, ${hit?.property?.suburb ?? ""}`,

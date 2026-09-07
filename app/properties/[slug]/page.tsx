@@ -177,8 +177,9 @@ export default async function PropertyPage({ params }: { params: { slug: string 
                   order. The enquiry form below lets the buyer pick which one
                   they are contacting. */}
               {l.agents.length > 0 ? (
-                l.agents.map((a, i) => (
-                  <div key={i} className={i > 0 ? "agent-extra" : undefined}>
+                <div className="agent-people">
+                {l.agents.map((a, i) => (
+                  <div key={i} className="agent-person">
                     {a.photo && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img className="agent-photo" src={a.photo} alt={a.name} />
@@ -194,7 +195,8 @@ export default async function PropertyPage({ params }: { params: { slug: string 
                       </div>
                     )}
                   </div>
-                ))
+                ))}
+                </div>
               ) : (
                 <>
                   <div className="nm">Loutakis Real Estate</div>
