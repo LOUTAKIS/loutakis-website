@@ -60,8 +60,7 @@ export async function POST(req: Request) {
         <p style="margin:24px 0">
           <a href="${siteUrl()}/portal/register" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">Request access</a>
         </p>
-        <p style="color:#999;font-size:13px">If this wasn't you, ignore this email — nothing has been created or shared.</p>
-        <p style="color:#666">Michael Loutakis &middot; 0409 438 025</p></div>`,
+        <p style="color:#999;font-size:13px">If this wasn't you, ignore this email — nothing has been created or shared.</p></div>`,
     });
   };
 
