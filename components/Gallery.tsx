@@ -74,14 +74,14 @@ export default function Gallery({ images }: { images: Img[] }) {
       const box = boxRef.current;
       if (!box) return;
       /**
-       * Fill from where the gallery starts to the bottom of the screen, less a
-       * small breath. Measuring the real position beats guessing at the header
-       * and the back-link in CSS, and keeps the photographs as large as the
-       * window allows.
+       * The budget is a screenful, less the sticky header and a breath top and
+       * bottom. It must NOT be derived from where the block sits in the
+       * document: on a listing with a video hero the gallery begins a full
+       * screen down, and "from here to the bottom of the window" then collapses
+       * to nothing.
        */
-      const rect = box.getBoundingClientRect();
-      const top = rect.top + window.scrollY;
-      const H = Math.max(320, window.innerHeight - top - 24);
+      const header = document.querySelector<HTMLElement>(".nav")?.offsetHeight ?? 78;
+      const H = Math.max(360, window.innerHeight - header - 96);
       const W = box.clientWidth;
       if (!W) return;
       if (!thumbs.length) return setSize({ mode: "row", hero: H, strip: 0 });
