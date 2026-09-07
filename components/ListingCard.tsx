@@ -1,3 +1,4 @@
+import { plural } from "@/lib/plural";
 import Link from "next/link";
 import Image from "next/image";
 import { Listing } from "@/lib/types";
@@ -20,9 +21,9 @@ export default function ListingCard({ listing }: { listing: Listing }) {
       </div>
       <h3>{listing.address.street}, {listing.address.suburb}</h3>
       <div className="meta-row">
-        <span>{listing.bed} Bed</span>
-        <span>{listing.bath} Bath</span>
-        <span>{listing.car} Car</span>
+        <span>{listing.bed} {plural(listing.bed, "Bed")}</span>
+        <span>{listing.bath} {plural(listing.bath, "Bath")}</span>
+        <span>{listing.car} {plural(listing.car, "Car")}</span>
       </div>
       {listing.status === "under_offer" ? (
         <div className="status-line">Under Offer</div>

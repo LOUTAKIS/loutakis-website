@@ -1,3 +1,4 @@
+import { plural } from "@/lib/plural";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getListingBySlug } from "@/lib/boxdice";
@@ -126,9 +127,9 @@ export default async function PropertyPage({ params }: { params: { slug: string 
             </div>
 
             <div className="feat">
-              <div><span className="n">{l.bed}</span><span className="l">Beds</span></div>
-              <div><span className="n">{l.bath}</span><span className="l">Baths</span></div>
-              <div><span className="n">{l.car}</span><span className="l">Cars</span></div>
+              <div><span className="n">{l.bed}</span><span className="l">{plural(l.bed, "Bed")}</span></div>
+              <div><span className="n">{l.bath}</span><span className="l">{plural(l.bath, "Bath")}</span></div>
+              <div><span className="n">{l.car}</span><span className="l">{plural(l.car, "Car")}</span></div>
               {l.landSize && <div><span className="n">{l.landSize}</span><span className="l">Land</span></div>}
             </div>
 

@@ -1,3 +1,4 @@
+import { plural } from "@/lib/plural";
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/portal-session";
 import { getOffMarketListings } from "@/lib/boxdice";
@@ -114,9 +115,9 @@ export default async function PortalPage() {
                     )}
 
                     <div className="feat">
-                      <div><span className="n">{l.bed}</span>Beds</div>
-                      <div><span className="n">{l.bath}</span>Baths</div>
-                      <div><span className="n">{l.car}</span>Cars</div>
+                      <div><span className="n">{l.bed}</span>{plural(l.bed, "Bed")}</div>
+                      <div><span className="n">{l.bath}</span>{plural(l.bath, "Bath")}</div>
+                      <div><span className="n">{l.car}</span>{plural(l.car, "Car")}</div>
                       {l.landSize && <div><span className="n">{l.landSize}</span>Land</div>}
                     </div>
 

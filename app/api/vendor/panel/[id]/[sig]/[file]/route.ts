@@ -1,5 +1,6 @@
 import { getCampaign } from "@/lib/campaigns";
 import { panelSig, renderBrochure } from "@/lib/brochure-render";
+import { getStaff } from "@/lib/staff-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,6 +32,8 @@ export async function GET(_req: Request, { params }: { params: { id: string; sig
     });
   } catch (err) {
     console.error("[brochure panel] render failed", err);
-    return new Response("Unavailable", { status: 502 });
+    // Staff see why; the vendor's page just falls back to rendering the PDF itself.
+    const detail = getStaff() ? `\n${(err as Error)?.stack ?? String(err)}` : "";
+    return new Response(`Unavailable${detail}`, { status: 502, headers: { "Content-Type": "text/plain" } });
   }
 }
