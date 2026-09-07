@@ -761,8 +761,10 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .sv-sound:hover { background: rgba(0,0,0,.75); }
 
 /* "Trust, not transactions": the testimonial beside the words. */
-.trust-grid { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: clamp(28px, 4vw, 64px); align-items: center; margin-top: 34px; }
+/* Words on the left, the testimonial on the right. */
+.trust-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 380px); gap: clamp(28px, 4vw, 64px); align-items: center; }
 @media (max-width: 760px) { .trust-grid { grid-template-columns: 1fr; } .sv-portrait { max-width: 100%; } }
+.trust-grid .sv-portrait { justify-self: end; }
 
 /* Sign-in code */
 .portal-code h3 { font-family: var(--serif); font-weight: 400; font-size: clamp(22px, 2.4vw, 28px); margin: 0 0 12px; }

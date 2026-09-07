@@ -9,18 +9,11 @@ import SelfVideo from "@/components/SelfVideo";
 export default function AboutPage() {
   return (
     <>
-      {/* TRUST, NOT TRANSACTIONS — the section from loutakis.com.au: the
-          testimonial on the left, the words beside it, never stacked. */}
+      {/* TRUST, NOT TRANSACTIONS — the section from loutakis.com.au: the words
+          on the left, the testimonial beside them on the right, never stacked. */}
       <section>
         <div className="wrap">
           <div className="trust-grid">
-            <SelfVideo
-              src="/video/testimonial-fourth-ave.mp4"
-              srcSmall="/video/testimonial-fourth-ave-720.mp4"
-              poster="/video/testimonial-fourth-ave-poster.jpg"
-              label="A testimonial from 29 Fourth Avenue"
-              className="sv-portrait"
-            />
             <div>
               <div className="eyebrow">About</div>
               <h1 className="lead">Real Estate built on trust, not transactions.</h1>
@@ -32,6 +25,13 @@ export default function AboutPage() {
                 Feel the movement
               </a>
             </div>
+            <SelfVideo
+              src="/video/testimonial-fourth-ave.mp4"
+              srcSmall="/video/testimonial-fourth-ave-720.mp4"
+              poster="/video/testimonial-fourth-ave-poster.jpg"
+              label="A testimonial from 29 Fourth Avenue"
+              className="sv-portrait"
+            />
           </div>
         </div>
       </section>
