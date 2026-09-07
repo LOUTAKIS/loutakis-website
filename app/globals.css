@@ -163,11 +163,17 @@ section { padding: 96px 0; }
 /* Each service is one screenful, the same as the About story: the picture is
    capped at 70% of the window and shows whole, and the words sit beside it. A
    4:5 frame across half a wide page was otherwise over 1100px tall. */
-/* Pictures hug the outer edge of the page, never the middle of their half:
-   that way the words of the next section start exactly where the picture
-   above them starts, and a paragraph ends where the picture below it ends. */
-.service-row .img-ph { height: 70svh; width: auto; aspect-ratio: 4/5; justify-self: start; }
-@media (min-width: 821px) { .service-row .img-ph.order-last { justify-self: end; } }
+/* The picture's column is only as wide as the picture, so the words begin
+   right beside it rather than half a page away — a 1fr track left a chasm.
+   The words then run to the opposite gutter, which is what makes a paragraph
+   end where the picture below it ends, and the next heading start where the
+   picture above it starts. */
+.service-row .intro-grid { grid-template-columns: auto minmax(0, 1fr); gap: clamp(32px, 4vw, 72px); }
+.service-row.reversed .intro-grid { grid-template-columns: minmax(0, 1fr) auto; }
+.service-row .img-ph { height: 70svh; width: auto; aspect-ratio: 4/5; }
+@media (max-width: 820px) {
+  .service-row .intro-grid, .service-row.reversed .intro-grid { grid-template-columns: 1fr; }
+}
 @media (max-width: 820px) { .service-row .img-ph { height: auto; width: 100%; } }
 
 .services { background: var(--paper-2); }
