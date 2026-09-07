@@ -187,11 +187,12 @@ section { padding: 96px 0; }
 .hover-cta span { font-family: var(--display); letter-spacing: .06em; text-transform: uppercase; font-size: clamp(15px, 1.5vw, 20px); color: #000; }
 
 /* Properties page: two big columns (the wider container comes from .layout.wide) */
-.properties-page .grid { grid-template-columns: repeat(2, 1fr); gap: 56px 48px; }
+.properties-page .grid { grid-template-columns: repeat(3, 1fr); gap: 52px 40px; }
 .properties-page .card .ph { aspect-ratio: 3/2; }
 .properties-page .card h3 { font-size: 24px; margin-top: 24px; }
 .properties-page .meta-row { font-size: 13px; }
 .properties-page .hover-cta span { font-size: clamp(18px, 2vw, 30px); }
+@media (max-width: 1100px) { .properties-page .grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 760px) { .properties-page .grid { grid-template-columns: 1fr; } }
 
 /* Property detail */
