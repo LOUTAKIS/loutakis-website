@@ -53,7 +53,11 @@ body {
 }
 a { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; }
-.wrap { max-width: 1180px; margin: 0 auto; padding: 0 28px; }
+/* One container width for the whole layout — header, content and footer share
+   it, so the wordmark and the footer always line up with the page's content.
+   A page never widens .wrap on its own; SiteChrome sets `wide` on the layout. */
+.wrap { max-width: var(--wrap, 1180px); margin: 0 auto; padding: 0 28px; }
+.layout.wide { --wrap: 1480px; }
 .eyebrow { font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; }
 .lead { font-family: var(--serif); font-weight: 400; font-size: clamp(26px, 3.4vw, 40px); line-height: 1.25; max-width: 780px; }
 section { padding: 96px 0; }
@@ -176,8 +180,7 @@ section { padding: 96px 0; }
 .card:hover .hover-cta { opacity: 1; }
 .hover-cta span { font-family: var(--display); letter-spacing: .06em; text-transform: uppercase; font-size: clamp(15px, 1.5vw, 20px); color: #000; }
 
-/* Properties page: wider container, two big columns */
-.properties-page .wrap { max-width: 1480px; }
+/* Properties page: two big columns (the wider container comes from .layout.wide) */
 .properties-page .grid { grid-template-columns: repeat(2, 1fr); gap: 56px 48px; }
 .properties-page .card .ph { aspect-ratio: 3/2; }
 .properties-page .card h3 { font-size: 24px; margin-top: 24px; }
@@ -660,6 +663,12 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
   .vnext li { grid-template-columns: 1fr; gap: 4px; }
   .va-preview { top: 58px; }
 }
+
+/* Advertising copy on the property page: the CRM heading, then the paragraphs
+   as typed (single newlines inside a paragraph are kept by pre-line). */
+.listing-headline { font-family: var(--serif); font-weight: 400; font-size: clamp(22px, 2.4vw, 30px); line-height: 1.2; margin: 0 0 22px; text-wrap: balance; }
+.listing-copy { color: var(--muted); white-space: pre-line; margin: 0 0 18px; }
+.listing-copy:last-of-type { margin-bottom: 0; }
 
 /* ── Brochure: four-panel closed gatefold in 3D ────────────────────────────
    Built like the paper: the base panel sits still; the right gate hinges on

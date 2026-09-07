@@ -133,7 +133,16 @@ export default async function PropertyPage({ params }: { params: { slug: string 
               {l.landSize && <div><span className="n">{l.landSize}</span><span className="l">Land</span></div>}
             </div>
 
-            <p style={{ color: "var(--muted)" }}>{l.description}</p>
+            {/* The advertising copy exactly as it is written in Box & Dice:
+                the heading as its own line, then the paragraphs as typed.
+                `headline` falls back to the address when the CRM has no
+                heading, so only show it when it is a real heading. */}
+            {l.headline && l.headline !== `${l.address.street}, ${l.address.suburb}` && (
+              <p className="listing-headline">{l.headline}</p>
+            )}
+            {l.description.split(/\n\s*\n/).map((para, i) => (
+              <p key={i} className="listing-copy">{para.trim()}</p>
+            ))}
 
             {l.features.length > 0 && (
               <>
