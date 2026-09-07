@@ -41,7 +41,8 @@
 
 /* Headings: geometric, wide-tracked to echo the LOUTAKIS wordmark */
 h1, h2, h3, .lead, .section-head h2 { letter-spacing: .01em; font-weight: 600; }
-.hero h1 { font-family: var(--display); font-weight: 400; letter-spacing: .04em; text-transform: uppercase; }
+/* The hero line: Gotham, lower case, light — set once here. */
+.hero h1 { font-family: var(--sans); font-weight: 400; letter-spacing: .01em; text-transform: none; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
@@ -87,14 +88,15 @@ section { padding: 96px 0; }
 /* svh, never dvh. The dynamic viewport unit changes value as the mobile
    address bar hides, resizing the element mid-scroll — which reads as the
    photo zooming in. svh is the stable, smallest height. */
-.hero { position: relative; height: calc(100vh - 78px); height: calc(100svh - 78px); min-height: 420px; display: flex; align-items: center; color: #fff; overflow: hidden; }
+.hero { position: relative; height: calc(100vh - 78px); height: calc(100svh - 78px); min-height: 420px; display: flex; align-items: center; justify-content: center; text-align: center; color: #fff; overflow: hidden; }
 .hero-bg { position: absolute; inset: 0; }
 .hero-bg img { width: 100%; height: 100%; object-fit: cover; filter: brightness(.92); }
 .hero::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(to top, rgba(0,0,0,.6), rgba(0,0,0,.38) 55%, rgba(0,0,0,.32)); }
 .hero-content { position: relative; z-index: 2; text-shadow: 0 1px 24px rgba(0,0,0,.3); }
 /* Size only — the family is set above as var(--display) (Brolink). Do not add
    font-family here: this rule comes later and would silently override it. */
-.hero h1 { font-weight: 400; font-size: clamp(40px, 7vw, 86px); line-height: 1.02; }
+/* One line at any width: size follows the viewport, never wraps. */
+.hero h1 { font-weight: 400; font-size: clamp(30px, 6.4vw, 92px); line-height: 1.05; white-space: nowrap; }
 .hero p { margin-top: 18px; max-width: 430px; font-size: 15px; opacity: .92; }
 .kicker { font-size: 12px; letter-spacing: .32em; text-transform: uppercase; opacity: .85; margin-bottom: 22px; }
 .hero .btn { margin-top: 30px; }
