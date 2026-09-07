@@ -111,6 +111,16 @@ section { padding: 96px 0; }
 .video-ph .play { width: 0; height: 0; border-style: solid; border-width: 16px 0 16px 26px; border-color: transparent transparent transparent #fff; margin-left: 6px; opacity: .9; }
 .video-ph .video-label { position: absolute; bottom: 16px; left: 0; right: 0; text-align: center; color: #fff; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; opacity: .55; }
 .img-ph { position: relative; aspect-ratio: 4/5; background: var(--paper-2); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
+/* Michael's portrait is a tall 4:5 frame; at half a wide page that made the
+   section far taller than a screen. Cap it at 70% of the window and let the
+   column take whatever width that leaves — the picture is never cropped
+   differently, it is simply smaller. */
+.about-story .intro-grid { grid-template-columns: auto minmax(0, 1fr); gap: clamp(32px, 4vw, 72px); }
+.about-story .portrait { height: 70svh; width: auto; }
+@media (max-width: 860px) {
+  .about-story .intro-grid { grid-template-columns: 1fr; }
+  .about-story .portrait { height: auto; width: 100%; }
+}
 .portrait { position: relative; aspect-ratio: 4/5; overflow: hidden; }
 .portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .video-embed { position: relative; aspect-ratio: 16/9; background: #000; overflow: hidden; }

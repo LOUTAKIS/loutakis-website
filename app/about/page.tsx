@@ -37,7 +37,7 @@ export default function AboutPage() {
       </section>
 
       {/* LED BY PASSION */}
-      <section className="services">
+      <section className="services about-story">
         <div className="wrap intro-grid">
           <div className="portrait">
             {/* eslint-disable-next-line @next/next/no-img-element */}
