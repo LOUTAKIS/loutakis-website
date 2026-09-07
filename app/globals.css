@@ -730,6 +730,26 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .vc-sort span { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 .vc-sort .field { min-width: 190px; }
 
+/* Films we host ourselves */
+.sv { position: relative; width: 100%; background: #000; overflow: hidden; }
+.sv video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.sv-portrait { max-width: 380px; aspect-ratio: 9 / 16; }
+.sv-portrait video { object-fit: cover; }
+.sv-play { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; padding: 0; cursor: pointer;
+  background: rgba(0,0,0,.12); display: flex; align-items: center; justify-content: center; transition: background .25s; }
+.sv-play:hover { background: rgba(0,0,0,.04); }
+.sv-play span { position: relative; width: 74px; height: 74px; border-radius: 50%; background: rgba(255,255,255,.94); box-shadow: 0 10px 30px rgba(0,0,0,.25); transition: transform .25s; }
+.sv-play span::after { content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-42%, -50%);
+  border-style: solid; border-width: 12px 0 12px 21px; border-color: transparent transparent transparent #000; }
+.sv-play:hover span { transform: scale(1.06); }
+.sv-sound { position: absolute; right: 14px; bottom: 14px; z-index: 2; background: rgba(0,0,0,.55); color: #fff;
+  border: 0; cursor: pointer; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; padding: 9px 13px; }
+.sv-sound:hover { background: rgba(0,0,0,.75); }
+
+/* "Trust, not transactions": the testimonial beside the words. */
+.trust-grid { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: clamp(28px, 4vw, 64px); align-items: center; margin-top: 34px; }
+@media (max-width: 760px) { .trust-grid { grid-template-columns: 1fr; } .sv-portrait { max-width: 100%; } }
+
 /* Sign-in code */
 .portal-code h3 { font-family: var(--serif); font-weight: 400; font-size: clamp(22px, 2.4vw, 28px); margin: 0 0 12px; }
 .portal-code > p { color: var(--muted); max-width: 46ch; margin-bottom: 26px; }

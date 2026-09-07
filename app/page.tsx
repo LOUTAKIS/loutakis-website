@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getListings } from "@/lib/boxdice";
 import ListingCard from "@/components/ListingCard";
-import VideoEmbed from "@/components/VideoEmbed";
+import SelfVideo from "@/components/SelfVideo";
 
 /**
  * Rendered per request, not at build time. Box & Dice rate-limits builds into
@@ -45,7 +45,14 @@ export default async function HomePage() {
             <p>Every property journey holds a unique story, and I treat each moment with the care and commitment it deserves. To me, it&rsquo;s never &lsquo;just another listing&rsquo; &mdash; it&rsquo;s someone&rsquo;s future, someone&rsquo;s dreams, someone&rsquo;s next chapter&mdash;and I&rsquo;m deeply honoured to be a part of one&rsquo;s story.</p>
             <a href="https://www.loutakis.com.au/contact" className="btn" style={{ marginTop: 28 }}>Join the movement</a>
           </div>
-          <VideoEmbed id="J-nrYPgIgwU" title="Loutakis Real Estate" />
+          {/* Our own file, not YouTube: the master graded at full quality. */}
+          <SelfVideo
+            src="/video/launch.mp4"
+            srcSmall="/video/launch-720.mp4"
+            poster="/video/launch-poster.jpg"
+            ambient
+            label="Loutakis Real Estate"
+          />
         </div>
       </section>
 

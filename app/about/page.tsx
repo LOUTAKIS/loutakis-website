@@ -4,6 +4,8 @@ export const metadata = {
     "Loutakis Real Estate: dedicated local experts committed to authentic service, community trust, and personalised real estate in Melbourne's Inner West.",
 };
 
+import SelfVideo from "@/components/SelfVideo";
+
 export default function AboutPage() {
   return (
     <>
@@ -12,13 +14,24 @@ export default function AboutPage() {
         <div className="wrap">
           <div className="eyebrow">About</div>
           <h1 className="lead">Real Estate built on trust, not transactions.</h1>
-          <p style={{ maxWidth: 620, color: "var(--muted)", marginTop: 18 }}>
-            Hear from the locals who have trusted Michael to guide them through some of life&rsquo;s
-            biggest moments.
-          </p>
-          <a href="https://www.loutakis.com.au/" className="btn" style={{ marginTop: 30 }}>
-            Feel the movement
-          </a>
+          <div className="trust-grid">
+            <SelfVideo
+              src="/video/testimonial-fourth-ave.mp4"
+              srcSmall="/video/testimonial-fourth-ave-720.mp4"
+              poster="/video/testimonial-fourth-ave-poster.jpg"
+              label="A testimonial from 29 Fourth Avenue"
+              className="sv-portrait"
+            />
+            <div>
+              <p style={{ color: "var(--muted)", maxWidth: "34ch" }}>
+                Hear from the locals who have trusted Michael to guide them through some of
+                life&rsquo;s biggest moments.
+              </p>
+              <a href="/contact" className="btn" style={{ marginTop: 26 }}>
+                Feel the movement
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 
