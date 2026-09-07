@@ -38,7 +38,7 @@ export default function ContactPage() {
               Hours
             </h3>
             <p style={{ color: "var(--muted)" }}>
-              Monday – Saturday: 9am – 6pm<br />Sunday: 10am – 3pm
+              Monday – Friday: 9am – 5pm<br />Saturday: 10am – 2pm
             </p>
 
             <h3 style={{ fontFamily: "var(--serif)", fontWeight: 600, fontSize: 20, margin: "30px 0 12px" }}>

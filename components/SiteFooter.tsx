@@ -20,7 +20,7 @@ export default function SiteFooter() {
           </div>
           <div>
             <h4>Hours</h4>
-            <p>Mon–Sat · 9am–6pm<br />Sun · 10am–3pm</p>
+            <p>Mon–Fri · 9am–5pm<br />Sat · 10am–2pm</p>
           </div>
           <div>
             <h4>Contact</h4>
