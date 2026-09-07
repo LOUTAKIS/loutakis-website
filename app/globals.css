@@ -59,10 +59,8 @@ img { display: block; max-width: 100%; }
    just a gutter that eases in on small screens. Reading measure is handled per
    block (see .lead, .listing-copy, .vcopy), never by narrowing this. */
 .wrap { width: 100%; margin: 0 auto; padding: 0 clamp(20px, 4vw, 64px); }
-/* Some pages narrow the container for readability (forms, policy text). Those
-   keep their measure but start on the same left margin as everything else,
-   rather than floating in the middle of the screen. */
-.wrap[style*="max-width"] { margin-left: 0; }
+/* Pages that narrow the container for readability (forms, policy text) stay
+   centred in the screen — `margin: 0 auto` above does that. */
 .eyebrow { font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; }
 .lead { font-family: var(--serif); font-weight: 400; font-size: clamp(26px, 3.4vw, 40px); line-height: 1.25; max-width: 780px; }
 section { padding: 96px 0; }

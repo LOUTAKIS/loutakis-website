@@ -209,3 +209,22 @@ export async function rememberContact(opts: {
   }
   await upsert(items);
 }
+
+/**
+ * "We already told this address it isn't registered" — so the sign-in form
+ * can't be used to post the same person an unlimited number of emails.
+ * Returns true the first time for an address, false while the note is fresh.
+ */
+export async function shouldSendNotRegistered(email: string, hours = 24): Promise<boolean> {
+  const key = `nr_${hash(normaliseEmail(email))}`;
+  if (client) {
+    try {
+      const last = await client.get<number>(key);
+      if (typeof last === "number" && Date.now() - last < hours * 3_600_000) return false;
+    } catch {
+      /* read failed — better to send than to swallow a genuine request */
+    }
+  }
+  await upsert([{ operation: "upsert", key, value: Date.now() }]).catch(() => {});
+  return true;
+}

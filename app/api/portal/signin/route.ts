@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { lookupContactId, storeConfigured } from "@/lib/portal-store";
+import { lookupContactId, storeConfigured, shouldSendNotRegistered } from "@/lib/portal-store";
 import { getContact, CATEGORY_APPROVED, CATEGORY_PENDING } from "@/lib/portal";
 import { createSignInToken } from "@/lib/portal-token";
 import { sendMail, esc } from "@/lib/mail";
@@ -40,13 +40,44 @@ export async function POST(req: Request) {
     return neutral;
   }
 
+  /**
+   * Nobody should be left wondering. If the identifier isn't on the list we
+   * write to that address with the way in — never revealing on screen whether
+   * it was known, and never more than once a day per address, so the form
+   * can't be turned into a mail cannon.
+   */
+  const looksLikeEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(identifier);
+  const inviteToRegister = async () => {
+    if (!looksLikeEmail) return; // a mobile number gives us nowhere to write
+    if (!(await shouldSendNotRegistered(identifier))) return;
+    await sendMail({
+      to: [identifier],
+      subject: "Off-market access — you're not on the list yet",
+      html: `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
+        <p>Hi,</p>
+        <p>Someone (we hope you) asked for a sign-in link to our off-market list using this address. There's no registration against it yet.</p>
+        <p>Request access here — it takes a minute, and Michael reviews each one personally:</p>
+        <p style="margin:24px 0">
+          <a href="${siteUrl()}/portal/register" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">Request access</a>
+        </p>
+        <p style="color:#999;font-size:13px">If this wasn't you, ignore this email — nothing has been created or shared.</p>
+        <p style="color:#666">Michael Loutakis &middot; 0409 438 025</p></div>`,
+    });
+  };
+
   try {
     const contactId = await lookupContactId(identifier);
-    if (!contactId) return neutral;
+    if (!contactId) {
+      await inviteToRegister();
+      return neutral;
+    }
 
     const contact = await getContact(contactId);
     const email = String(contact?.email ?? "").trim();
-    if (!email) return neutral;
+    if (!email) {
+      await inviteToRegister();
+      return neutral;
+    }
 
     const names = (contact?.categories ?? []).map((c: any) => String(c?.name ?? c));
     const approved = names.includes(CATEGORY_APPROVED);
@@ -55,6 +86,10 @@ export async function POST(req: Request) {
     if (!approved) {
       // Tell them where they stand — but only via the email on file, which is
       // the same proof-of-inbox the sign-in link relies on.
+      if (!pending) {
+        // On the CRM but never registered for off-market: point them at the form.
+        await inviteToRegister();
+      }
       if (pending) {
         await sendMail({
           to: [email],
