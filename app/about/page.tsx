@@ -30,6 +30,9 @@ export default function AboutPage() {
               srcSmall="/video/testimonial-fourth-ave-720.mp4"
               poster="/video/testimonial-fourth-ave-poster.jpg"
               label="A testimonial from 29 Fourth Avenue"
+              /* Runs on its own, muted and looping, like the launch film —
+                 one tap brings the voices in. */
+              ambient
               className="sv-portrait"
             />
           </div>
