@@ -207,7 +207,7 @@ section { padding: 96px 0; }
 /* The two lines read as one mark, so the leading is closed right up: at 44px
    the price's default line box is what was holding SOLD away from it, not the
    gap. */
-.card .sold-mark { display: flex; flex-direction: column; align-items: center; gap: 12px; line-height: 1; }
+.card .sold-mark { display: flex; flex-direction: column; align-items: center; gap: 22px; line-height: 1; }
 .card .sold-mark em { font-style: normal; font-weight: 700; line-height: 1; font-size: clamp(11px, .95vw, 15px); letter-spacing: .5em; text-indent: .5em; text-transform: uppercase; color: var(--ink); }
 /* Same voice as the hero line: Gotham, lower case, no full stop. */
 .hover-cta span { font-family: var(--sans); font-weight: 400; letter-spacing: .01em; text-transform: none; font-size: clamp(16px, 1.6vw, 22px); color: #000; }
