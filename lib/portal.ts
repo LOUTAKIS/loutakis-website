@@ -365,7 +365,15 @@ export async function approveBuyer(contactId: string) {
     console.error("[portal] alert list add failed", err)
   );
 
-  const registered = (await getRegisteredEmail(contactId).catch(() => null)) || contact?.email;
+  /**
+   * Only ever the address they registered with. The CRM's primary can be years
+   * out of date — an old work address on a contact matched by name and mobile —
+   * and portal mail must never go somewhere they didn't give us.
+   */
+  const registered = await getRegisteredEmail(contactId).catch(() => null);
+  if (!registered) {
+    console.error(`[portal] approved ${contactId} but no registered email on file — nothing sent`);
+  }
   if (registered) {
     await sendMail({
       to: [registered],

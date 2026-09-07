@@ -84,7 +84,11 @@ export async function runOffMarketAlerts(dryRun = false): Promise<AlertResult> {
       result.skippedNoLongerApproved++;
       continue;
     }
-    if (!contact?.email) {
+    // Only the address they registered with — never the CRM's primary, which
+    // can be an old work address on a contact we matched by name and mobile.
+    const registeredEmail = await getRegisteredEmail(contactId).catch(() => null);
+    if (!registeredEmail) {
+      console.error(`[alerts] no registered email for contact ${contactId} — skipped`);
       result.failed++;
       continue;
     }
@@ -96,7 +100,7 @@ export async function runOffMarketAlerts(dryRun = false): Promise<AlertResult> {
 
     try {
       await sendMail({
-        to: [(await getRegisteredEmail(contact.id).catch(() => null)) || contact.email],
+        to: [registeredEmail],
         subject:
           fresh.length === 1
             ? "A new off-market property is available"

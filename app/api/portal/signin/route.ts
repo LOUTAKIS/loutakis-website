@@ -98,12 +98,16 @@ export async function POST(req: Request) {
     }
 
     const contact = await getContact(contactId);
-    // Write to the address they registered with; the CRM's primary may be the
-    // office's own copy of an existing contact (see rememberRegisteredEmail).
+    /**
+     * Only ever an address the person gave us: the one they registered with,
+     * or — when they signed in with an email — that exact address, which only
+     * matched because it is already on their record. The CRM's own primary is
+     * never used; it may be an old address on a contact matched by name.
+     */
     const registered = await getRegisteredEmail(contactId).catch(() => null);
-    const email = String(registered || contact?.email || "").trim();
+    const email = String(registered || (looksLikeEmail ? identifier : "")).trim();
     if (!email) {
-      await inviteToRegister();
+      console.error(`[portal] contact ${contactId} has no registered email — nothing sent`);
       return neutral;
     }
 
