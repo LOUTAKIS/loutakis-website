@@ -171,8 +171,9 @@ section { padding: 96px 0; }
 @media (max-width: 980px) { .grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 620px) { .grid { grid-template-columns: 1fr; } }
 .card { display: block; }
-.card .ph { position: relative; overflow: hidden; aspect-ratio: 4/3; }
-.card .ph img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s ease; }
+.card .ph { position: relative; overflow: hidden; aspect-ratio: 4/3; background: var(--paper); }
+/* Whole photo, never cropped — the frame is the space it may use, not a crop. */
+.card .ph img { width: 100%; height: 100%; object-fit: contain; transition: transform .6s ease; }
 .card:hover .ph img { transform: scale(1.05); }
 .tag { position: absolute; top: 14px; left: 14px; background: #000; color: #fff; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; padding: 7px 12px; }
 .tag.sold { background: #fff; color: #000; border: 1px solid #000; }
@@ -194,19 +195,23 @@ section { padding: 96px 0; }
 @media (max-width: 760px) { .properties-page .grid { grid-template-columns: 1fr; } }
 
 /* Property detail */
-.detail-hero { aspect-ratio: 16/9; position: relative; overflow: hidden; }
-.detail-hero img { width: 100%; height: 100%; object-fit: cover; }
+.detail-hero { aspect-ratio: 16/9; position: relative; overflow: hidden; background: var(--paper); }
+.detail-hero img { width: 100%; height: 100%; object-fit: contain; }
 .gallery-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
-.gallery-strip .g { position: relative; aspect-ratio: 4/3; overflow: hidden; }
-.gallery-strip img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-strip .g { position: relative; aspect-ratio: 4/3; overflow: hidden; background: var(--paper); }
+.gallery-strip img { width: 100%; height: 100%; object-fit: contain; }
 .more-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.55); color: #fff; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; }
 
 /* Gallery fills the screen: hero + 3 thumbnails together fit the viewport,
    so the bottom of the thumbnails always lands at the bottom of the screen. */
-.gallery-fit { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 168px); height: calc(100svh - 168px); min-height: 460px; }
+/* Hero and thumbnails together always fit the window — on a laptop, a phone or
+   a short window — so the gallery is never cut off at the bottom. min-height
+   would break that promise, so there isn't one. */
+.gallery-fit { display: flex; flex-direction: column; gap: 8px; height: calc(100svh - 168px); max-height: calc(100svh - 168px); }
 .gallery-fit .detail-hero { flex: 1 1 auto; min-height: 0; aspect-ratio: auto; }
-.gallery-fit .gallery-strip { flex: 0 0 auto; height: clamp(110px, 20vh, 220px); margin-top: 0; }
+.gallery-fit .gallery-strip { flex: 0 1 auto; height: clamp(80px, 18vh, 220px); min-height: 0; margin-top: 0; }
 .gallery-fit .gallery-strip .g { aspect-ratio: auto; height: 100%; }
+@media (max-width: 600px) { .gallery-fit { height: calc(100svh - 140px); max-height: calc(100svh - 140px); } }
 
 /* Lightbox gallery */
 /* Gallery viewer on paper, not black. A black surround reads as a stock photo
@@ -316,7 +321,7 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 /* ---- Off-market portal: the list ---- */
 .portal-list { display: flex; flex-direction: column; gap: 72px; margin-top: 40px; }
 .portal-listing { border-top: 1px solid var(--line); padding-top: 40px; }
-.portal-hero { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; margin-bottom: 30px; }
+.portal-hero { width: 100%; aspect-ratio: 16/9; object-fit: contain; display: block; margin-bottom: 30px; background: var(--paper); }
 .portal-body { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 48px; align-items: start; }
 @media (max-width: 900px) { .portal-body { grid-template-columns: 1fr; gap: 32px; } }
 .portal-listing h3 { font-family: var(--serif); font-weight: 400; font-size: clamp(24px, 3vw, 34px); margin-bottom: 8px; }
@@ -325,7 +330,7 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .portal-desc p { color: var(--muted); margin-bottom: 14px; }
 .portal-times { margin-top: 26px; }
 .portal-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 28px; }
-.portal-gallery img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+.portal-gallery img { width: 100%; aspect-ratio: 4/3; object-fit: contain; display: block; background: var(--paper); }
 @media (max-width: 600px) { .portal-gallery { grid-template-columns: repeat(2, 1fr); } }
 
 /* ── Off-market entry points ───────────────────────────────────────────────
@@ -482,7 +487,7 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .vc-blurb textarea { font-size: 14px; }
 .vc-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .vc-photo { position: relative; padding: 0; border: 2px solid transparent; background: none; cursor: pointer; aspect-ratio: 4/3; overflow: hidden; }
-.vc-photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity .2s; }
+.vc-photo img { width: 100%; height: 100%; object-fit: contain; display: block; transition: opacity .2s; }
 .vc-photo span { position: absolute; left: 8px; bottom: 8px; background: rgba(0,0,0,.65); color: #fff; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; padding: 3px 7px; }
 .vc-photo.off img { opacity: .22; filter: grayscale(1); }
 .vc-photo.off::after { content: "Hidden"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink); }
@@ -577,7 +582,7 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .vp { display: flex; flex-direction: column; gap: 14px; --strip: 74px; }
 .vp-stage { position: relative; margin: 0 auto; max-height: calc(var(--fit) - var(--strip) - 14px); box-shadow: 0 18px 44px rgba(0,0,0,.14); }
 .vp-main { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
-.vp-main img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.vp-main img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .vp-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgba(255,255,255,.92); color: var(--ink); font-size: 28px; line-height: 44px; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.14); opacity: 0; transition: opacity .2s; }
 .vp-arrow.prev { left: 14px; } .vp-arrow.next { right: 14px; }
 .vp-stage:hover .vp-arrow, .vp-arrow:focus-visible { opacity: 1; }
