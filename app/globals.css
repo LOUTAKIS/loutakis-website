@@ -116,10 +116,14 @@ section { padding: 96px 0; }
    column take whatever width that leaves — the picture is never cropped
    differently, it is simply smaller. */
 .about-story .intro-grid { grid-template-columns: auto minmax(0, 1fr); gap: clamp(32px, 4vw, 72px); }
-.about-story .portrait { height: 70svh; width: auto; }
+/* No 4:5 crop here — that cut the top of his head off. The frame takes the
+   photograph's own shape and is capped at 70% of the window. */
+.about-story .portrait { height: 70svh; width: auto; aspect-ratio: auto; }
+.about-story .portrait img { height: 100%; width: auto; object-fit: contain; }
 @media (max-width: 860px) {
   .about-story .intro-grid { grid-template-columns: 1fr; }
   .about-story .portrait { height: auto; width: 100%; }
+  .about-story .portrait img { width: 100%; height: auto; }
 }
 .portrait { position: relative; aspect-ratio: 4/5; overflow: hidden; }
 .portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
