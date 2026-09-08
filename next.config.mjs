@@ -15,11 +15,29 @@ const nextConfig = {
   // default 60s per-page limit restarts the page (and re-fetches), which is
   // exactly what makes the throttling worse.
   staticPageGenerationTimeout: 180,
-  // The page was /services until Sep 2026. Anything already pointing there —
-  // a bookmark, an email signature, a search result — lands on the new URL
-  // rather than a 404.
+  /**
+   * Old URLs that must never 404.
+   *
+   * These are not tidy-ups. Both addresses are printed on things already in the
+   * world — signboards, brochures, QR codes, email signatures — and a printed
+   * URL cannot be edited after the fact. They stay here permanently.
+   *
+   *   /listings   the Squarespace site's properties page, and where every QR
+   *               code on a board or brochure currently points
+   *   /services   renamed to /sell-with-us in Sep 2026
+   *
+   * `permanent: true` sends a 308, which browsers and search engines cache hard
+   * — correct here, because these will never mean anything else.
+   */
   async redirects() {
-    return [{ source: "/services", destination: "/sell-with-us", permanent: true }];
+    return [
+      { source: "/listings", destination: "/properties", permanent: true },
+      // Deep links from the old site: the slugs don't survive the move, so send
+      // them to the properties page rather than a 404. Someone scanning a board
+      // wants to see what's for sale, not a specific dead URL.
+      { source: "/listings/:path*", destination: "/properties", permanent: true },
+      { source: "/services", destination: "/sell-with-us", permanent: true },
+    ];
   },
   images: {
     remotePatterns: [
