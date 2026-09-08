@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { formStarted, formSubmitted, formSucceeded, formFailed } from "@/lib/track";
 
 /**
  * Enquiry form — posts to /api/enquiry, which emails via Microsoft 365.
@@ -23,6 +24,14 @@ export default function EnquiryForm({
   const [error, setError] = useState<string>("");
   const [agentIndex, setAgentIndex] = useState(0);
 
+  // Once per visit — see the same guard on the appraisal form.
+  const started = useRef(false);
+  function noteStart() {
+    if (started.current) return;
+    started.current = true;
+    formStarted("enquiry");
+  }
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (state === "sending") return;
@@ -32,6 +41,7 @@ export default function EnquiryForm({
 
     setState("sending");
     setError("");
+    formSubmitted("enquiry");
 
     try {
       const res = await fetch("/api/enquiry", {
@@ -53,9 +63,11 @@ export default function EnquiryForm({
       const json = await res.json().catch(() => ({}));
 
       if (res.ok && json?.ok) {
+        formSucceeded("enquiry", json?.crm === true);
         setState("sent");
         form.reset();
       } else {
+        formFailed("enquiry", json?.error ? "rejected" : `http_${res.status}`);
         setState("error");
         setError(
           json?.error ||
@@ -63,6 +75,7 @@ export default function EnquiryForm({
         );
       }
     } catch {
+      formFailed("enquiry", "network");
       setState("error");
       setError(
         "Sorry — we couldn't send that just now. Please check your connection, or call 0409 438 025."
@@ -79,7 +92,7 @@ export default function EnquiryForm({
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate>
+    <form onSubmit={onSubmit} onFocus={noteStart} noValidate>
       {agentNames.length > 1 && (
         <label className="agent-pick">
           <span>Who would you like to contact?</span>

@@ -3,6 +3,7 @@ import "./globals.css";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import SiteChrome from "@/components/SiteChrome";
+import { Analytics } from "@vercel/analytics/next";
 
 // Set NEXT_PUBLIC_SITE_URL in Vercel to https://www.loutakis.com.au on launch
 // day and every absolute URL below follows automatically.
@@ -45,6 +46,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SiteChrome header={<SiteHeader />} footer={<SiteFooter />}>
           {children}
         </SiteChrome>
+        {/**
+         * Vercel Web Analytics. Chosen over GA4 deliberately: it sets no
+         * cookies and stores no personal data, so the site needs no consent
+         * banner — and a banner on a real estate site costs more enquiries
+         * than the extra reporting would ever be worth.
+         *
+         * Page views are automatic. What matters here is the custom events
+         * fired from the forms (see lib/track.ts): a listing enquiry is worth
+         * more than a thousand page views, so we count the funnel, not traffic.
+         */}
+        <Analytics />
       </body>
     </html>
   );

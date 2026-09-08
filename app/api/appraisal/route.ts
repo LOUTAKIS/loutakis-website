@@ -162,13 +162,22 @@ export async function POST(req: Request) {
     crm = { ok: false, detail: err instanceof Error ? err.message : "unknown error" };
   }
 
+  let mailed = false;
   if (mailIsConfigured()) {
     const rows = answers
       .map(([k, v]) => `<tr><td style="padding:6px 16px 6px 0;color:#666;vertical-align:top">${esc(k)}</td><td style="padding:6px 0">${esc(v)}</td></tr>`)
       .join("");
-    await sendMail({
+    mailed = await sendMail({
       to: officeRecipients(),
-      subject: `APPRAISAL REQUEST — ${address}`,
+      /**
+       * The CRM outcome goes in the SUBJECT, not just the body. A failed write
+       * that is only mentioned three paragraphs down gets skimmed past, and the
+       * lead sits in an inbox instead of Lead Flow until someone notices. In
+       * the subject it is unmissable in the message list itself.
+       */
+      subject: crm.ok
+        ? `APPRAISAL REQUEST — ${address}`
+        : `APPRAISAL REQUEST — NOT IN CRM — ${address}`,
       html: `
         <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
           <p style="font-size:17px"><strong>${esc(firstName)} ${esc(lastName)}</strong> wants an appraisal for <strong>${esc(address)}</strong>.</p>
@@ -178,8 +187,34 @@ export async function POST(req: Request) {
         </div>
       `,
       replyTo: { address: email, name: `${firstName} ${lastName}`.trim() },
-    }).catch((err) => console.error("[appraisal] office email failed", err));
+    })
+      .then(() => true)
+      .catch((err) => {
+        console.error("[appraisal] office email failed", err);
+        return false;
+      });
   }
 
-  return NextResponse.json({ ok: true });
+  /**
+   * Both paths failed, so nothing anywhere recorded this seller.
+   *
+   * Saying "thank you, we'll be in touch" to someone whose enquiry has been
+   * dropped on the floor is the worst outcome this route has: they wait, we
+   * never call, and they list with whoever answered. Tell them the truth and
+   * give them the phone number instead.
+   */
+  if (!crm.ok && !mailed) {
+    console.error("[appraisal] LEAD LOST — no CRM record and no email:", crm.detail);
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "We couldn't submit that just now. Please call Michael on 0409 438 025 — we don't want to lose your enquiry.",
+      },
+      { status: 502 }
+    );
+  }
+
+  // `crm` is reported so the browser can record whether Box & Dice took the
+  // lead. The seller is never shown it — from their side, mail alone is enough.
+  return NextResponse.json({ ok: true, crm: crm.ok });
 }
