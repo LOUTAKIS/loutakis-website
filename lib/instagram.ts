@@ -351,6 +351,36 @@ export async function instagramDiagnostics(): Promise<Record<string, unknown>> {
       (m) => (m.media_type === "VIDEO" ? m.thumbnail_url : m.media_url) && m.permalink
     ).length;
     out.renderable = renderable;
+
+    /**
+     * The account says 64 media; one page gave 10, the newest from June 2025.
+     * So walk the pages and count. This answers the only question that matters:
+     * does the API know about anything more recent, or does its view of the
+     * account genuinely stop on that date?
+     *
+     * Bounded at five pages — this is a diagnostic, not a crawler.
+     */
+    let next: string | null = JSON.parse(renderText)?.paging?.next ?? null;
+    const stamps: string[] = items.map((m) => m.timestamp).filter(Boolean);
+    let pages = 1;
+    while (next && pages < 5) {
+      const pageRes = await fetch(next, { cache: "no-store" });
+      if (!pageRes.ok) {
+        out.pagingStoppedAt = `page ${pages + 1} -> ${pageRes.status}`;
+        break;
+      }
+      const page = await pageRes.json();
+      for (const m of page?.data ?? []) if (m?.timestamp) stamps.push(m.timestamp);
+      next = page?.paging?.next ?? null;
+      pages += 1;
+    }
+    stamps.sort();
+    out.pagesWalked = pages;
+    out.totalSeen = stamps.length;
+    out.mediaCountClaimed = 64;
+    out.oldestSeen = stamps[0] ?? null;
+    out.newestSeen = stamps[stamps.length - 1] ?? null;
+    out.morePagesRemain = Boolean(next);
     out.verdict = renderable
       ? `Working — ${renderable} of ${items.length} posts can be shown for @${out.username}.`
       : `Instagram returns ${items.length} posts but NONE has a usable picture, so the row hides itself — see items.`;
