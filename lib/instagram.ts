@@ -381,6 +381,32 @@ export async function instagramDiagnostics(): Promise<Record<string, unknown>> {
     out.oldestSeen = stamps[0] ?? null;
     out.newestSeen = stamps[stamps.length - 1] ?? null;
     out.morePagesRemain = Boolean(next);
+
+    /**
+     * Ten posts, one page, none newer than June 2025, against a claimed 64.
+     * That is not a short feed — it is the wrong set. /me returns two ids, and
+     * we have been asking /{user_id}/media; the documented call for Instagram
+     * Login is /me/media. If this returns the recent posts, the id is the bug.
+     */
+    const meMediaRes = await fetch(
+      `${GRAPH}/me/media?fields=id,media_type,timestamp,permalink&limit=${FETCH_WINDOW}&access_token=${encodeURIComponent(token)}`,
+      { cache: "no-store" }
+    );
+    const meMediaText = await meMediaRes.text();
+    out.meMediaStatus = meMediaRes.status;
+    if (meMediaRes.ok) {
+      const rows: any[] = JSON.parse(meMediaText)?.data ?? [];
+      const dates = rows.map((m) => m.timestamp).filter(Boolean).sort();
+      out.meMediaCount = rows.length;
+      out.meMediaNewest = dates[dates.length - 1] ?? null;
+      out.meMediaOldest = dates[0] ?? null;
+      out.verdict =
+        out.meMediaNewest && out.meMediaNewest > (out.newestSeen as string)
+          ? "/me/media sees NEWER posts than /{user_id}/media — the id is the bug, switch the feed to /me/media."
+          : "Both ids return the same window, so the API's view of the account really does stop there — the cause is on Meta's side.";
+    } else {
+      out.meMediaBody = meMediaText.slice(0, 300);
+    }
     out.verdict = renderable
       ? `Working — ${renderable} of ${items.length} posts can be shown for @${out.username}.`
       : `Instagram returns ${items.length} posts but NONE has a usable picture, so the row hides itself — see items.`;
