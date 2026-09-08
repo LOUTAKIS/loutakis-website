@@ -88,7 +88,7 @@ export default async function PortalPage() {
 
         <p className="portal-intro">
           These aren&rsquo;t advertised anywhere else. Prices are by conversation — enquire on any
-          property and the agent will call you.
+          property and we will call you.
         </p>
 
         {listings.length === 0 ? (
