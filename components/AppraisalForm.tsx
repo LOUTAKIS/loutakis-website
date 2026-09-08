@@ -132,7 +132,6 @@ export default function AppraisalForm({
           className="field"
           value={street}
           onChange={(e) => setStreet(e.target.value)}
-          placeholder="12 Smith Street"
           autoComplete="street-address"
         />
       </label>
