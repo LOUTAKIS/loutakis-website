@@ -159,7 +159,7 @@ section { padding: 96px 0; }
 @media (min-width: 821px) { .intro-grid .order-last { order: 2; } }
 @media (max-width: 820px) { .intro-grid { grid-template-columns: 1fr; gap: 34px; } }
 
-/* Services */
+/* Sell with us */
 /* Each service is one screenful, the same as the About story: the picture is
    capped at 70% of the window and shows whole, and the words sit beside it. A
    4:5 frame across half a wide page was otherwise over 1100px tall. */

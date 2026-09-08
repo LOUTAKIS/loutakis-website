@@ -15,6 +15,12 @@ const nextConfig = {
   // default 60s per-page limit restarts the page (and re-fetches), which is
   // exactly what makes the throttling worse.
   staticPageGenerationTimeout: 180,
+  // The page was /services until Sep 2026. Anything already pointing there —
+  // a bookmark, an email signature, a search result — lands on the new URL
+  // rather than a 404.
+  async redirects() {
+    return [{ source: "/services", destination: "/sell-with-us", permanent: true }];
+  },
   images: {
     remotePatterns: [
       // Box & Dice / CRM image CDN — add your real listing image host(s) here.

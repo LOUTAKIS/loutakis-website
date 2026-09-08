@@ -15,7 +15,7 @@ export default function SiteHeader() {
           <Logo height={18} variant="black" />
         </a>
         <nav className="nav-links">
-          <a href="/services">Services</a>
+          <a href="/sell-with-us">Sell with us</a>
           <a href="/properties">Properties</a>
           <a href="/portal">Off-market</a>
           <a href="/about">About</a>

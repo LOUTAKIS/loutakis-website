@@ -45,12 +45,12 @@ const SERVICES = [
   },
 ];
 
-export default function ServicesPage() {
+export default function SellWithUsPage() {
   return (
     <>
       <section>
         <div className="wrap">
-          <div className="eyebrow">Our services</div>
+          <div className="eyebrow">Sell with us</div>
           <h1 className="lead">Sell with us.</h1>
           <p style={{ maxWidth: 760, color: "var(--muted)", marginTop: 18 }}>
             We specialise in selling residential properties with sharp marketing, expert negotiation,
