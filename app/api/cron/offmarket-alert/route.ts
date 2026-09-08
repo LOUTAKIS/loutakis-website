@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runOffMarketAlerts } from "@/lib/portal-alerts";
+import { refreshInstagramToken } from "@/lib/instagram";
 
 /**
  * Daily check for newly tagged off-market listings, emailing the approved list
@@ -27,7 +28,18 @@ export async function GET(req: Request) {
   try {
     const result = await runOffMarketAlerts(url.searchParams.get("dry") === "1");
     console.log("[alerts] run complete", result);
-    return NextResponse.json({ ok: true, ...result });
+
+    /**
+     * Piggy-backed on the same nightly run rather than given a cron of its
+     * own: an Instagram long-lived token dies for good if it goes 60 days
+     * without a refresh, and one job that always runs is safer than two that
+     * might not. Never fatal to the alerts above.
+     */
+    const instagram = await refreshInstagramToken();
+    if (!instagram.ok) console.error("[instagram] token refresh failed:", instagram.detail);
+    else console.log("[instagram]", instagram.detail);
+
+    return NextResponse.json({ ok: true, ...result, instagram });
   } catch (err) {
     console.error("[alerts] run failed", err);
     return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });

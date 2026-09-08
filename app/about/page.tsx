@@ -1,3 +1,11 @@
+/**
+ * Re-rendered hourly. The page itself rarely changes, but the Instagram row
+ * does — and a statically-built page would freeze the feed at whatever was
+ * posted on the day of the deploy. It also matters that Instagram's image
+ * URLs are signed and expire within a day or so.
+ */
+export const revalidate = 3600;
+
 export const metadata = {
   title: "About — Loutakis Real Estate",
   description:
@@ -5,6 +13,7 @@ export const metadata = {
 };
 
 import SelfVideo from "@/components/SelfVideo";
+import InstagramRow from "@/components/InstagramRow";
 
 export default function AboutPage() {
   return (
@@ -75,6 +84,10 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+
+      {/* Live from Instagram, below Michael's story. Renders nothing when the
+          feed is unavailable, so the page never shows a broken row. */}
+      <InstagramRow />
 
       {/* CONTACT TEASER */}
       <section style={{ textAlign: "center" }}>
