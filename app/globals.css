@@ -341,6 +341,10 @@ section { padding: 96px 0; }
 .gallery-fit.gf-side .gf-strip { flex-direction: column; height: 100%; width: 26%; }
 .gallery-fit.gf-side .gf-thumb { height: auto; width: 100%; }
 .gallery-fit.gf-side .gf-thumb img { width: 100%; height: auto; }
+/* Only while the photographs' shapes are still unknown — Gallery.tsx removes
+   this the moment it can size them. Without it the thumbnail column overruns
+   its box on a cold load and lands on the address and the enquiry panel. */
+.gallery-fit.gf-measuring { overflow: hidden; }
 .gf-hero, .gf-thumb { display: block; padding: 0; border: 0; background: none; cursor: pointer; min-height: 0; }
 .gf-hero { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; }
 .gf-hero img { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; }

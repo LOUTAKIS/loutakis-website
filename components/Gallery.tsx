@@ -163,7 +163,19 @@ export default function Gallery({ images }: { images: Img[] }) {
        * The hero and the row together are capped to the window height.
        */}
       <div
-        className={`gallery-fit${wide ? " gf-side" : ""}`}
+        /**
+         * `gf-measuring` until every photograph's shape is known.
+         *
+         * Before that the strip is told to be 100% tall while its images are
+         * height:auto, so the column runs longer than the box and spills over
+         * the address and the agent card beneath it. Cached images resolve in
+         * the same frame and it is never seen; a hard refresh shows it for as
+         * long as the photos take to arrive.
+         *
+         * The clip lasts only for that moment. Once measured the class is gone
+         * and every photograph is shown whole, which is the rule everywhere.
+         */
+        className={`gallery-fit${wide ? " gf-side" : ""}${size ? "" : " gf-measuring"}`}
         ref={boxRef}
         // In side mode the block is exactly as tall as the hero — no dead space.
         style={
