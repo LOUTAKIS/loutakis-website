@@ -170,7 +170,7 @@ section { padding: 96px 0; }
    picture above it starts. */
 /* The row is capped and centred: run edge to edge on a wide monitor and a
    paragraph stretches past any comfortable reading measure. */
-.service-row .intro-grid, .service-row .service-quote { max-width: 1180px; margin-inline: auto; }
+.service-row .intro-grid, .service-row .service-quote { max-width: 1480px; margin-inline: auto; }
 .service-row .intro-grid { grid-template-columns: auto minmax(0, 1fr); gap: clamp(32px, 4vw, 72px); }
 .service-row.reversed .intro-grid { grid-template-columns: minmax(0, 1fr) auto; }
 .service-row .img-ph { height: 70svh; width: auto; aspect-ratio: 4/5; }
