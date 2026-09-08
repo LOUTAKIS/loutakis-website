@@ -56,13 +56,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* FEATURED LISTINGS */}
+      {/* FEATURED PROPERTIES */}
       <section>
         <div className="wrap">
           <div className="section-head">
             <div>
               <div className="eyebrow">Properties</div>
-              <h2>Featured listings</h2>
+              <h2>Featured properties</h2>
             </div>
           </div>
           <div className="grid" style={{ marginTop: 44 }}>
