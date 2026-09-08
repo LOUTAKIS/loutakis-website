@@ -173,8 +173,7 @@ section { padding: 96px 0; }
    Every picture is the same shape in the same row, so across the top they read
    as a single band. */
 .sell-grid { max-width: 1480px; margin-inline: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(16px, 2vw, 34px); }
-/* Landscape: an auction crowd or a room does not fit a tall box. */
-.sell-col .img-ph { aspect-ratio: 4 / 3; }
+.sell-photo { width: 100%; height: auto; }
 .sell-col { text-align: center; }
 .sell-col h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(22px, 2.1vw, 30px); line-height: 1.15; margin: clamp(24px, 2.4vw, 38px) 0 14px; }
 .sell-col p { color: var(--muted); }

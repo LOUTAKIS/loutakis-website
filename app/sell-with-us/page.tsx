@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { getConsultantOptions, defaultConsultant } from "@/lib/boxdice";
 import AppraisalForm from "@/components/AppraisalForm";
 
@@ -10,6 +11,8 @@ export const metadata = {
 const SERVICES = [
   {
     title: "Residential Sales",
+    image: "/brand/sell/sell-residential.jpg",
+    alt: "A living room opening onto a hedged courtyard",
     blurb:
       "Selling your home is a significant moment, and we take it personally. We bring strategy, energy, and the right advice to ensure your property is positioned to achieve the best possible result.",
     points: [
@@ -22,6 +25,8 @@ const SERVICES = [
   },
   {
     title: "Auctioneering",
+    image: "/brand/sell/sell-auction.jpg",
+    alt: "A double-height living room with a fireplace, opening to the garden",
     blurb:
       "Not all auctioneers are equal. What separates a win from a missed opportunity is often invisible — until it's too late. We read the room, control the pace, and bring confidence under pressure.",
     points: [
@@ -34,6 +39,8 @@ const SERVICES = [
   },
   {
     title: "Sale Prep & Advice",
+    image: "/brand/sell/sell-advice.jpg",
+    alt: "A kitchen and hallway looking through to the garden beyond",
     blurb:
       "You don't need to be selling right now, or even own a home, to ask questions and get honest answers. We're part of the community, here to help long before any paperwork is signed.",
     points: [
@@ -72,9 +79,16 @@ export default async function SellWithUsPage() {
         <div className="wrap sell-grid">
           {SERVICES.map((s) => (
             <div className="sell-col" key={s.title}>
-              <div className="img-ph" aria-label={`${s.title} — image placeholder`}>
-                <span>Image placeholder</span>
-              </div>
+              {/* 2:3 and shown whole — the three share a shape, so their
+                  bottom edges line up without anything being cropped. */}
+              <Image
+                className="sell-photo"
+                src={s.image}
+                alt={s.alt}
+                width={1000}
+                height={1500}
+                sizes="(max-width: 900px) 100vw, 33vw"
+              />
               <h2>{s.title}</h2>
               <p>{s.blurb}</p>
               <ul>
