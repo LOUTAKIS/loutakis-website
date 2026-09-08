@@ -43,7 +43,7 @@ export default async function HomePage() {
             <h2 className="lead">Authentic is back.</h2>
             <p>My name is Michael Loutakis, founder of Loutakis Real Estate and I am a small piece of the vibrant community in the Inner West. With a reputation for soulful, deeply personal service, I&rsquo;m not here to simply transact&mdash;I&rsquo;m here to connect, guide, and deliver life-changing outcomes for every client I meet.</p>
             <p>Every property journey holds a unique story, and I treat each moment with the care and commitment it deserves. To me, it&rsquo;s never &lsquo;just another listing&rsquo; &mdash; it&rsquo;s someone&rsquo;s future, someone&rsquo;s dreams, someone&rsquo;s next chapter&mdash;and I&rsquo;m deeply honoured to be a part of one&rsquo;s story.</p>
-            <a href="https://www.loutakis.com.au/contact" className="btn" style={{ marginTop: 28 }}>Join the movement</a>
+            <a href="/contact" className="btn" style={{ marginTop: 28 }}>Join the movement</a>
           </div>
           {/* Our own file, not YouTube: the master graded at full quality. */}
           <SelfVideo

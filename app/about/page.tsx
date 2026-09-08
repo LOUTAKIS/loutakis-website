@@ -69,7 +69,7 @@ export default function AboutPage() {
             <p>
               <strong>Welcome to Loutakis Real Estate. Local. Honest. Invested in people.</strong>
             </p>
-            <a href="https://www.loutakis.com.au/contact" className="btn" style={{ marginTop: 28 }}>
+            <a href="/contact" className="btn" style={{ marginTop: 28 }}>
               Speak with Michael
             </a>
           </div>
