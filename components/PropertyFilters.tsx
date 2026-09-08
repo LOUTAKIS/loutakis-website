@@ -44,6 +44,11 @@ export default function PropertyFilters({ listings }: { listings: Listing[] }) {
               {t.label}
             </button>
           ))}
+          {/* Not a filter — the private list lives behind a sign-in, so this
+              one leaves the page rather than switching what's shown. */}
+          <Link href="/portal" className="tab tab-link">
+            Off-market
+          </Link>
         </div>
         <select
           value={suburb}
