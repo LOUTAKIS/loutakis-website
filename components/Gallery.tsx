@@ -103,6 +103,28 @@ export default function Gallery({ images }: { images: Img[] }) {
     };
   }, []);
 
+  /**
+   * Catch the photographs that were already loaded before React woke up.
+   *
+   * onLoad only fires for images that finish AFTER hydration. On any visit
+   * where the browser has them cached they are complete the moment the markup
+   * parses, no event ever arrives, and the arrangement is never solved — the
+   * gallery just sits in its fallback for the whole visit. Sweeping the DOM
+   * once on mount collects those, and onLoad still handles the slow ones.
+   */
+  useEffect(() => {
+    const box = boxRef.current;
+    if (!box) return;
+    const found: Record<string, number> = {};
+    box.querySelectorAll("img").forEach((im) => {
+      const src = im.getAttribute("src");
+      if (src && im.complete && im.naturalWidth && im.naturalHeight) {
+        found[src] = im.naturalWidth / im.naturalHeight;
+      }
+    });
+    if (Object.keys(found).length) setRatios((m) => ({ ...found, ...m }));
+  }, []);
+
   const noteRatio = (url: string) => (e: React.SyntheticEvent<HTMLImageElement>) => {
     const im = e.currentTarget;
     if (!im.naturalWidth || !im.naturalHeight) return;

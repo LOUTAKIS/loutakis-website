@@ -84,9 +84,15 @@ async function fetchSize(url: string): Promise<ImageSize | null> {
   try {
     // Ask for the first 64KB only. A JPEG's frame header sits well inside that,
     // even after a fat EXIF block, and it saves pulling a 4MB photograph.
+    /**
+     * No `cache: "no-store"` here on purpose. This runs inside unstable_cache,
+     * and Next refuses a no-store fetch in that context — the whole call throws
+     * and every measurement comes back null, which is exactly what happened on
+     * the first deploy: not one image carried its dimensions.
+     */
     const res = await fetch(url, {
       headers: { Range: "bytes=0-65535" },
-      cache: "no-store",
+      next: { revalidate: 60 * 60 * 24 * 30, tags: ["image-meta"] },
     });
     if (!res.ok && res.status !== 206) {
       console.error(`[image-meta] ${res.status} for ${url}`);
