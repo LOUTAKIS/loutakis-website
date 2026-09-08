@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 
-type Img = { url: string; alt: string };
+type Img = { url: string; alt: string; w?: number; h?: number };
 
 export default function Gallery({ images }: { images: Img[] }) {
   const [open, setOpen] = useState(false);
@@ -49,7 +49,25 @@ export default function Gallery({ images }: { images: Img[] }) {
    * Either way the whole block fits inside the window.
    */
   const boxRef = useRef<HTMLDivElement>(null);
-  const [ratios, setRatios] = useState<Record<string, number>>({});
+
+  /**
+   * The photographs' proportions, known BEFORE any of them download.
+   *
+   * The server reads each file's header and sends w/h with the listing
+   * (lib/image-meta), so the arrangement can be solved on the very first render
+   * instead of waiting for four photographs to arrive and measuring them. That
+   * wait was the whole bug: on a cold load the thumbnail column had no settled
+   * height and ran over the address and the enquiry panel beneath it.
+   *
+   * onLoad still fills in anything the server could not measure, so one
+   * unreadable file degrades to the old behaviour for that image alone.
+   */
+  const known = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const im of images) if (im.w && im.h) m[im.url] = im.w / im.h;
+    return m;
+  }, [images]);
+  const [ratios, setRatios] = useState<Record<string, number>>(known);
   const [size, setSize] = useState<
     | { mode: "row"; hero: number; strip: number }
     | { mode: "side"; heroW: number; heroH: number; thumbW: number }
@@ -199,7 +217,13 @@ export default function Gallery({ images }: { images: Img[] }) {
           }
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={images[0].url} alt={images[0].alt} onLoad={noteRatio(images[0].url)} />
+          <img
+            src={images[0].url}
+            alt={images[0].alt}
+            width={images[0].w}
+            height={images[0].h}
+            onLoad={noteRatio(images[0].url)}
+          />
         </button>
 
         {thumbs.length > 0 && (
@@ -216,7 +240,13 @@ export default function Gallery({ images }: { images: Img[] }) {
             {thumbs.map((img, n) => (
               <button className="gf-thumb" key={n} onClick={() => openAt(n + 1)} aria-label={`View photograph ${n + 2}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img.url} alt={img.alt} onLoad={noteRatio(img.url)} />
+                <img
+                  src={img.url}
+                  alt={img.alt}
+                  width={img.w}
+                  height={img.h}
+                  onLoad={noteRatio(img.url)}
+                />
                 {n === thumbs.length - 1 && images.length > 4 && (
                   <span className="more-overlay">+{images.length - 4} more</span>
                 )}

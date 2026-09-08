@@ -3,6 +3,8 @@ import { unstable_cache } from "next/cache";
 import { Listing, ListingStatus, ListingCategory, Agent } from "./types";
 import { MOCK_LISTINGS } from "./mock-data";
 import { melbourneTime } from "./when";
+import { proxied, originalOf } from "./image-proxy";
+import { imageSizes } from "./image-meta";
 
 /**
  * Box & Dice (MRI) — Website API client.
@@ -266,8 +268,9 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
   const gallery = rawImages
     .filter((i: any) => idx(i) !== "MAIN" && !idx(i).startsWith("FLOORPLAN"))
     .sort((a: any, b: any) => compareImageIndex(idx(a), idx(b)));
+  // Through our own route, never hotlinked — see lib/image-proxy for why.
   const images = [...main, ...gallery, ...floorplans].map((img: any) => ({
-    url: img.url,
+    url: proxied(img.url),
     alt: `${street}, ${suburb}`,
   }));
 
@@ -562,7 +565,28 @@ export async function getListings(): Promise<Listing[]> {
 
 export async function getListingBySlug(slug: string): Promise<Listing | null> {
   const listings = await getListings();
-  return listings.find((l) => l.slug === slug) ?? null;
+  const listing = listings.find((l) => l.slug === slug);
+  if (!listing) return null;
+
+  /**
+   * Measure the four photographs the gallery actually arranges — the hero and
+   * the three beside it. Everything after that appears only in the lightbox,
+   * which sizes itself to the window and needs no help.
+   *
+   * Only on the detail page: measuring every image of every listing would mean
+   * hundreds of requests to build a page that shows four of them. Each is
+   * cached for a month by URL, so this costs nothing after the first visit.
+   */
+  const shown = listing.images.slice(0, 4);
+  const sizes = await imageSizes(shown.map((i) => originalOf(i.url)));
+
+  return {
+    ...listing,
+    images: listing.images.map((img, n) => {
+      const size = sizes[n];
+      return size ? { ...img, w: size.w, h: size.h } : img;
+    }),
+  };
 }
 
 /* ── Vendor marketing approval ────────────────────────────────────────────

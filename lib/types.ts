@@ -51,7 +51,14 @@ export interface Listing {
   landSize?: string;
   description: string;
   features: string[];
-  images: { url: string; alt: string }[];
+  /**
+   * `w`/`h` are the photograph's real pixel dimensions, read from the file on
+   * the server (lib/image-meta). The CRM does not supply them, and without them
+   * the gallery cannot be laid out until the browser has downloaded every photo
+   * — which is what made a cold load overlap the page. Optional because a
+   * measurement can fail; the gallery falls back to measuring that one itself.
+   */
+  images: { url: string; alt: string; w?: number; h?: number }[];
   agents: Agent[];
   inspections?: { start: string; end: string }[];
   auctionAt?: string;
