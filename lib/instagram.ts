@@ -116,13 +116,41 @@ export async function refreshInstagramToken(): Promise<{ ok: boolean; detail: st
   }
 }
 
+/**
+ * Pinned deliberately. graph.instagram.com without a version follows Meta's
+ * latest, which changes under us; a pinned one fails loudly on a known date
+ * instead. Bump it when Meta deprecates this version.
+ */
+const GRAPH = "https://graph.instagram.com/v26.0";
+
 async function fetchPosts(limit: number): Promise<InstagramPost[]> {
   const token = await currentToken();
   if (!token) return [];
 
+  /**
+   * Two calls, as the documentation shows: resolve the professional account's
+   * id, then read that account's media. Cached hourly with everything else, so
+   * the extra hop costs one request an hour.
+   */
+  const meRes = await fetch(
+    `${GRAPH}/me?fields=user_id&access_token=${encodeURIComponent(token)}`,
+    { cache: "no-store" }
+  );
+  if (!meRes.ok) {
+    console.error(`[instagram] me -> ${meRes.status} ${(await meRes.text()).slice(0, 200)}`);
+    return [];
+  }
+  const me: any = await meRes.json();
+  // The docs show this both bare and wrapped in `data`, so accept either.
+  const userId = String(me?.user_id ?? me?.data?.[0]?.user_id ?? me?.id ?? "");
+  if (!userId) {
+    console.error("[instagram] no user_id in /me response");
+    return [];
+  }
+
   const fields = "id,caption,media_type,media_url,permalink,thumbnail_url";
   const res = await fetch(
-    `https://graph.instagram.com/me/media?fields=${fields}&limit=${limit}&access_token=${encodeURIComponent(token)}`,
+    `${GRAPH}/${userId}/media?fields=${fields}&limit=${limit}&access_token=${encodeURIComponent(token)}`,
     { cache: "no-store" }
   );
   if (!res.ok) {
@@ -135,6 +163,7 @@ async function fetchPosts(limit: number): Promise<InstagramPost[]> {
 
   return data
     .map((m) => {
+      // Reels come through as VIDEO; a carousel shows its cover image.
       const isVideo = m.media_type === "VIDEO";
       // A video has no still of its own in media_url — that's the mp4 — so the
       // thumbnail is the only thing safe to put in an <img>.
