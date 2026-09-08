@@ -387,21 +387,44 @@ export type ConsultantOption = { id: number; name: string; title: string | null 
 /**
  * The people who can be picked as "your agent" on the appraisal form.
  *
+ * Not everyone in the consultants feed sells: it also carries admin staff and
+ * system accounts like "Contacts Team", and offering those to a vendor is
+ * worse than offering nobody. Two signals separate them, in order of trust:
+ *
+ *   1. `teams` — the CRM's own answer, e.g. ["Sales"].
+ *   2. `position` — a job title. Sales staff have one; the admin and system
+ *      records in this account do not.
+ *
+ * If neither field is populated we have nothing to judge on, so everyone is
+ * offered rather than nobody — an empty menu would break the form outright.
+ *
  * Ids come straight from the CRM because `POST /appraisal_leads` needs a
- * `consultant_id` — the browser sends that id back and the server never has to
- * trust a name or an address from the form.
+ * `consultant_id`, so the browser sends back an id and the server never has to
+ * trust a name or an address from a form.
  */
 export async function getConsultantOptions(): Promise<ConsultantOption[]> {
   try {
-    const list = await cachedConsultants();
-    return list
+    const raw = await cachedConsultants();
+    const all = raw
       .map((c: any) => ({
         id: Number(c.id),
         name: [c.first_name, c.last_name].filter(Boolean).join(" ").trim(),
-        title: c.position ? String(c.position) : null,
+        title: c.position ? String(c.position).trim() : null,
+        teams: (Array.isArray(c.teams) ? c.teams : []).map((t: unknown) => String(t)),
       }))
-      .filter((c: ConsultantOption) => c.id && c.name)
-      .sort((a: ConsultantOption, b: ConsultantOption) => a.name.localeCompare(b.name));
+      .filter((c) => c.id && c.name);
+
+    const onSalesTeam = all.filter((c) => c.teams.some((t: string) => /sales/i.test(t)));
+    const titled = all.filter((c) => c.title);
+    const sellers = onSalesTeam.length ? onSalesTeam : titled.length ? titled : all;
+
+    if (sellers.length === all.length && all.length > 1) {
+      console.warn("[boxdice] no teams or positions set — every consultant is offered as an agent");
+    }
+
+    return sellers
+      .map(({ id, name, title }) => ({ id, name, title }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   } catch (e) {
     console.error("[boxdice] consultant options failed:", e);
     return [];

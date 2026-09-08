@@ -95,8 +95,7 @@ export default async function SellWithUsPage() {
           <div className="eyebrow">Get started</div>
           <h2 className="lead">Tell us about your home.</h2>
           <p className="swu-intro">
-            The more you can tell us, the more useful our first conversation will be. Only your name,
-            the address and an email are needed — skip anything you&rsquo;re unsure about.
+            A few questions so we arrive knowing something about your home, rather than starting cold.
           </p>
           <AppraisalForm consultants={consultants} defaultConsultantId={preferred?.id ?? null} />
         </div>
