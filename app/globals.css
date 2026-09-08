@@ -276,7 +276,12 @@ section { padding: 96px 0; }
 .filter-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 16px; }
 .filter-bar > .field { justify-self: end; }
 @media (max-width: 700px) { .filter-bar { grid-template-columns: 1fr; justify-items: center; } .filter-bar > .field { justify-self: center; } }
-.tab { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; padding: 0 0 14px; color: var(--muted); cursor: pointer; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; font-family: var(--sans); }
+/* padding-left matches the letter-spacing on purpose. Letter-spacing is added
+   after EVERY letter, the last one included, so the button's box runs .18em
+   further right than the ink does — and the underline, which follows the box,
+   sits visibly off-centre under the word. Padding the left by the same amount
+   puts the ink back in the middle of its own box. Same trick as .brand. */
+.tab { font-size: 12px; letter-spacing: .18em; padding: 0 0 14px .18em; text-transform: uppercase; color: var(--muted); cursor: pointer; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; font-family: var(--sans); }
 .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
 /* The off-market tab is a link out, so it never takes the active underline. */
 .tab-link:hover { color: var(--ink); }
