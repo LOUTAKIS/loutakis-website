@@ -22,6 +22,60 @@ const TIME: Intl.DateTimeFormatOptions = {
   timeZone: TZ,
 };
 
+/**
+ * How far ahead of UTC Melbourne is at a given instant, in milliseconds.
+ * +10h for AEST, +11h during daylight saving — asked of the runtime rather
+ * than hard-coded, because the changeover dates move every year.
+ */
+function zoneOffsetMs(instant: number): number {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(new Date(instant));
+
+  const p: Record<string, string> = {};
+  for (const { type, value } of parts) p[type] = value;
+
+  // `hour` can come back as "24" for midnight in some runtimes.
+  const asIfUTC = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second);
+  return asIfUTC - instant;
+}
+
+/**
+ * Turn Box & Dice's date and time into a real instant.
+ *
+ * THIS IS THE BUG THAT PUT A 12PM OPEN ON THE SITE AS 10PM. The CRM stores
+ * wall-clock time with no zone at all — inspection_date "2026-09-12",
+ * start_time "12:00" — meaning midday in Melbourne, where the house is. Joining
+ * them into "2026-09-12T12:00" produces a floating time, and `new Date` reads a
+ * floating time in the server's own zone. Vercel's servers run in UTC, so
+ * midday became midday UTC: ten hours out, and eleven during daylight saving.
+ *
+ * So the wall clock is anchored to Melbourne explicitly. The offset is applied
+ * twice on purpose: the first pass uses the offset at the wrong instant, which
+ * lands an hour out on the two days a year the clocks change, and the second
+ * corrects it.
+ */
+export function melbourneTime(date?: string | null, time?: string | null): string {
+  if (!date) return "";
+  const [y, m, d] = String(date).slice(0, 10).split("-").map(Number);
+  if (!y || !m || !d) return "";
+
+  const [hh = 0, mm = 0] = String(time ?? "00:00").split(":").map(Number);
+  if (isNaN(hh) || isNaN(mm)) return "";
+
+  const wallAsUTC = Date.UTC(y, m - 1, d, hh, mm);
+  const firstGuess = wallAsUTC - zoneOffsetMs(wallAsUTC);
+  const instant = wallAsUTC - zoneOffsetMs(firstGuess);
+  return new Date(instant).toISOString();
+}
+
 function valid(iso?: string | null): Date | null {
   if (!iso) return null;
   const d = new Date(iso);

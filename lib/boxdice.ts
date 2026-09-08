@@ -2,6 +2,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { Listing, ListingStatus, ListingCategory, Agent } from "./types";
 import { MOCK_LISTINGS } from "./mock-data";
+import { melbourneTime } from "./when";
 
 /**
  * Box & Dice (MRI) — Website API client.
@@ -335,13 +336,20 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
     features: p.property_features ?? [],
     images,
     agents,
-    inspections: (raw.inspections ?? []).map((i: any) => ({
-      start: `${i.inspection_date ?? ""}T${i.start_time ?? "00:00"}`,
-      end: `${i.inspection_date ?? ""}T${i.end_time ?? "00:00"}`,
-    })),
+    /**
+     * The CRM's times are Melbourne wall-clock with no zone on them, so they
+     * are anchored here rather than left to whatever zone the server runs in.
+     * See melbourneTime — getting this wrong advertised a midday open at 10pm.
+     */
+    inspections: (raw.inspections ?? [])
+      .map((i: any) => ({
+        start: melbourneTime(i.inspection_date, i.start_time),
+        end: melbourneTime(i.inspection_date, i.end_time),
+      }))
+      .filter((i: { start: string }) => Boolean(i.start)),
     auctionAt:
       raw.auction && raw.auction_date
-        ? `${raw.auction_date}T${raw.auction_time ?? "12:00"}`
+        ? melbourneTime(raw.auction_date, raw.auction_time ?? "12:00") || undefined
         : undefined,
     geo: p.latitude && p.longitude ? { lat: Number(p.latitude), lng: Number(p.longitude) } : undefined,
     documents, // website-tagged files (read-only), SOI excluded — it has its own button
