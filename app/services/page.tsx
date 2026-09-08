@@ -83,7 +83,7 @@ export default function ServicesPage() {
           {/* The closing line is the best writing in each section, so it ends
               the section on its own rather than trailing off as body copy. */}
           <div className="wrap">
-            <p className="service-quote">{s.foot}</p>
+            <p className="service-quote"><span>{s.foot}</span></p>
           </div>
         </section>
       ))}
