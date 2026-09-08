@@ -112,3 +112,62 @@ export async function addApprovalNote(
   if (!res.ok) throw new Error(`approval note -> ${res.status} ${await res.text()}`);
   return { contactId };
 }
+
+/**
+ * A sales appraisal lead — someone asking us to sell their home.
+ *
+ * `POST /appraisal_leads` needs a contact and a consultant; everything the
+ * seller told us that has no field of its own goes in `comment`, so nothing
+ * they typed is lost even when the address can't be parsed into the CRM's
+ * separate parts. Per the docs, an open lead for the same contact, property
+ * and type is reused rather than duplicated, and a consultant without the Lead
+ * Flow module gets a task instead.
+ */
+export type AppraisalAddress = {
+  unit?: string;
+  number?: string;
+  street_name?: string;
+  street_type?: string;
+  suburb?: string;
+  postcode?: string;
+  state?: string;
+};
+
+export async function createAppraisalLead(input: {
+  consultantId: number;
+  contactId: number;
+  address?: AppraisalAddress;
+  temperature?: "hot" | "warm" | "cold";
+  subject?: string;
+  comment?: string;
+}): Promise<ContactResult> {
+  if (!API_KEY) throw new Error("BOXDICE_API_KEY is not set");
+
+  const appraisal_lead: Record<string, unknown> = {
+    consultant_id: input.consultantId,
+    contact_id: input.contactId,
+    listing_type: "sales",
+    temperature: input.temperature ?? "warm",
+    subject: input.subject ?? "Appraisal request from the website",
+  };
+  if (input.address && Object.values(input.address).some(Boolean)) {
+    appraisal_lead.address = input.address;
+  }
+  if (input.comment) appraisal_lead.comment = input.comment;
+
+  const res = await fetch(`${API_BASE}/appraisal_leads`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ appraisal_lead }),
+    cache: "no-store",
+  });
+
+  let body: unknown;
+  const text = await res.text();
+  try {
+    body = JSON.parse(text);
+  } catch {
+    body = text.slice(0, 500);
+  }
+  return { status: res.status, body };
+}

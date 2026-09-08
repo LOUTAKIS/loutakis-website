@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { getConsultantOptions } from "@/lib/boxdice";
+import AppraisalForm from "@/components/AppraisalForm";
 
 export const metadata = {
   title: "Sell with us — Loutakis Real Estate",
@@ -45,18 +46,19 @@ const SERVICES = [
   },
 ];
 
-export default function SellWithUsPage() {
+export default async function SellWithUsPage() {
+  const consultants = await getConsultantOptions();
   return (
     <>
       <section>
-        <div className="wrap">
-          <div className="eyebrow">Sell with us</div>
+        <div className="wrap swu-head">
           <h1 className="lead">Sell with us.</h1>
-          <p style={{ maxWidth: 760, color: "var(--muted)", marginTop: 18 }}>
+          <p>
             We specialise in selling residential properties with sharp marketing, expert negotiation,
             and a flair for storytelling that genuinely connects buyers to your home. And on auction
             day, we bring clarity, confidence and just the right amount of charisma.
           </p>
+          <a href="#start" className="btn">Get started</a>
         </div>
       </section>
 
@@ -84,13 +86,21 @@ export default function SellWithUsPage() {
         </div>
       </section>
 
-      <section style={{ textAlign: "center" }} className="services">
-        <div className="wrap">
-          <div className="eyebrow" style={{ textAlign: "center" }}>Get in touch</div>
-          <h2 className="lead" style={{ margin: "0 auto 24px" }}>Interested in working together?</h2>
-          <Link href="/contact" className="btn">Contact us</Link>
+      {/* The appraisal request. The old "Interested in working together?"
+          button pointed at a general contact page; a seller who has read this
+          far should be able to start here instead. */}
+      <section id="start">
+        <div className="wrap swu-form">
+          <div className="eyebrow">Get started</div>
+          <h2 className="lead">Tell us about your home.</h2>
+          <p className="swu-intro">
+            The more you can tell us, the more useful our first conversation will be. Only your name,
+            the address and an email are needed — skip anything you&rsquo;re unsure about.
+          </p>
+          <AppraisalForm consultants={consultants} />
         </div>
       </section>
+
     </>
   );
 }

@@ -381,6 +381,33 @@ async function getConsultants(): Promise<Map<number, Agent>> {
   return map;
 }
 
+/** A consultant a seller can choose on the appraisal form. */
+export type ConsultantOption = { id: number; name: string; title: string | null };
+
+/**
+ * The people who can be picked as "your agent" on the appraisal form.
+ *
+ * Ids come straight from the CRM because `POST /appraisal_leads` needs a
+ * `consultant_id` — the browser sends that id back and the server never has to
+ * trust a name or an address from the form.
+ */
+export async function getConsultantOptions(): Promise<ConsultantOption[]> {
+  try {
+    const list = await cachedConsultants();
+    return list
+      .map((c: any) => ({
+        id: Number(c.id),
+        name: [c.first_name, c.last_name].filter(Boolean).join(" ").trim(),
+        title: c.position ? String(c.position) : null,
+      }))
+      .filter((c: ConsultantOption) => c.id && c.name)
+      .sort((a: ConsultantOption, b: ConsultantOption) => a.name.localeCompare(b.name));
+  } catch (e) {
+    console.error("[boxdice] consultant options failed:", e);
+    return [];
+  }
+}
+
 /**
  * Raw, unfiltered sales listings straight from Box & Dice.
  *
