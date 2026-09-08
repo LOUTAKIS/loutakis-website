@@ -77,8 +77,13 @@ export default function ServicesPage() {
                   <li key={p}>{p}</li>
                 ))}
               </ul>
-              <p style={{ marginTop: 16 }}>{s.foot}</p>
             </div>
+          </div>
+
+          {/* The closing line is the best writing in each section, so it ends
+              the section on its own rather than trailing off as body copy. */}
+          <div className="wrap">
+            <p className="service-quote">{s.foot}</p>
           </div>
         </section>
       ))}
