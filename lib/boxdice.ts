@@ -231,13 +231,32 @@ function buildStreet(p: any): string {
     .trim();
 }
 
+/**
+ * Order photographs by their Box & Dice `index` label.
+ *
+ * B&D labels images the way a spreadsheet labels columns — A…Z, then AA, AB —
+ * so a label's LENGTH ranks before its letters. `localeCompare` doesn't know
+ * that: it compares character by character, so "AA" sorts between "1A" and
+ * "B" and the twenty-seventh photograph turned up third.
+ *
+ * Labels beginning with a digit are numbered rather than lettered ("1A"), and
+ * keep their numeric position at the front of the set.
+ */
+export function compareImageIndex(a: string, b: string): number {
+  const numbered = (s: string) => /^\d/.test(s);
+  if (numbered(a) !== numbered(b)) return numbered(a) ? -1 : 1;
+  if (numbered(a)) return a.localeCompare(b, undefined, { numeric: true });
+  if (a.length !== b.length) return a.length - b.length;
+  return a.localeCompare(b);
+}
+
 function normalise(raw: any, consultants: Map<number, Agent>): Listing {
   const p = raw.property ?? {};
   const street = buildStreet(p);
   const suburb = titleCase(p.suburb ?? "");
   // Box & Dice image ordering by the `index` label:
   //   "MAIN"        = hero photo (show first)
-  //   "A".."Z"      = gallery photos, alphabetical order
+  //   "A".."Z","AA" = gallery photos, in column order (see compareImageIndex)
   //   "FLOORPLAN_n" = floorplans (show last, never the hero)
   const rawImages = (raw.images ?? []).filter((i: any) => i?.url);
   const idx = (i: any) => String(i.index ?? "").toUpperCase();
@@ -245,7 +264,7 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
   const floorplans = rawImages.filter((i: any) => idx(i).startsWith("FLOORPLAN"));
   const gallery = rawImages
     .filter((i: any) => idx(i) !== "MAIN" && !idx(i).startsWith("FLOORPLAN"))
-    .sort((a: any, b: any) => idx(a).localeCompare(idx(b), undefined, { numeric: true }));
+    .sort((a: any, b: any) => compareImageIndex(idx(a), idx(b)));
   const images = [...main, ...gallery, ...floorplans].map((img: any) => ({
     url: img.url,
     alt: `${street}, ${suburb}`,
@@ -484,10 +503,10 @@ function toMarketingSource(raw: any, consultants: Map<number, Agent>): Marketing
   const main = imgs.filter((i: any) => idx(i) === "MAIN");
   const gallery = imgs
     .filter((i: any) => idx(i) !== "MAIN" && !idx(i).startsWith("FLOORPLAN"))
-    .sort((a: any, b: any) => idx(a).localeCompare(idx(b), undefined, { numeric: true }));
+    .sort((a: any, b: any) => compareImageIndex(idx(a), idx(b)));
   const floorplans = imgs
     .filter((i: any) => idx(i).startsWith("FLOORPLAN"))
-    .sort((a: any, b: any) => idx(a).localeCompare(idx(b), undefined, { numeric: true }));
+    .sort((a: any, b: any) => compareImageIndex(idx(a), idx(b)));
   const agentIds: number[] = raw.consultant_ids ?? (raw.primary_consultant_id ? [raw.primary_consultant_id] : []);
   const number = [p.unit ? `${p.unit}/` : "", p.number].join("").replace(" /", "/");
 
