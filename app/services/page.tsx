@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Services — Loutakis Real Estate",
+  title: "Sell with us — Loutakis Real Estate",
   description:
     "Residential sales, auctioneering, and honest sale preparation & advice across Melbourne's Inner West.",
 };
@@ -51,7 +51,7 @@ export default function ServicesPage() {
       <section>
         <div className="wrap">
           <div className="eyebrow">Our services</div>
-          <h1 className="lead">Selling with precision, creativity, and a whole lot of heart.</h1>
+          <h1 className="lead">Sell with us.</h1>
           <p style={{ maxWidth: 760, color: "var(--muted)", marginTop: 18 }}>
             We specialise in selling residential properties with sharp marketing, expert negotiation,
             and a flair for storytelling that genuinely connects buyers to your home. And on auction
@@ -60,24 +60,29 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {SERVICES.map((s, i) => (
-        <section key={s.title} className={`service-row${i % 2 === 1 ? " reversed" : ""}${i % 2 === 0 ? " services" : ""}`}>
-          <div className="wrap intro-grid">
-            <div className={`img-ph${i % 2 === 1 ? " order-last" : ""}`} aria-label="Image placeholder">
-              <span>Image placeholder</span>
-            </div>
-            <div>
-              <h2 className="lead">{s.title}</h2>
-              <p style={{ color: "var(--muted)" }}>{s.blurb}</p>
-              <ul className="features-list" style={{ columns: 1, marginTop: 18 }}>
+      {/* One banner of three, each service written under its own picture. The
+          pictures share a row and a shape, so across the top they read as a
+          single band; keeping each one in a cell with its own words means a
+          phone stacks picture-then-words rather than all three pictures and
+          then all three blocks of copy. */}
+      <section className="services">
+        <div className="wrap sell-grid">
+          {SERVICES.map((s) => (
+            <div className="sell-col" key={s.title}>
+              <div className="img-ph" aria-label={`${s.title} — image placeholder`}>
+                <span>Image placeholder</span>
+              </div>
+              <h2>{s.title}</h2>
+              <p>{s.blurb}</p>
+              <ul>
                 {s.points.map((p) => (
                   <li key={p}>{p}</li>
                 ))}
               </ul>
             </div>
-          </div>
-        </section>
-      ))}
+          ))}
+        </div>
+      </section>
 
       <section style={{ textAlign: "center" }} className="services">
         <div className="wrap">
