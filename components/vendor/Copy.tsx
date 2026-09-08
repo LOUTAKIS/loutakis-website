@@ -41,7 +41,6 @@ export default function Copy({ heading, text }: { heading: string; text: string 
       {text.split(/\n{2,}/).map((p, i) => (
         <p key={i}>{p}</p>
       ))}
-      <p className="vp-note">Spotted something? Select the words and tap &ldquo;Suggest a change&rdquo;.</p>
       {chip && (
         <button
           className="vcopy-chip"
