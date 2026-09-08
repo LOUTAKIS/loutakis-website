@@ -201,3 +201,73 @@ export async function getInstagramPosts(limit = 6): Promise<InstagramPost[]> {
     return [];
   }
 }
+
+/**
+ * A safe account of why the feed is or isn't working.
+ *
+ * Never returns the token — only whether one exists and where it came from —
+ * so it can be read from a browser without leaking anything. Bypasses the
+ * hourly cache deliberately: the question is what Instagram says *now*.
+ */
+export async function instagramDiagnostics(): Promise<Record<string, unknown>> {
+  const stored = await readStoredToken().catch(() => null);
+  const envToken = process.env.INSTAGRAM_TOKEN ?? "";
+  const token = stored?.token || envToken || "";
+
+  const out: Record<string, unknown> = {
+    tokenInStore: Boolean(stored?.token),
+    storeRefreshedAt: stored?.refreshedAt ?? null,
+    tokenInEnv: Boolean(envToken),
+    envTokenLength: envToken.length,
+    usingToken: token ? (stored?.token ? "store" : "env") : "none",
+    graph: GRAPH,
+  };
+  if (!token) {
+    out.verdict = "No token at all — INSTAGRAM_TOKEN is not reaching the server.";
+    return out;
+  }
+
+  try {
+    const meRes = await fetch(
+      `${GRAPH}/me?fields=user_id,username,account_type,media_count&access_token=${encodeURIComponent(token)}`,
+      { cache: "no-store" }
+    );
+    const meText = await meRes.text();
+    out.meStatus = meRes.status;
+    out.meBody = meText.slice(0, 400);
+    if (!meRes.ok) {
+      out.verdict = "The token is rejected by Instagram — see meBody.";
+      return out;
+    }
+
+    const me = JSON.parse(meText);
+    const userId = String(me?.user_id ?? me?.data?.[0]?.user_id ?? me?.id ?? "");
+    out.resolvedUserId = userId || null;
+    out.username = me?.username ?? me?.data?.[0]?.username ?? null;
+    if (!userId) {
+      out.verdict = "Instagram answered but gave no user_id — the field name may have changed.";
+      return out;
+    }
+
+    const mediaRes = await fetch(
+      `${GRAPH}/${userId}/media?fields=id,media_type,permalink&limit=6&access_token=${encodeURIComponent(token)}`,
+      { cache: "no-store" }
+    );
+    const mediaText = await mediaRes.text();
+    out.mediaStatus = mediaRes.status;
+    out.mediaBody = mediaText.slice(0, 600);
+    if (mediaRes.ok) {
+      const count = (JSON.parse(mediaText)?.data ?? []).length;
+      out.mediaCount = count;
+      out.verdict = count
+        ? `Working — ${count} posts for @${out.username}. If the page is still blank it is serving a cached build; redeploy.`
+        : "Token works but the account returned no media.";
+    } else {
+      out.verdict = "The account resolved but its media could not be read — see mediaBody.";
+    }
+  } catch (err) {
+    out.error = err instanceof Error ? err.message : String(err);
+    out.verdict = "The request to Instagram threw — see error.";
+  }
+  return out;
+}
