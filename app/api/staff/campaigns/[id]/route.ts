@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStaff } from "@/lib/staff-auth";
-import { getCampaign, updateCampaign, deleteCampaign, type Selection } from "@/lib/campaigns";
+import { getCampaign, updateCampaign, deleteCampaign, campaignVendors, type Selection } from "@/lib/campaigns";
 import { sendVendorLink } from "@/lib/vendor";
 import { panelUrls } from "@/lib/brochure-render";
 
@@ -46,8 +46,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   const next = await updateCampaign(params.id, {
     selection,
-    vendorName: body?.vendorName !== undefined ? clean(body.vendorName, 120) : current.vendorName,
-    vendorEmail: body?.vendorEmail !== undefined ? clean(body.vendorEmail, 160).toLowerCase() : current.vendorEmail,
+    vendors: Array.isArray(body?.vendors)
+      ? body.vendors
+          .slice(0, 8)
+          .map((v: any) => ({ name: clean(v?.name, 120), email: clean(v?.email, 160).toLowerCase() }))
+          // A row with neither a name nor an address is one the staff member
+          // added and left blank; it should not be stored.
+          .filter((v: { name: string; email: string }) => v.name || v.email)
+      : campaignVendors(current),
     // Copy can be tidied on the review screen — it's the approved wording, so
     // what's shown must be what's stored.
     copyText: body?.copyText !== undefined ? clean(body.copyText, 8000) : current.copyText,
@@ -64,8 +70,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const c = await getCampaign(params.id);
   if (!c) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
-  if (!c.vendorName || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.vendorEmail)) {
-    return NextResponse.json({ ok: false, error: "Add the vendor's name and a valid email first." }, { status: 400 });
+  // Every row must be complete before anyone is emailed: a half-filled row is
+  // a vendor who silently never hears about the campaign.
+  const people = campaignVendors(c);
+  const bad = people.find((v) => !v.name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.email));
+  if (!people.length || bad) {
+    return NextResponse.json(
+      { ok: false, error: bad?.name ? `${bad.name} needs a valid email address.` : "Add each vendor's name and a valid email first." },
+      { status: 400 }
+    );
   }
 
   try {

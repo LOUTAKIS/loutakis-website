@@ -1,6 +1,10 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import { createClient } from "@vercel/global-config";
+import type { Vendor } from "./vendors";
+
+// Re-exported so server code has one place to import campaign things from.
+export { campaignVendors, vendorEmails, vendorGreeting, type Vendor } from "./vendors";
 
 /**
  * Vendor marketing approval campaigns.
@@ -44,6 +48,7 @@ export type Selection = {
 
 export type Amendment = { at: string; text: string; name: string };
 
+
 export type Campaign = {
   id: string;
   listingId: number;
@@ -51,8 +56,13 @@ export type Campaign = {
   street: string; // for the SharePoint folder match
   number: string;
   folderPath: string | null; // confirmed SharePoint property folder
-  vendorName: string;
-  vendorEmail: string;
+  /** Everyone the approval goes to. A property often has two owners, and an
+      estate or an investment can have more. */
+  vendors: Vendor[];
+  /** Superseded by `vendors`, kept so campaigns saved before this change still
+      read. Never written any more — go through `campaignVendors()`. */
+  vendorName?: string;
+  vendorEmail?: string;
   createdBy: string; // staff email
   createdAt: string;
   sentAt: string | null;

@@ -1,4 +1,4 @@
-import { getCampaign } from "@/lib/campaigns";
+import { getCampaign, campaignVendors } from "@/lib/campaigns";
 import { getMarketingSource } from "@/lib/boxdice";
 import { verifyToken } from "@/lib/portal-token";
 import { getStaff } from "@/lib/staff-auth";
@@ -130,7 +130,7 @@ export default async function ApprovePage({
   return (
     <div className="va2">
       <VendorFrame address={c.address} markers={markers} approved={approved} />
-      {isPreview && <div className="va-preview">Preview — this is what {c.vendorName || "the vendor"} will see. Opens aren&rsquo;t counted.</div>}
+      {isPreview && <div className="va-preview">Preview — this is what {campaignVendors(c)[0]?.name || "the vendor"} will see. Opens aren&rsquo;t counted.</div>}
 
       {/* Opening */}
       <section className="vh" style={hero ? { backgroundImage: `url(${hero})` } : undefined}>
@@ -170,7 +170,7 @@ export default async function ApprovePage({
               </p>
             </div>
           ) : (
-            <VendorApprovalForm campaignId={c.id} token={vendorOk ? token : ""} wording={AUTHORISATION_WORDING} preview={isPreview} address={c.address} vendorName={c.vendorName} items={chapters.map((ch) => ch.title)} />
+            <VendorApprovalForm campaignId={c.id} token={vendorOk ? token : ""} wording={AUTHORISATION_WORDING} preview={isPreview} address={c.address} vendorName={campaignVendors(c).length === 1 ? campaignVendors(c)[0].name : ""} items={chapters.map((ch) => ch.title)} />
           )}
         </div>
       </section>

@@ -65,8 +65,8 @@ export async function POST(req: Request) {
     street: source.streetName,
     number: source.number,
     folderPath,
-    vendorName: "",
-    vendorEmail: "",
+    // One empty row to type into; staff add more as the title demands.
+    vendors: [{ name: "", email: "" }],
     createdBy: staff.email,
     createdAt: new Date().toISOString(),
     sentAt: null,

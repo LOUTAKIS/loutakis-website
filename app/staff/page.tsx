@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getStaff } from "@/lib/staff-auth";
-import { listCampaigns, type Campaign, type CampaignStatus } from "@/lib/campaigns";
+import { listCampaigns, type Campaign, type CampaignStatus, campaignVendors } from "@/lib/campaigns";
 import StaffSignInForm from "@/components/StaffSignInForm";
 import StaffSignOut from "@/components/StaffSignOut";
 import DeleteCampaign from "@/components/DeleteCampaign";
@@ -96,9 +96,12 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
                   <li key={c.id} className="vc-row">
                     <Link href={`/staff/${c.id}`}>
                       <div className="vc-addr">{c.address}</div>
-                      {(c.vendorName || c.vendorEmail || c.sentBy) && (
+                      {(campaignVendors(c).length > 0 || c.sentBy) && (
                         <div className="vc-meta">
-                          {[c.vendorName, c.vendorEmail, c.sentBy ? `sent by ${c.sentBy.split("@")[0]}` : ""].filter(Boolean).join(" · ")}
+                          {[
+                            campaignVendors(c).map((v) => v.name || v.email).filter(Boolean).join(" & "),
+                            c.sentBy ? `sent by ${c.sentBy.split("@")[0]}` : "",
+                          ].filter(Boolean).join(" · ")}
                         </div>
                       )}
                       <StatusLine c={c} />

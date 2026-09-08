@@ -1,7 +1,7 @@
 import "server-only";
 import { sendMail, officeRecipients, esc } from "./mail";
 import { createToken } from "./portal-token";
-import { updateCampaign, type Campaign } from "./campaigns";
+import { updateCampaign, campaignVendors, vendorEmails, vendorGreeting, type Campaign } from "./campaigns";
 import { addApprovalNote } from "./boxdice-write";
 
 /**
@@ -40,15 +40,16 @@ const fmt = (iso: string) =>
     timeZone: "Australia/Melbourne",
   });
 
-const first = (name: string) => name.trim().split(/\s+/)[0] || "there";
-
 export async function sendVendorLink(c: Campaign, sentBy: string): Promise<void> {
+  // Everyone on the title gets their own copy, addressed to all of them. One
+  // shared link: whoever opens it first sees the same page, and the approval
+  // records who actually pressed the button.
   await sendMail({
-    to: [c.vendorEmail],
+    to: vendorEmails(c),
     subject: `Your marketing for ${c.address} is ready to review`,
     html: `
       <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
-        <p>Hi ${esc(first(c.vendorName))},</p>
+        <p>Hi ${esc(vendorGreeting(c))},</p>
         <p>The marketing for <strong>${esc(c.address)}</strong> is ready for you to look over — the board, brochure, copy, floorplan, photos and video, all in one place.</p>
         <p style="margin:26px 0">
           <a href="${vendorLink(c.id)}" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">Review and approve</a>
@@ -85,7 +86,8 @@ export async function approveCampaign(
 
   const note = [
     `MARKETING APPROVED — ${c.address} (listing ${c.listingId}) — ${fmt(at)}`,
-    `Approved by: ${name} (${c.vendorEmail})`,
+    `Approved by: ${name}`,
+    `Sent to: ${campaignVendors(c).map((v) => `${v.name} <${v.email}>`).join("; ") || "—"}`,
     `Sent by: ${c.sentBy ?? c.createdBy} on ${c.sentAt ? fmt(c.sentAt) : "—"}`,
     `Link opened ${c.openCount} time(s); approved from ${meta.ip}`,
     ``,
@@ -97,15 +99,18 @@ export async function approveCampaign(
     c.selection.includeCopy ? c.copyText : "(copy not part of this approval)",
   ].join("\n");
 
-  await addApprovalNote({ name, email: c.vendorEmail }, note);
+  // The note lands on the contact card of whoever approved, matched on the
+  // address it was sent to — falling back to the first vendor when the
+  // approver's own address isn't one we hold.
+  await addApprovalNote({ name, email: vendorEmails(c)[0] ?? "" }, note);
 
   // Receipt to the vendor — they keep what they agreed to.
   await sendMail({
-    to: [c.vendorEmail],
+    to: vendorEmails(c),
     subject: `Marketing approved — ${c.address}`,
     html: `
       <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
-        <p>Hi ${esc(first(c.vendorName))},</p>
+        <p>Hi ${esc(vendorGreeting(c))},</p>
         <p>Thank you — the marketing for <strong>${esc(c.address)}</strong> was approved by <strong>${esc(name)}</strong> on ${esc(fmt(at))}. Production is under way.</p>
         <p style="margin:22px 0;padding:16px 18px;background:#f4f4f4;color:#444;font-size:14px;line-height:1.5">${esc(AUTHORISATION_WORDING)}</p>
         <p style="color:#666">This is your copy of the approval. Any questions, call Michael on 0409 438 025.</p>
@@ -145,7 +150,10 @@ export async function requestChanges(c: Campaign, name: string, text: string): P
         <p><a href="${siteUrl()}/staff/${c.id}">Open the campaign</a></p>
       </div>
     `,
-    replyTo: { address: c.vendorEmail, name: c.vendorName },
+    replyTo: (() => {
+      const v = campaignVendors(c)[0];
+      return v?.email ? { address: v.email, name: v.name } : undefined;
+    })(),
   });
 
   await updateCampaign(c.id, { status: "changes", amendments });

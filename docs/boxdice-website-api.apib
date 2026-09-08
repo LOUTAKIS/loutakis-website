@@ -1,0 +1,1691 @@
+FORMAT: 1A
+HOST: https://your-domain.boxdice.com.au/website_api
+
+# Website Box+Dice API
+
+
+## Authentication
+
+Users can generate an API key for any office group in CRM. The key's token can then
+be used by any website back-end for authentication against the Website Box+Dice API.
+
+The API uses `Api-Key` authentication scheme. The token has to be included
+in the `Authorization` request header with every request:
+
+```
+Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+```
+
+
+## Response status codes
+
+The API will respond with the following status codes:
+* `200 Success` - request was processed successfully, response contains the requested resources.
+* `201 Created` - request was processed successfully, a new record was created.
+* `204 No Content` - there are no resources matching the request.
+* `401 Unauthorized` - missing or invalid `Authorization` request header.
+* `404 Not Found` - a record requested by ID does not exist.
+* `429 Too Many Requests` - used to limit the request rate.
+
+
+## Pagination
+
+All API endpoints that return an array of records, are paginated by timestamps. The optimal use
+of the API endpoints to fetch all records is as follows:
+
+1. first send a request with no arguments. This will return a batch of records with the oldest timestamps.
+It will also return a `next` attribute that contains a URL to be used for the next request. This URL contains
+an `after` parameter that tells the API, which record was returned last in the last response.
+1. next send a request to the new URL. One of two things will happen:
+    * If there are new or updated records, API will respond with `200 Success` status code,
+    return another batch of records and provide new `next` URL.
+    * If there are no new nor updated records, API will respond with `204 No Content` status code and
+    an empty response body. This means the client has received the most recent data.
+    In this case the client should wait for a reasonable amount of time and retry sending a request to the same URL.
+    
+Note that if a record is updated after it was returned from an API endpoint, it will appear in following response again.
+
+## Rate limiting
+
+All paginated API endpoints enforce rate limits. All these endpoints return a `Retry-After` response code, which
+contains a number of seconds client should wait before making another request. The value defaults to
+
+* 10 seconds for responses with status code `200 OK`,
+* 1 minute for responses with status code `204 No Content`.
+
+In case a rate limit is exceeded, server will respond with status code `429 Too Many Requests`. The response
+will include a `Retry-After` header. The `Retry-After` header contains number of seconds to wait before sending another request.
+The limits are subject to change so the API clients should observe and respect the `Retry-After` response header.
+
+The rate limits are applied to each paginated endpoint individually, not to the API as a whole.
+
+## Hotlinking
+
+Do not hotlink image URLs in your applications. These URLs may change at any time, and we do
+not support third-party implementations using our bandwidth. Always fetch image URLs through 
+the API as intended.
+
+# Group Lead Flow Lead
+
+Represents lead flow lead.
+
+---
+**Attributes:**
+
+- id `(Number)`
+---
+
+## Add Lead Flow Lead [/appraisal_leads]
+
+### Create Lead Flow Lead [POST]
+
+This endpoint can be used to create Sales Appraisal or Rental BDM Leads. The response will contain id of the created Lead or task. It will not create a new Lead when an open Lead already exists in system for the contact, property and lead type. When Lead Consultant does not have the Lead Flow module enabled, this endpoint will create tasks instead.
+
+---
+**Lead Flow Lead attributes:**
+- consultant_id `(Number, required)`
+- contact_id `(Number, required)`
+- property_id `(Number, optional)` - should be:
+    - property owned by contact
+- address - (if property id is unknown):
+    - unit `(Number)`
+    - number `(Number)` 
+    - street name `(String, optional)`
+    - street type `(String, optional)`
+    - suburb `(String, optional)`
+    - postcode `(Number)`
+    - state `(String, optional)`
+    - country `(String, optional)`
+- listing_type `(String, optional)` - should be:
+    - sales [default if blank]
+    - rental
+- temperature `(String, optional)` - one of:
+    - hot
+    - warm
+    - cold
+- subject `(String, optional)`
+    - task subject [Default: New Website Lead]
+- task_date `(Date, optional)`
+    - task due date [Default: Date.today]
+- comment `(String, optional)`
+
+---
+
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
+    + Body
+
+            {
+              "appraisal_lead": 
+                {
+                  "consultant_id": 1,
+                  "contact_id": 2,
+                  "property_id": 3,
+                  "temperature": "hot",
+                  "listing_type": "sales",
+                }
+            }
+            
++ Response 200 (application/json)
+
+            {
+                "id": 7352
+            }
+
+
++ Response 400 (application/json)
+
+            {
+                "error": "Appraisal Lead for this contact and property already exists." 
+            }
+
+# Group Sales Listings
+
+Represents sales listing details.
+
+---
+**Sales listing attributes:**
+
+- id `(Number)`
+- office_id `(Number)`
+- status `(String)`
+
+- consultant_ids `(Array of Numbers)`
+- primary_consultant_id `(Number)`
+- listing_type `(String)`
+- project_listing `(Boolean)`
+
+- hidden `(Boolean)`
+- price_undisclosed `(Boolean)`
+- address_undisclosed `(Boolean)`
+- suburb_undisclosed `(Boolean)`
+- under_offer `(Boolean)`
+
+- website_status `(String)`
+- description `(String)`
+- url `(String)`
+- internet_hits `(String)`
+
+- auction `(Boolean)`
+- auctioneer_id `(Number)`: Consultant
+- passed_in_date `(Date)`
+- auction_date `(Date)`
+- auction_time `(Time)`
+
+- price_from `(Number)`
+- price_to `(Number)`
+- display_price `(String)`
+
+- situation_very_sensitive `(Boolean)`
+- source `(String)`
+
+- date_listed `(Date)`
+- campaign_start_date `(Date)`
+- sale_date `(Date)`
+- sale_price `(Number)`
+- sale_status `(String)`
+- record_price `(Boolean)`
+
+- inspections (Array)
+    - inspection_date `(Date)`
+    - start_time `(Time)`
+    - end_time `(Time)`
+    
+- images `(Array)`
+    - index `(String)`
+    - url `(String)`
+    
+- virtual_tour_url `(String)`
+- video_link_url `(String)`
+- interactive_floor_plan_url `(String)`
+- soi_file `(String)`
+- public_files `(Array)`
+    - id `(String)`
+    - name `(String)`
+    - url `(String)`
+    - description `(String)`
+
+- other_links `(Array)`
+    - label `(String)`
+    - url `(String)`
+
+- advertising_copy
+    - heading `(String)`
+    - text `(String)`
+
+- property (Object)
+    - unit `(String)`
+    - number `(String)`
+    - street_name `(String)`
+    - street_type `(String)`
+    - suburb `(String)`
+    - state `(String)`
+    - postcode `(String)`
+    - country `(String)`
+    - latitude `(Number)`
+    - longitude `(Number)`
+    - project_id `(Number)`
+    - property_type_id `(Number)`
+    - property_category_id `(Number)`
+    - property_other_category_id `(Number)`
+    - beds `(Number)`
+    - baths `(Number)`
+    - garages `(Number)`
+    - rooms `(Number)`
+    - toilets `(Number)`
+    - open_spaces `(Number)`
+    - study `(Number)`
+    - other_carspace `(String)`
+    - cars `(Number)`
+    - lot `(Number)`
+    - powder_rooms `(Number)`
+    - rates `(String)`
+    - level `(String)`
+    - water_rates `(Number)`
+    - body_corporate `(String)`
+    - fencing `(String)`
+    - annual_rainfall `(String)`
+    - year_built `(String)`
+    - soil_types 
+    - improvements `(String)`
+    - council_rates `(String)`
+    - irrigation `(String)`
+    - stock_capacity `(String)`
+    - services `(String)`
+    - land_size `(String)`
+    - land_desc `(String)`
+    - land_measure `(String)`
+    - house_size `(String)`
+    - house_desc `(String)`
+    - house_measure `(String)`
+    - business_lease `(Number)`
+    - business_lease_period `(String)`
+    - takings `(Number)`
+    - commercial_rent `(Number)`
+    - commercial_listing_type `(String)`
+    - return `(Number)`
+    - outgoings `(Number)`
+    - eer `(Number)`: The energy efficiency rating of the property
+    - property_styles `(Array of Strings)`
+    - property_views `(Array of Strings)`
+    - property_materials `(Array of Strings)`
+    - property_features `(Array of Strings)`
+    - tags `(Array of Strings)`
+---
+
+## Sales Listings Collection [/sales_listings{?office_id}{?after}]
+
+### List all Sales Listings [GET]
+
+Retrieve paginated list of sales listings.
+
++ Request
+
+    + Headers
+
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
++ Parameters
+
+    + office_id (optional, integer, `15`) ... Filter results by office
+    + after (optional, string, `1520452907_37`) ... Paging cursor returned in the last response
+
++ Response 200 (application/json)
+
+        {
+            "data": [
+                {
+                    "id": 1,
+                    "office_id": 1,
+                    "status": "settled",
+                    "consultant_ids": [
+                        4,
+                        8
+                    ],
+                    "primary_consultant_id": 4,
+                    "listing_type": "EXCLUSIVE",
+                    "project_listing": true,
+                    "hidden": false,
+                    "price_undisclosed": false,
+                    "address_undisclosed": false,
+                    "suburb_undisclosed": false,
+                    "under_offer": true,
+                    "website_status": "sold",
+                    "description": "",
+                    "auction": false,
+                    "price_from": 490000,
+                    "price_to": 540000,
+                    "display_price": "SOLD",
+                    "situation_very_sensitive": false,
+                    "source": "",
+                    "date_listed": "2015-01-08",
+                    "record_price": false,
+                    "sale_date": "2015-04-10",
+                    "sale_price": "500000.0",
+                    "sale_status": "PS",
+                    "images": [
+                        {
+                            "index": "MAIN",
+                            "url": "https://assets.boxdice.com.au/sandbox/listings/1/MAIN.1424237990.jpg"
+                        },
+                        {
+                            "index": "A",
+                            "url": "https://assets.boxdice.com.au/sandbox/listings/1/82a2afdf.JPG"
+                        },
+                        {
+                            "index": "B",
+                            "url": "https://assets.boxdice.com.au/sandbox/listings/1/bdc49e3d.JPG"
+                        },
+                        {
+                            "index": "C",
+                            "url": "https://assets.boxdice.com.au/sandbox/listings/1/9f6d64c7.JPG"
+                        },
+                        {
+                            "index": "D",
+                            "url": "https://assets.boxdice.com.au/sandbox/listings/1/b63a7350.JPG"
+                        },
+                        {
+                            "index": "E",
+                            "url": "https://assets.boxdice.com.au/sandbox/listings/1/2a108cfd.JPG"
+                        },
+                        {
+                            "index": "F",
+                            "url": "https://assets.boxdice.com.au/sandbox/listings/1/053c7e18.JPG"
+                        },
+                        {
+                            "index": "G",
+                            "url": "https://assets.boxdice.com.au/sandbox/listings/1/42c51c59.JPG"
+                        }
+                    ],
+                    "interactive_floor_plan_url": "",
+                    "soi_file": "http://assets.boxdice.com.au/sandbox/virtual_files/sales_listing/1/soi_file.pdf",
+                    "public_files": [
+                        {
+                            "id": 2,
+                            "name": "2024-07-26-11-09-17_contract.pdf",
+                            "url": "http://assets.boxdice.com.au/sandbox/virtual_files/sales_listing/1/2024-07-26-11-09-17_contract.pdf",
+                            "description": "this is my public file description"
+                        },
+                        {
+                            "id": 3,
+                            "name": "p1.pdf",
+                            "url": "http://assets.boxdice.com.au/sandbox/virtual_files/sales_listing/1/p1.pdf",
+                            "description": ""
+                        }
+                    ],
+                    "other_links": [],
+                    "advertising_copy": {
+                        "heading": "Let Me Entertain You",
+                        "text": "This neat family orientated home, situated on approximately 696 m2 block of land in Elizabeth Macarthur Estate, comprises of 3 bedrooms all with built in robes, a 3 way bathroom and large formal lounge. Also offering a well appointed kitchen with breakfast bench, opening onto a combined dining and family area. A great space for family interaction and with a view of the enticing salt water pool and surrounding rock gardens. Other features include ducted air con, secured double carport, 2 garden sheds and still room in the yard for kids to play, pets or simply to relax and entertain family and friends and is only a short stroll to the bike track and river. This property has character and is well worth a look. Contact Agents with enquiries or to arrange a viewing."
+                    },
+                    "property": {
+                        "number": "12",
+                        "street_name": "Arndell",
+                        "street_type": "Street",
+                        "suburb": "CAMDEN SOUTH",
+                        "postcode": "2570",
+                        "state": "NSW",
+                        "country": "Australia",
+                        "latitude": -34.077148,
+                        "longitude": 150.697287,
+                        "project": "Building Project name",
+                        "property_type_id": 6,
+                        "property_category_id": 42,
+                        "beds": 3,
+                        "baths": 1,
+                        "open_spaces": 2,
+                        "cars": 2,
+                        "land_size": "696.0",
+                        "land_measure": "Sqm",
+                        "property_styles": [],
+                        "property_views": [],
+                        "property_materials": [
+                            "Brick Veneer"
+                        ],
+                        "property_features": [
+                            "In-ground Pool"
+                        ],
+                        "tags": []
+                    }
+                }
+            ],
+            "paging": {
+                "next": "https://your-domain.boxdice.com.au/website_api/sales_listings?after=1520848432_1"
+            }
+
+        }
+
+## Sales Listing [/sales_listings/{id}]
+
++ Parameters
+    + id (required, integer, `217`)
+
+### Update a Sales Listing [PATCH]
+
+This endpoint can be used to set sales listing's website URL or set Internet Hits value.
+
+Do not hotlink image URLs in your applications. These URLs may change at any time, and we do
+not support third-party implementations using our bandwidth. Always fetch image URLs through 
+the API as intended.
+
+**Accepted parameters:**
+  - url `(String)`
+  - internet_hits `(String)`
+
+If any of the permitted parameters is omited in request payload - the corresponding value will not be changed on the backend.
+
+*Note that as `id` attribute one of `id` or `uniqueId` can be used to update sales listing's attributes.*
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
+    + Body
+    
+            {
+                "sales_listing": {
+                    "url": "https://example.com/path/to/listing",
+                    "internet_hits": "1000"
+                }
+            }
+
++ Response 200 (application/json)
+
+    + Body
+    
+            {}
+
+# Group Rental Listings
+
+Represents rental listing details.
+
+---
+**Rental listing attributes:**
+
+- id `(Number)`
+- office_id `(Number)`
+- status `(String)`
+
+- consultant_ids `(Array of Numbers)`
+- primary_consultant_id `(Number)`
+- rental_type `(String)`
+
+- price_undisclosed `(Boolean)`
+- address_undisclosed `(Boolean)`
+- advertisable `(Boolean)`
+- url `(String)`
+
+- price_from `(Number)`
+- price_to `(Number)`
+- price_period `(String)`
+- display_price `(String)`
+
+- bond `(Number)`
+- leased_duration `(Number)`
+
+- date_listed `(Date)`
+- action_date_on `(Date)`
+- date_available `(Date)`
+- date_leased `(Date)`
+- date_offmarket `(Date)`
+- date_withdrawn `(Date)`
+
+- holiday_category `(String)`
+- availability_link `(String)`
+- virtual_tour_url `(String)`
+- video_link_url `(String)`
+
+- inspections `(Array)`
+    - date `(Date)`
+    - start_time `(Time)`
+    - end_time `(Time)`
+
+- images `(Array)`
+    - index `(String)`
+    - url `(String)`
+
+- advertising_copy
+    - heading `(String)`
+    - text `(String)`
+
+- property `(Object)`
+    - unit `(String)`
+    - number `(String)`
+    - street_name `(String)`
+    - street_type `(String)`
+    - suburb `(String)`
+    - state `(String)`
+    - postcode `(String)`
+    - country `(String)`
+    - latitude `(Number)`
+    - longitude `(Number)`
+    - property_type_id `(Number)`
+    - property_category_id `(Number)`
+    - property_other_category_id `(Number)`
+    - beds `(Number)`
+    - baths `(Number)`
+    - garages `(Number)`
+    - rooms `(Number)`
+    - toilets `(Number)`
+    - open_spaces `(Number)`
+    - study `(Number)`
+    - other_carspace `(String)`
+    - cars `(Number)`
+    - lot `(Number)`
+    - powder_rooms `(Number)`
+    - rates `(String)`
+    - level `(String)`
+    - water_rates `(Number)`
+    - body_corporate `(String)`
+    - fencing `(String)`
+    - annual_rainfall `(String)`
+    - year_built `(String)`
+    - soil_types 
+    - improvements `(String)`
+    - council_rates `(String)`
+    - irrigation `(String)`
+    - stock_capacity `(String)`
+    - services `(String)`
+    - land_size `(String)`
+    - land_desc `(String)`
+    - land_measure `(String)`
+    - house_size `(String)`
+    - house_desc `(String)`
+    - house_measure `(String)`
+    - business_lease `(Number)`
+    - business_lease_period `(String)`
+    - takings `(Number)`
+    - commercial_rent `(Number)`
+    - commercial_listing_type `(String)`
+    - return `(Number)`
+    - outgoings `(Number)`
+    - eer `(Number)`: The energy efficiency rating of the property
+    - property_styles `(Array of Strings)`
+    - property_views `(Array of Strings)`
+    - property_materials `(Array of Strings)`
+    - property_features `(Array of Strings)`
+    - tags `(Array of Strings)`
+---
+
+## Rental Listings Collection [/rental_listings{?office_id}{?after}]
+
+### List all Rental Listings [GET]
+
+Retrieve paginated list of rental listings.
+
++ Request
+
+    + Headers
+
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
++ Parameters
+
+    + office_id (optional, integer, `15`) ... Filter results by office
+    + after (optional, string, `1520452907_37`) ... Paging cursor returned in the last response
+
++ Response 200 (application/json)
+
+        {
+            "data": [
+                {
+                    "id": 1,
+                    "office_id": 1,
+                    "status": "LEASED",
+                    "consultant_ids": [
+                        15
+                    ],
+                    "rental_type": "RENTAL",
+                    "primary_consultant_id": 15,
+                    "price_undisclosed": false,
+                    "address_undisclosed": false,
+                    "advertisable": false,
+                    "url": "",
+                    "price_from": 400,
+                    "price_to": 500,
+                    "price_period": "WEEK",
+                    "display_price": "$480",
+                    "bond": 1920,
+                    "leased_duration": 12,
+                    "date_listed": "2015-06-19T16:23:59.000+02:00",
+                    "date_available": "2015-06-30",
+                    "date_leased": "2015-07-11",
+                    "availability_link": "",
+                    "virtual_tour_url": "",
+                    "video_link_url": "",
+                    "images": [
+                        {
+                            "index": "A",
+                            "url": "https://assets.boxdice.com.au/sandbox/rental_listings/1/81063f35.jpg"
+                        },
+                        {
+                            "index": "B",
+                            "url": "https://assets.boxdice.com.au/sandbox/rental_listings/1/70c0d57e.jpg"
+                        },
+                        {
+                            "index": "C",
+                            "url": "https://assets.boxdice.com.au/sandbox/rental_listings/1/f29b1084.jpg"
+                        },
+                        {
+                            "index": "D",
+                            "url": "https://assets.boxdice.com.au/sandbox/rental_listings/1/83d15ebe.jpg"
+                        },
+                        {
+                            "index": "E",
+                            "url": "https://assets.boxdice.com.au/sandbox/rental_listings/1/316a80e8.jpg"
+                        },
+                        {
+                            "index": "F",
+                            "url": "https://assets.boxdice.com.au/sandbox/rental_listings/1/82cfe914.jpg"
+                        },
+                        {
+                            "index": "G",
+                            "url": "https://assets.boxdice.com.au/sandbox/rental_listings/1/6b04bec7.jpg"
+                        },
+                        {
+                            "index": "H",
+                            "url": "https://assets.boxdice.com.au/sandbox/rental_listings/1/d873ffdd.jpg"
+                        },
+                        {
+                            "index": "I",
+                            "url": "https://assets.boxdice.com.au/sandbox/rental_listings/1/83941ed4.jpg"
+                        },
+                        {
+                            "index": "J",
+                            "url": "https://assets.boxdice.com.au/sandbox/rental_listings/1/26979f76.jpg"
+                        },
+                        {
+                            "index": "K",
+                            "url": "https://assets.boxdice.com.au/sandbox/rental_listings/1/3e00a5b8.jpg"
+                        },
+                        {
+                            "index": "MAIN",
+                            "url": "https://assets.boxdice.com.au/sandbox/rental_listings/1/99c90429.jpg"
+                        }
+                    ],
+                    "advertising_copy": {
+                        "heading": "Beautiful 4 Bedroom Home Located In Ambarvale",
+                        "text": "Get in quick before you miss this opportunity for an immaculately presented, spacious as new family home with lock up remote garage just freshly painted. Offering 4 bedrooms 3 with built ins renovated bathroom with bath and separate toilet. Separate lounge, dining plus meals area off the renovated kitchen with quality appliances including dishwasher. Other features include gas hot water system, split system reverse cycle air con, fabulous paved covered entertaining area, plus a large grassed area for the kids. All this close to shops schools and hospital you will get one opportunity and one opportunity only."
+                    },
+                    "property": {
+                        "number": "77",
+                        "street_name": "Crispsparkle",
+                        "street_type": "Drive",
+                        "suburb": "AMBARVALE",
+                        "postcode": "2560",
+                        "state": "NSW",
+                        "country": "Australia",
+                        "latitude": -34.09579799999999,
+                        "longitude": 150.78903,
+                        "property_type_id": 6,
+                        "property_category_id": 42,
+                        "beds": 4,
+                        "baths": 1,
+                        "garages": 1,
+                        "property_styles": [],
+                        "property_views": [],
+                        "property_materials": [],
+                        "property_features": [],
+                        "tags": []
+                    }
+                }
+            ],
+            "paging": {
+                "next": "https://your-domain.boxdice.com.au/website_api/sales_listings?after=1520848432_1"
+            }
+
+        }
+
+## Rental Listing [/rental_listings/{id}]
+
++ Parameters
+    + id (required, integer, `217`)
+
+### Update a Rental Listing [PATCH]
+
+This endpoint can be used to set rental listing's website URL.
+
+*Note that as `id` attribute one of `id` or `uniqueId` can be used to update rental listing's attributes.*
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
+    + Body
+    
+            {
+                "rental_listing": {
+                    "url": "https://example.com/path/to/listing"
+                }
+            }
+
++ Response 200 (application/json)
+
+    + Body
+    
+            {}
+
+# Group Contacts
+
+**Attributes:**
+- id `(Number)`
+- first_name `(String)`
+- last_name `(String)`
+- mobile `(String)`
+- email `(String)`
+- permit\_email_campaign `(Boolean)`
+- permit_sms `(Boolean)`
+- ealert\_enabled `(Boolean)` - *equals `true` when the contact has ealerts enabled for at least one set of buying criteria*
+- consultant\_id `(Number)` - *equals Consultant ID with "My Contact" category. If there is no such category assigned, then the contact creator will be returned*
+- address `(Object)` - *residential Property address*
+  - unit `(String)`
+  - number `(String)`
+  - street_name `(String)`
+  - street_type `(String)`
+  - suburb `(String)`
+  - postcode `(String)`
+  - state `(String)`
+  - country `(String)`
+  - latitude `(Number)`
+  - longitude `(Number)`
+- categories `(Array of Object)`
+  - name `(String)`
+  - consultant_id `(Number)`
+  - type_id `(Number)`
+- comments `(Array of Object)`
+  - id `(Number)`
+  - consultant_id `(Number)`
+  - important `(Boolean)`
+  - created\_at `(String)` - *in ISO 8601 format*
+  - updated\_at `(String)` - *in ISO 8601 format*
+  - text `(String)`
+- criteria `(Array of Object)` - *buying criteria*
+  - id `(Number)`
+  - type `(String)` - *can be `rental` or `sales`*
+  - suburb_ids `(Array of Number)`
+  - property\_type\_ids `(Array of Number)`
+  - property\_category\_ids `(Array of Number)`
+  - ealert_enabled `(Boolean)`
+  - beds_from `(Number)`
+  - beds_to `(Number)`
+  - baths `(Number)`
+  - rooms `(Number)`
+  - cars `(Number)`
+  - price_from `(Number)`
+  - price_to `(Number)`
+  - house\_size\_from `(Number)`
+  - house\_size\_to `(Number)`
+  - house_measure `(String)`
+  - land\_size\_from `(Number)`
+  - land\_size\_to `(Number)`
+  - land_measure `(String)`
+  - return\_pa\_from `(Number)`
+  - return\_pa\_to `(Number)`
+  - notes `(String)`
+
+---
+
+## Contacts Collection [/contacts{?ignore_ealert_enabled}{?after}]
+
+### List all contacts [GET]
+
+This API endpoint returns contacts with early alerts (E-Alerts) enabled/disabled by default.
+To retrieve all contacts irrespective of early alerts flag, `ignore_ealert_enabled` parameter needs to be set to `true`.
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+            
++ Parameters
+
+    + ignore_ealert_enabled (optional, boolean, `true`) ... if true, will return all contacts
+    + after (optional, string, `1520452907_37`) ... Paging cursor returned in the last response
+
++ Response 200 (application/json)
+
+    + Body
+    
+            {
+                "data": [
+                    {
+                        "id": 37,
+                        "first_name": "Peter",
+                        "last_name": "Doe",
+                        "mobile": "+61555666777",
+                        "email": "peter.doe@example.com",
+                        "consultant_id": 3,
+                        "permit_email_campaign": true,
+                        "permit_sms": true,
+                        "ealert_enabled": true,
+                        "address": {
+                            "unit": "2",
+                            "number": "3",
+                            "street_name": "Princess",
+                            "street_type": "Road",
+                            "suburb": "Woodend",
+                            "postcode": "3442",
+                            "state": "VIC",
+                            "country": "Australia"
+                        },
+                        "categories": [
+                            {
+                                "name": "My Contact",
+                                "consultant_id": 3,
+                                "type_id": 1
+                            }
+                        ],
+                        "notes": [
+                            {
+                                "id": 967,
+                                "consultant_id": 3,
+                                "text": "Foo bar",
+                                "created_at": "2020-04-27T16:11:35.000+10:00",
+                                "updated_at": "2020-04-27T16:11:35.000+10:00"
+                            }
+                        ]
+                    }
+                ],
+                "paging": {
+                    "next": "https://your-domain.boxdice.com.au/website_api/contacts?after=1520848432_37"
+                }
+            }
+
+
+### Create a Contact [POST]
+
+This API endpoint creates a new contact. If an exact match is found in the database, it will be reused.
+This process is transparent and the response will contain just the contact id in both cases.
+If the provided details are invalid, the response will contain validation messages.
+
+Optional attribute `address` can be passed to assign Residential Property address to a new Contact.
+It should be an object with nested attributes: `unit`, `number`, `street_name`, `street_type`, `suburb`, `postcode`, `state`, `country`.
+
+Optional attribute `consultant_id` should only be used when the website user makes
+an enquiry about a specific listing or contacts a specific consultant. This will grant the consultant access
+to the contact in the CRM.
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
+    + Body
+    
+            {
+                "contact": {
+                    "first_name": "Peter",
+                    "last_name": "Doe",
+                    "mobile": "+61555666777",
+                    "email": "peter.doe@example.com"
+                }
+            }
+
++ Response 201 (application/json)
+
+    + Body
+
+            {
+                "id": 31416
+            }
+            
++ Response 400 (application/json)
+
+    + Body
+
+            {
+                "errors": {
+                    "email": "invalid format"
+                }
+            }
+
+## Contact [/contacts/{id}]
+
++ Parameters
+
+    + id (required, integer, `217`)
+
+### Get a Contact [GET]
+
+This endpoint can be used to get contact details and buying criteria.
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
++ Response 200 (application/json)
+
+    + Body
+    
+            {
+                "contact": {
+                    "id": 17728,
+                    "permit_email_campaign": true,
+                    "permit_sms": true,
+                    "consultant_id": 3,
+                    "categories": [
+                        {
+                            "name": "My Contact",
+                            "consultant_id": 3,
+                            "type_id": 1
+                        }
+                    ],
+                    "notes": [
+                        {
+                            "id": 967,
+                            "consultant_id": 3,
+                            "text": "Foo bar",
+                            "created_at": "2020-04-27T16:11:35.000+10:00",
+                            "updated_at": "2020-04-27T16:11:35.000+10:00"
+                        }
+                    ],
+                    "criteria": [
+                        {
+                            "id": 453,
+                            "type": "sales",
+                            "suburb_ids": [3, 7, 13],
+                            "property_type_ids": [1, 6],
+                            "property_category_ids": [45, 46],
+                            "beds_from": 3,
+                            "beds_to": 3,
+                            "baths": 2,
+                            "rooms": 4,
+                            "cars": 2,
+                            "price_from": "1250000",
+                            "price_to": "1300000",
+                            "house_size_from": 8,
+                            "house_size_to": 10,
+                            "house_measure": "Square(s)",
+                            "land_size_from": 1500,
+                            "land_size_to": 2000,
+                            "land_measure": "Sqm",
+                            "return_pa_from": 10,
+                            "return_pa_to": 15,
+                            "notes": "Investment property",
+                            "ealert_enabled": true
+                        }
+                    ]
+                }
+            }
+
+
+### Update a Contact [PATCH]
+
+This endpoint can be used to permit/deny email campaigns subscription and create notes on contact's timeline when contact details like firstname, lastname, email or mobile has changed for an existing contact.
+
+*Note that the `consultant_id` attribute is optional and should only be used when the website user makes
+an enquiry about a specific listing or contacts a specific consultant. This will grant the consultant access
+to the contact in the CRM.*
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
+    + Body
+    
+            {
+                "contact": {
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "permit_email_campaign": true,
+                    "permit_sms": true,
+                    "mobile": "+61555999888",
+                    "email": null,
+                    "consultant_id": 5
+                }
+            }
+
++ Response 200 (application/json)
+
+    + Body
+    
+            {}
+
+# Group Contact Categories
+
+## Contact Category Types [/contact_category_types{?expand}{&after}]
+
+Depending on parameter `expand` returns list of all available Category Types in the system as array of names or array of objects.
+
+### Get simple list of Category Names [GET /contact_category_types]
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
++ Response 200 (application/json)
+
+    + Body
+    
+            [
+                "My Contact", "Web Enquiry"
+            ]
+
+### Get expanded list of Category Types [GET /contact_category_types{?expand}{&after}]
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
++ Parameters
+
+    + expand (required, boolean, `true`) ... Return expanded list
+
+    + after (optional, string, `1520452907_37`) ... Paging cursor returned in the last response
+
++ Response 200 (application/json)
+
+    + Body
+    
+            {
+                "data": [
+                    {
+                        "id": 1,
+                        "name": "My Contact",
+                        "office_group_id": 1
+                    },
+                    {
+                        "id": 2,
+                        "name": "Web Enquiry",
+                        "office_group_id": 1
+                    }
+                ],
+                "paging": {
+                    "next": "https://your-domain.boxdice.com.au/website_api/contact_category_types?after=1520848432_2&expand=true"
+                }
+            }
+
+## Contact Categories collection [/contacts/{contact_id}/categories]
+
+### Assign contact categories [POST]
+
+This endpoint can be used to assign one or more contact categories to a contact.
+Categories should already exist in the system.
+
++ Parameters
+
+    + contact_id (required, integer, `12`) ... Contact ID
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
+    + Body
+
+            {
+                "categories": [
+                    {"name": "My Contact", "consultant_id": 1},
+                    {"name": "Web Enquiry", "consultant_id": 2}
+                ]
+            }
+
++ Response 201 (application/json)
+
+    + Body
+        
+            {}
+
+### Remove contact categories [DELETE]
+
+This endpoint can be used to remove (unassign) one or more contact categories from a contact.
+
++ Parameters
+
+    + contact_id (required, integer, `12`) ... Contact ID
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+            
+    + Body
+
+            {
+                "categories": [
+                    {"name": "Web Enquiry", "consultant_id": 2}
+                ]
+            }
+
++ Response 204 (application/json)
+
+# Group Contact Notes
+
+Represents contact note details.
+
+---
+**Contact note attributes:**
+
+- text `(String)`
+- consultant_id `(Number)`
+---
+
+## Contact Notes collection [/contacts/{contact_id}/notes]
+
+### Create a contact note [POST]
+
+This endpoint can be used to create a contact note.
+
++ Parameters
+
+    + contact_id (required, integer, `12`) ... Contact ID
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
+    + Body
+
+            {
+                "note": {
+                    "text": "Will be reachable in two weeks.",
+                    "consultant_id": 3
+                }
+            }
+
++ Response 201 (application/json)
+
+    + Body
+        
+            {
+                "id": 7352
+            }
+
+# Group Enquiries
+
+## Enquiries Collection [/enquiries]
+
+### Create an enquiry [POST]
+
+This endpoint can be used to create a new enquiry. One of `listing_id` or `consultant_id` attributes is required. 
+
++ Request (application/json)
+
+    + Body
+    
+            {
+                "enquiry": {
+                    "listing_id": 123,
+                    "consultant_id": 34,
+                    "contact_name": "Peter F.",
+                    "contact_email": "peter@example.com",
+                    "contact_phone": "0444123456",
+                    "message": "I would like to get an indication of price"
+                }
+            }
+
++ Response 201 (application/json)
+
+    + Body
+    
+            {}
+
+# Group Projects
+
+## Projects Collection [/projects{?office_id}{?after}]
+
++ Parameters
+
+    + office_id (optional, integer, `15`) ... Filter results by office
+    + after (optional, string, `1520452907_37`) ... Paging cursor returned in the last response
+
+### Retrieve all projects [GET]
+
+This endpoint allows the caller to retrieve a collection of projects.
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
++ Response 200 (application/json)
+
+    + Body
+        
+            {
+                "data": [
+                    {
+                        "id": 1,
+                        "name": "ProjectA"
+                    },
+                    {
+                        "id": 5,
+                        "name": "ProjectB"
+                    },
+                    {
+                        "id": 6,
+                        "name": "ProjectC"
+                    }
+                ],
+                "paging": {
+                    "next": "https://your-domain.boxdice.com.au/website_api/projects?after=1520452907_2669"
+                }
+            }
+
+
+# Group Property Types
+
+## Property Types Collection [/property_types{?after}]
+
++ Parameters
+
+    + after (optional, string, `1520452907_37`) ... Paging cursor returned in the last response
+
+### Retrieve all property types [GET]
+
+This endpoint allows the caller to retrieve a collection of property types.
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
++ Response 200 (application/json)
+
+    + Body
+        
+            {
+                "data": [
+                    {
+                        "id": 1,
+                        "name": "Business"
+                    },
+                    {
+                        "id": 5,
+                        "name": "Rental"
+                    },
+                    {
+                        "id": 6,
+                        "name": "Residential"
+                    }
+                ],
+                "paging": {
+                    "next": "https://your-domain.boxdice.com.au/website_api/property_types?after=1520452907_2669"
+                }
+            }
+
+
+# Group Property Categories
+
+Represents property category details.
+
+---
+**Property category attributes:**
+
+- id `(Number)`
+- type_id `(Number)`
+- name `(String)`
+
+---
+
+## Property Categories Collection [/property_categories{?after}]
+
++ Parameters
+
+    + after (optional, string, `1520452907_37`) ... Paging cursor returned in the last response
+
+### Retrieve all property categories [GET]
+
+This endpoint allows the caller to retrieve a collection of property categories.
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
++ Response 200 (application/json)
+
+    + Body
+        
+            {
+                "data": [
+                    {
+                        "id": 1,
+                        "type_id": 1,
+                        "name": "Accommodation/Tourism"
+                    },
+                    {
+                        "id": 73,
+                        "type_id": 6,
+                        "name": "House (New Developments)"
+                    },
+                    {
+                        "id": 74,
+                        "type_id": 6,
+                        "name": "Land"
+                    }
+                ],
+                "paging": {
+                    "next": "https://website-api-dev.boxdice.com.au/website_api/property_categories?after=1524744400_19599"
+                }
+            }
+
+# Group Other Property Categories
+
+Returns list of custom Property Categories.
+
+In the CRM they can be managed on Settings -> Properties -> Other Property Categories page.
+
+---
+**Attributes:**
+
+- id `(Number)`
+- name `(String)`
+
+---
+
+## Other Property Categories Collection [/property_other_categories{?after}]
+
++ Parameters
+
+    + after (optional, string, `1520452907_37`) ... Paging cursor returned in the last response
+
+### Retrieve all other property categories [GET]
+
+This endpoint allows the caller to retrieve a collection of Other Property Categories.
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
++ Response 200 (application/json)
+
+    + Body
+        
+            {
+                "data": [
+                    {
+                        "id": 1,
+                        "name": "Custom Category A"
+                    },
+                    {
+                        "id": 2,
+                        "name": "Custom Category B"
+                    }
+                ],
+                "paging": {
+                    "next": "https://website-api-dev.boxdice.com.au/website_api/property_other_categories?after=1524744400_3"
+                }
+            }
+
+# Group Suburbs
+
+Represents suburb details.
+
+---
+**Property suburb attributes:**
+
+- id `(Number)`
+- postcode `(String)`
+- state `(String)`
+- name `(String)`
+- country `(String)`
+
+---
+
+## Suburbs Collection [/suburbs{?after}]
+
++ Parameters
+
+    + after (optional, string, `1520452907_37`) ... Paging cursor returned in the last response
+
+### Retrieve all suburbs [GET]
+
+This endpoint allows the caller to retrieve a collection of suburbs.
+Because the overall number of records is large, the API only returns a limited set of suburbs.
+It also provides a URL the caller can use to fetch the next batch of suburbs. This process
+can continue until the response is empty.
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
++ Response 200 (application/json)
+
+    + Body
+        
+            {
+                "data": [
+                    {
+                        "id": 13,
+                        "name": "Barkers Creek",
+                        "postcode": "3451"
+                    },
+                    {
+                        "id": 157,
+                        "name": "Erigolia",
+                        "postcode": "2669"
+                    }
+                ],
+                "paging": {
+                    "next": "https://your-domain.boxdice.com.au/website_api/suburbs?after=1520452907_2669"
+                }
+            }
+
+# Group Search Criteria
+
+## Search Criteria Collection [/contacts/{contact_id}/criteria]
+
++ Parameters
+
+    + contact_id (required, integer, `31415`)
+
+### Create Search Criteria [POST]
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
+    + Body
+
+            {
+                "criteria": {
+                    "type": "sales",
+                    "suburb_ids": [3, 7, 13],
+                    "property_type_ids": [1, 6],
+                    "property_category_ids": [45, 46],
+                    "beds_from": 3,
+                    "beds_to": 3,
+                    "baths": 2,
+                    "rooms": 4,
+                    "cars": 2,
+                    "price_from": "1250000",
+                    "price_to": "1300000",
+                    "house_size_from": 8,
+                    "house_size_to": 10,
+                    "house_measure": "Square(s)",
+                    "land_size_from": 1500,
+                    "land_size_to": 2000,
+                    "land_measure": "Sqm",
+                    "return_pa_from": 10,
+                    "return_pa_to": 15,
+                    "notes": "Investment property"
+                }
+            }
+    
++ Response 201 (application/json)
+
+    + Body
+    
+            {
+                "id": 913
+            }
+
+## Search Criteria [/contacts/{contact_id}/criteria/{id}]
+
++ Parameters
+    
+    + contact_id (required, integer, `31415`)
+    + id (required, integer, `2728`)
+
+### Update Search Criteria [PATCH]
+
++ Request (application/json)
+
+    + Headers
+    
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
+    + Body
+    
+            {
+                "criteria": {
+                    "suburb_ids": [3, 5],
+                    "price_to": "1400000",
+                    "cars": 1
+                }
+            }
+
++ Response 200 (application/json)
+
+    + Body
+    
+            {}
+
+### Delete Search Criteria [DELETE]
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
++ Response 200 (application/json)
+
+    + Body
+            
+            {}
+
+# Group Office
+
+Represents office details.
+
+---
+**Office attributes:**
+
+- id `(Number)`
+- name `(String)`
+- company_name `(String)`
+- street_address `(String)`
+- suburb `(String)`
+- state `(String)`
+- postcode `(String)`
+- phone `(String)`
+- fax `(String)`
+- email `(String)`
+---
+
+## Offices collection [/offices{?after}]
+
+### List all offices [GET]
+
+The response contains paginated list of offices the Api-Key is authorized to access. 
+
+The Office collection returns `bdm_consultant_id`, which can be used as the default `consultant_id` when creating BDM leads using Add Lead Flow Lead endpoint (listing_type: 'rental')."
+
++ Request
+
+    + Headers
+
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
++ Parameters
+
+    + after (optional, string, `1520452907_37`) ... Paging cursor returned in the last response
+
++ Response 200 (application/json)
+
+        {
+            "data": [
+                {
+                    "id": 1,
+                    "name": "Smith Woodend",
+                    "company_name": "Smith Real Estate",
+                    "street_address": "1/23 Peterson Street",
+                    "suburb": "Woodend",
+                    "state": "VIC",
+                    "postcode": "3442",
+                    "phone": "0312345678",
+                    "fax": "0312345679",
+                    "email": "smith.woodend@example.com",
+                    "bdm_consultant_id": 2
+                }
+            ],
+            "paging": {
+                "next": "https://your-domain.boxdice.com.au/website_api/offices?after=1520848432_1"
+            }
+
+        }
+        
+# Group Consultant
+
+Represents consultant details.
+
+---
+**Consultant attributes:**
+
+- id `(Number)`
+- office_id `(Number)`
+- first_name `(String)`
+- last_name `(String)`
+- mobile `(String)`
+- phone_bh `(String)`
+- email `(String)`
+- profile `(String)`
+- profile_url `(String)`
+- position `(String)`
+- avatar_url `(String)`
+- staff_image_url `(String)`
+- teams `(Array)`
+- testimonials `(Array)`
+    - text `(String)`
+    - provider `(String)`
+    - date `(Date)`
+- specialty_suburb_ids `(Array of Numbers)`
+---
+
+## Consultants collection [/consultants{?after}]
+
+### List all consultants [GET]
+
+The response contains paginated list of consultants the Api-Key is authorized to access.
+
++ Request
+
+    + Headers
+
+            Authorization: Api-Key token=b3c7623c3ad30d34fec6226f90914b0af125dc06
+
++ Parameters
+
+    + after (optional, string, `1520452907_37`) ... Paging cursor returned in the last response
+
++ Response 200 (application/json)
+
+        {
+            "data": [
+                {
+                    "id": 1,
+                    "office_id": 1,
+                    "first_name": "Jack",
+                    "last_name": "Smith",
+                    "mobile": "0312345678",
+                    "phone_bh": "0312345889",
+                    "email": "jack.smith@example.com",
+                    "profile": "My profile text",
+                    "profile_url": "http://example.com/my-video",
+                    "position": "Office champion",
+                    "avatar_url": "https://assets.boxdice.com/avatar.jpg",
+                    "staff_image_url": "https://assets.boxdice.com.au/original_avatar.jpg",
+                    "teams": ["Sales"],
+                    "testimonials": [
+                        {
+                            "text": "Text",
+                            "provider": "Provider",
+                            "date": "2018-09-04"
+                        }
+                    ],
+                    "specialty_suburb_ids": [
+                        1,
+                        2,
+                        3
+                    ]
+                }
+            ],
+            "paging": {
+                "next": "https://your-domain.boxdice.com.au/website_api/consultants?after=1520848432_1"
+            }
+
+        }

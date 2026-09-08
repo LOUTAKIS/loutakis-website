@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { campaignVendors, type Vendor } from "@/lib/vendors";
 import type { Campaign, Selection } from "@/lib/campaigns";
 import type { MarketingSource } from "@/lib/boxdice";
 
@@ -26,8 +27,11 @@ export default function CampaignReview({
 }) {
   const [c, setC] = useState<Campaign>(campaign);
   const [sel, setSel] = useState<Selection>(campaign.selection);
-  const [vendorName, setVendorName] = useState(campaign.vendorName);
-  const [vendorEmail, setVendorEmail] = useState(campaign.vendorEmail);
+  // Always at least one row to type into, however the campaign was stored.
+  const [vendors, setVendors] = useState<Vendor[]>(() => {
+    const v = campaignVendors(campaign);
+    return v.length ? v : [{ name: "", email: "" }];
+  });
   const [copyHeading, setCopyHeading] = useState(campaign.copyHeading);
   const [copyText, setCopyText] = useState(campaign.copyText);
   const [busy, setBusy] = useState<"" | "save" | "send">("");
@@ -51,7 +55,7 @@ export default function CampaignReview({
       const res = await fetch(`/api/staff/campaigns/${c.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ selection: sel, vendorName, vendorEmail, copyHeading, copyText }),
+        body: JSON.stringify({ selection: sel, vendors, copyHeading, copyText }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
@@ -68,14 +72,20 @@ export default function CampaignReview({
 
   async function send() {
     if (!(await save())) return;
-    if (!confirm(`Email the approval link to ${vendorName} <${vendorEmail}>?`)) return;
+    const named = vendors.filter((v) => v.email.trim());
+    if (!named.length) {
+      setMsg({ kind: "err", text: "Add at least one vendor with an email address." });
+      return;
+    }
+    const who = named.map((v) => `${v.name || v.email} <${v.email}>`).join("\n");
+    if (!confirm(`Email the approval link to:\n\n${who}`)) return;
     setBusy("send");
     try {
       const res = await fetch(`/api/staff/campaigns/${c.id}`, { method: "POST" });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
       setC(json.campaign);
-      setMsg({ kind: "ok", text: `Sent to ${vendorEmail}.` });
+      setMsg({ kind: "ok", text: `Sent to ${named.map((v) => v.email).join(", ")}.` });
     } catch (e: any) {
       setMsg({ kind: "err", text: e?.message || "Couldn't send." });
     } finally {
@@ -125,17 +135,61 @@ export default function CampaignReview({
 
       {/* Vendor */}
       <div className="vc-block">
-        <h3>Vendor</h3>
-        <div className="pf-row">
-          <label>
-            <span>Name</span>
-            <input className="field" value={vendorName} onChange={(e) => setVendorName(e.target.value)} autoComplete="off" />
-          </label>
-          <label>
-            <span>Email</span>
-            <input className="field" type="email" value={vendorEmail} onChange={(e) => setVendorEmail(e.target.value)} autoComplete="off" />
-          </label>
-        </div>
+        <h3>Vendors</h3>
+        <p className="form-note">
+          Everyone on the title. They all receive the link; whoever approves is the name recorded in Box &amp; Dice.
+        </p>
+        {vendors.map((v, i) => (
+          <div className="pf-row vc-vendor" key={i}>
+            <label>
+              <span>Name</span>
+              <input
+                className="field"
+                value={v.name}
+                onChange={(e) =>
+                  setVendors((list) => list.map((x, n) => (n === i ? { ...x, name: e.target.value } : x)))
+                }
+                autoComplete="off"
+              />
+            </label>
+            <label>
+              <span>Email</span>
+              <input
+                className="field"
+                type="email"
+                value={v.email}
+                onChange={(e) =>
+                  setVendors((list) => list.map((x, n) => (n === i ? { ...x, email: e.target.value } : x)))
+                }
+                autoComplete="off"
+              />
+            </label>
+            {/* The last remaining row is emptied rather than removed, so there
+                is always somewhere to type. */}
+            <button
+              type="button"
+              className="vc-vendor-x"
+              aria-label={`Remove ${v.name || "this vendor"}`}
+              onClick={() =>
+                setVendors((list) =>
+                  list.length > 1 ? list.filter((_, n) => n !== i) : [{ name: "", email: "" }]
+                )
+              }
+            >
+              &times;
+            </button>
+          </div>
+        ))}
+        {vendors.length < 8 && (
+          <button
+            type="button"
+            className="linkish"
+            style={{ marginTop: 12 }}
+            onClick={() => setVendors((list) => [...list, { name: "", email: "" }])}
+          >
+            + Add another vendor
+          </button>
+        )}
         {c.sentAt && (
           <p className="form-note">
             Sent {new Date(c.sentAt).toLocaleString("en-AU", { timeZone: "Australia/Melbourne" })} by {c.sentBy}
