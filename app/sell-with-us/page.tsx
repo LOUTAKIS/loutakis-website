@@ -15,13 +15,6 @@ const SERVICES = [
     alt: "A living room opening onto a hedged courtyard",
     blurb:
       "Selling your home is a significant moment, and we take it personally. We bring strategy, energy, and the right advice to ensure your property is positioned to achieve the best possible result.",
-    points: [
-      "Tailored campaign strategy that reflects your goals and market conditions",
-      "Trusted advice on presentation, pricing, and timing",
-      "Professional photography, copywriting, and marketing to stand out",
-      "Transparent communication every step of the way",
-      "Skilled negotiation to extract the strongest outcome from every buyer",
-    ],
   },
   {
     title: "Auctioneering",
@@ -29,13 +22,6 @@ const SERVICES = [
     alt: "A double-height living room with a fireplace, opening to the garden",
     blurb:
       "Not all auctioneers are equal. What separates a win from a missed opportunity is often invisible — until it's too late. We read the room, control the pace, and bring confidence under pressure.",
-    points: [
-      "Set the right tone and energy on auction day",
-      "Adapt style to suit buyer comfort and crowd dynamics",
-      "Leverage emotion and competition to maximise outcomes",
-      "Work seamlessly with vendors in pre-auction strategy",
-      "Maintain poise and control to protect your bottom line",
-    ],
   },
   {
     title: "Sale Prep & Advice",
@@ -43,13 +29,6 @@ const SERVICES = [
     alt: "A kitchen and hallway looking through to the garden beyond",
     blurb:
       "You don't need to be selling right now, or even own a home, to ask questions and get honest answers. We're part of the community, here to help long before any paperwork is signed.",
-    points: [
-      "Confidential consultations without pressure or obligation",
-      "Help you understand the market, even years before a sale",
-      "Styling and improvement advice to boost future value",
-      "A long-term game plan tailored to your goals",
-      "Always available for a chat, a coffee, or just some clarity",
-    ],
   },
 ];
 
@@ -91,11 +70,6 @@ export default async function SellWithUsPage() {
               />
               <h2>{s.title}</h2>
               <p>{s.blurb}</p>
-              <ul>
-                {s.points.map((p) => (
-                  <li key={p}>{p}</li>
-                ))}
-              </ul>
             </div>
           ))}
         </div>
