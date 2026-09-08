@@ -123,6 +123,13 @@ export async function refreshInstagramToken(): Promise<{ ok: boolean; detail: st
  */
 const GRAPH = "https://graph.instagram.com/v26.0";
 
+/**
+ * Shared with the diagnostic on purpose. Asking Instagram a different question
+ * there than the page asks here is how a "working" diagnostic sits next to an
+ * empty row: the fields you request decide what comes back.
+ */
+const MEDIA_FIELDS = "id,caption,media_type,media_url,permalink,thumbnail_url";
+
 async function fetchPosts(limit: number): Promise<InstagramPost[]> {
   const token = await currentToken();
   if (!token) return [];
@@ -148,9 +155,8 @@ async function fetchPosts(limit: number): Promise<InstagramPost[]> {
     return [];
   }
 
-  const fields = "id,caption,media_type,media_url,permalink,thumbnail_url";
   const res = await fetch(
-    `${GRAPH}/${userId}/media?fields=${fields}&limit=${limit}&access_token=${encodeURIComponent(token)}`,
+    `${GRAPH}/${userId}/media?fields=${MEDIA_FIELDS}&limit=${limit}&access_token=${encodeURIComponent(token)}`,
     { cache: "no-store" }
   );
   if (!res.ok) {
@@ -256,15 +262,54 @@ export async function instagramDiagnostics(): Promise<Record<string, unknown>> {
     const mediaText = await mediaRes.text();
     out.mediaStatus = mediaRes.status;
     out.mediaBody = mediaText.slice(0, 600);
-    if (mediaRes.ok) {
-      const count = (JSON.parse(mediaText)?.data ?? []).length;
-      out.mediaCount = count;
-      out.verdict = count
-        ? `Working — ${count} posts for @${out.username}. If the page is still blank it is serving a cached build; redeploy.`
-        : "Token works but the account returned no media.";
-    } else {
+    if (!mediaRes.ok) {
       out.verdict = "The account resolved but its media could not be read — see mediaBody.";
+      return out;
     }
+
+    const count = (JSON.parse(mediaText)?.data ?? []).length;
+    out.mediaCount = count;
+    if (!count) {
+      out.verdict = "Token works but the account returned no media.";
+      return out;
+    }
+
+    /**
+     * The question that actually matters: not "does Instagram answer?" but
+     * "does what it answers survive being turned into a tile?".
+     *
+     * The row drops any post with no picture, and a reel's only picture is
+     * thumbnail_url. So this asks for the SAME fields the page asks for and
+     * reports, per post, which of them came back — a feed of six reels with no
+     * thumbnails looks identical to a working feed until you check this.
+     */
+    const renderRes = await fetch(
+      `${GRAPH}/${userId}/media?fields=${MEDIA_FIELDS}&limit=6&access_token=${encodeURIComponent(token)}`,
+      { cache: "no-store" }
+    );
+    const renderText = await renderRes.text();
+    out.renderStatus = renderRes.status;
+    if (!renderRes.ok) {
+      out.renderBody = renderText.slice(0, 600);
+      out.verdict =
+        "The short field list works but the one the page uses is rejected — a field in MEDIA_FIELDS is the problem. See renderBody.";
+      return out;
+    }
+
+    const items: any[] = JSON.parse(renderText)?.data ?? [];
+    out.items = items.map((m) => ({
+      media_type: m.media_type,
+      hasMediaUrl: Boolean(m.media_url),
+      hasThumbnail: Boolean(m.thumbnail_url),
+      hasPermalink: Boolean(m.permalink),
+    }));
+    const renderable = items.filter(
+      (m) => (m.media_type === "VIDEO" ? m.thumbnail_url : m.media_url) && m.permalink
+    ).length;
+    out.renderable = renderable;
+    out.verdict = renderable
+      ? `Working — ${renderable} of ${items.length} posts can be shown for @${out.username}.`
+      : `Instagram returns ${items.length} posts but NONE has a usable picture, so the row hides itself — see items.`;
   } catch (err) {
     out.error = err instanceof Error ? err.message : String(err);
     out.verdict = "The request to Instagram threw — see error.";
