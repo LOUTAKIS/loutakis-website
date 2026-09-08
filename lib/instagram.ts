@@ -128,7 +128,17 @@ const GRAPH = "https://graph.instagram.com/v26.0";
  * there than the page asks here is how a "working" diagnostic sits next to an
  * empty row: the fields you request decide what comes back.
  */
-const MEDIA_FIELDS = "id,caption,media_type,media_url,permalink,thumbnail_url";
+const MEDIA_FIELDS = "id,caption,media_type,media_url,permalink,thumbnail_url,timestamp";
+
+/**
+ * Ask for far more than we show, then sort.
+ *
+ * The API returned a page of mid-2025 posts when the newest were wanted, so its
+ * order is not something to rely on. Over-fetching and sorting by the real
+ * timestamp makes the row correct whatever order Instagram chooses, and costs
+ * nothing extra — it is one request either way, cached for an hour.
+ */
+const FETCH_WINDOW = 50;
 
 async function fetchPosts(limit: number): Promise<InstagramPost[]> {
   const token = await currentToken();
@@ -156,7 +166,7 @@ async function fetchPosts(limit: number): Promise<InstagramPost[]> {
   }
 
   const res = await fetch(
-    `${GRAPH}/${userId}/media?fields=${MEDIA_FIELDS}&limit=${limit}&access_token=${encodeURIComponent(token)}`,
+    `${GRAPH}/${userId}/media?fields=${MEDIA_FIELDS}&limit=${FETCH_WINDOW}&access_token=${encodeURIComponent(token)}`,
     { cache: "no-store" }
   );
   if (!res.ok) {
@@ -168,6 +178,10 @@ async function fetchPosts(limit: number): Promise<InstagramPost[]> {
   const data: any[] = Array.isArray(json?.data) ? json.data : [];
 
   return data
+    .slice()
+    // Newest first, by Instagram's own timestamp rather than by the order it
+    // happened to send. Anything undated sinks rather than jumping the queue.
+    .sort((a, b) => Date.parse(b?.timestamp ?? 0) - Date.parse(a?.timestamp ?? 0))
     .map((m) => {
       // Reels come through as VIDEO; a carousel shows its cover image.
       const isVideo = m.media_type === "VIDEO";
@@ -182,7 +196,8 @@ async function fetchPosts(limit: number): Promise<InstagramPost[]> {
         caption: typeof m.caption === "string" ? m.caption : "",
       };
     })
-    .filter((p) => p.image && p.permalink);
+    .filter((p) => p.image && p.permalink)
+    .slice(0, limit);
 }
 
 /**
@@ -299,7 +314,7 @@ export async function instagramDiagnostics(): Promise<Record<string, unknown>> {
      * thumbnails looks identical to a working feed until you check this.
      */
     const renderRes = await fetch(
-      `${GRAPH}/${userId}/media?fields=${MEDIA_FIELDS}&limit=6&access_token=${encodeURIComponent(token)}`,
+      `${GRAPH}/${userId}/media?fields=${MEDIA_FIELDS}&limit=${FETCH_WINDOW}&access_token=${encodeURIComponent(token)}`,
       { cache: "no-store" }
     );
     const renderText = await renderRes.text();
@@ -312,8 +327,22 @@ export async function instagramDiagnostics(): Promise<Record<string, unknown>> {
     }
 
     const items: any[] = JSON.parse(renderText)?.data ?? [];
-    out.items = items.map((m) => ({
+    out.windowSize = items.length;
+    /**
+     * Dates, in the order Instagram sent them. If this list is not descending,
+     * the API's order is not chronological and the sort in fetchPosts is what
+     * puts the newest posts on the page.
+     */
+    out.asSentByInstagram = items.slice(0, 12).map((m) => m.timestamp ?? null);
+    out.newest = items
+      .map((m) => m.timestamp)
+      .filter(Boolean)
+      .sort()
+      .slice(-3)
+      .reverse();
+    out.items = items.slice(0, 6).map((m) => ({
       media_type: m.media_type,
+      timestamp: m.timestamp ?? null,
       hasMediaUrl: Boolean(m.media_url),
       hasThumbnail: Boolean(m.thumbnail_url),
       hasPermalink: Boolean(m.permalink),
