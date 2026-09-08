@@ -233,6 +233,21 @@ export async function instagramDiagnostics(): Promise<Record<string, unknown>> {
     return out;
   }
 
+  /**
+   * What the PAGE gets, not what Instagram gives.
+   *
+   * Everything else here talks to Instagram directly and so proves only that
+   * the account and token are fine. The row calls getInstagramPosts, which goes
+   * through the hourly cache — so if this number is 0 while the calls below all
+   * succeed, the cache is the culprit and not the API.
+   *
+   * Calling it also warms that cache, which is a side effect worth knowing
+   * about: a 0 here can become a 6 on the next read.
+   */
+  out.pageWouldRender = await getInstagramPosts(6)
+    .then((p) => p.length)
+    .catch((e) => `threw: ${e instanceof Error ? e.message : String(e)}`);
+
   try {
     const meRes = await fetch(
       `${GRAPH}/me?fields=user_id,username,account_type,media_count&access_token=${encodeURIComponent(token)}`,
