@@ -6,7 +6,7 @@ export const metadata = {
     "Residential sales, auctioneering, and honest sale preparation & advice across Melbourne's Inner West.",
 };
 
-const SERVICES = [
+const SERVICES: { title: string; blurb: string; points: string[]; foot?: string }[] = [
   {
     title: "Residential Sales",
     blurb:
@@ -44,7 +44,6 @@ const SERVICES = [
       "A long-term game plan tailored to your goals",
       "Always available for a chat, a coffee, or just some clarity",
     ],
-    foot: "Whatever stage you're at, let's talk. We're here when you're ready, no rush.",
   },
 ];
 
@@ -82,9 +81,11 @@ export default function ServicesPage() {
 
           {/* The closing line is the best writing in each section, so it ends
               the section on its own rather than trailing off as body copy. */}
-          <div className="wrap">
-            <p className="service-quote"><span>{s.foot}</span></p>
-          </div>
+          {s.foot && (
+            <div className="wrap">
+              <p className="service-quote"><span>{s.foot}</span></p>
+            </div>
+          )}
         </section>
       ))}
 
