@@ -493,9 +493,15 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
    Understated by intent: this is a private list, so it whispers rather than
    sells. The homepage band sits on the darker paper to separate it from the
    listings above; the properties card is a quiet aside after the grid. */
-.offmarket-band { background: var(--paper-2); border-top: 1px solid var(--line); }
-.offmarket-band .lead { margin: 0 0 18px; }
-.offmarket-band p { color: var(--muted); max-width: 46ch; margin-bottom: 28px; }
+/* The two closing bands are both invitations — one to buyers, one to sellers —
+   so they are centred alike and capped. Left-aligned in a full-width band, the
+   off-market words left two thirds of the screen empty. A hairline keeps them
+   from reading as one enormous grey slab. */
+.offmarket-band { background: var(--paper-2); border-top: 1px solid var(--line); text-align: center; }
+.offmarket-band .wrap > * { max-width: 640px; margin-inline: auto; }
+.offmarket-band .lead { margin: 0 auto 18px; }
+.offmarket-band p { color: var(--muted); margin: 0 auto 28px; }
+.offmarket-band + .services { border-top: 1px solid var(--line); }
 
 .offmarket-card {
   display: flex; align-items: center; justify-content: space-between;
