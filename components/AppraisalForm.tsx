@@ -150,7 +150,6 @@ export default function AppraisalForm({
             className="field"
             value={lastSold}
             onChange={(e) => setLastSold(e.target.value)}
-            placeholder="2019, or roughly"
             disabled={neverSold}
           />
           <label className="ap-check">
