@@ -301,6 +301,18 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
       ? "Contact Agent"
       : raw.display_price || "Contact Agent";
 
+  /**
+   * Sort key only — see the note on Listing.priceValue.
+   *
+   * The blueprint gives price_from and price_to as numbers on a sales listing,
+   * so ordering uses the CRM's own figures rather than parsing priceDisplay,
+   * which is free text and is just as likely to read "Auction" or
+   * "Contact Agent" as a dollar amount. Top of the guide first, then the
+   * bottom, then the achieved price for a sold record.
+   */
+  const priceValue =
+    Number(raw.price_to) || Number(raw.price_from) || (saleP || undefined) || undefined;
+
   return {
     id: String(raw.id),
     slug: slugify(`${street} ${suburb}`) || String(raw.id),
@@ -314,6 +326,7 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
       postcode: p.postcode ?? "",
     },
     priceDisplay,
+    priceValue,
     bed: Number(p.beds ?? 0),
     bath: Number(p.baths ?? 0),
     car: Number(p.cars ?? p.garages ?? 0),

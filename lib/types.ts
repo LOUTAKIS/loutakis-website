@@ -36,6 +36,15 @@ export interface Listing {
     postcode: string;
   };
   priceDisplay: string;
+  /**
+   * A number to SORT by — never to show.
+   *
+   * priceDisplay is the only price a visitor may see: it is what the agent
+   * entered and what the underquoting rules are written against. This is the
+   * top of the CRM's price guide, used for ordering alone. Rendering it would
+   * publish a figure nobody approved for advertising.
+   */
+  priceValue?: number;
   bed: number;
   bath: number;
   car: number;

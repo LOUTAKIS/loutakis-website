@@ -6,6 +6,7 @@ import { STATUS_LABEL } from "@/lib/types";
 import EnquiryForm from "@/components/EnquiryForm";
 import Gallery from "@/components/Gallery";
 import PropertyVideoHero from "@/components/PropertyVideoHero";
+import { fmtInspection, fmtMoment } from "@/lib/when";
 
 /** Extract a YouTube video id from a Box & Dice video link. */
 function youTubeId(url?: string): string | null {
@@ -39,12 +40,6 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-function fmtInspection(iso: string) {
-  return new Date(iso).toLocaleString("en-AU", {
-    weekday: "short", day: "numeric", month: "short",
-    hour: "numeric", minute: "2-digit",
-  });
-}
 
 export default async function PropertyPage({ params }: { params: { slug: string } }) {
   const l = await getListingBySlug(params.slug);
@@ -108,7 +103,7 @@ export default async function PropertyPage({ params }: { params: { slug: string 
                 {l.auctionAt && l.status !== "sold" && l.status !== "leased" && (
                   <div style={{ marginBottom: 18 }}>
                     <div className="times-label">Auction</div>
-                    <p>{fmtInspection(l.auctionAt)}</p>
+                    <p>{fmtMoment(l.auctionAt)}</p>
                   </div>
                 )}
                 {/* Same again for inspections — a sold property must never
@@ -118,7 +113,7 @@ export default async function PropertyPage({ params }: { params: { slug: string 
                   <div>
                     <div className="times-label">Inspections</div>
                     <p style={{ color: "var(--muted)" }}>
-                      {l.inspections.map((insp, i) => <span key={i}>{fmtInspection(insp.start)}<br /></span>)}
+                      {l.inspections.map((insp, i) => <span key={i}>{fmtInspection(insp.start, insp.end)}<br /></span>)}
                       or by private appointment
                     </p>
                   </div>

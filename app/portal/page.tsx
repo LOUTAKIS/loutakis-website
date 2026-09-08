@@ -4,6 +4,7 @@ import { getViewer } from "@/lib/portal-session";
 import { getOffMarketListings } from "@/lib/boxdice";
 import type { Listing } from "@/lib/types";
 import EnquiryForm from "@/components/EnquiryForm";
+import { fmtInspection } from "@/lib/when";
 
 export const metadata = {
   title: "Off-market properties — Loutakis Real Estate",
@@ -13,18 +14,6 @@ export const metadata = {
 // Never cached: who can see this is decided per request, from the CRM.
 export const dynamic = "force-dynamic";
 
-const fmt = (iso: string) => {
-  const d = new Date(iso);
-  if (isNaN(+d)) return "";
-  return d.toLocaleString("en-AU", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "Australia/Melbourne",
-  });
-};
 
 export default async function PortalPage() {
   const viewer = await getViewer();
@@ -138,7 +127,7 @@ export default async function PortalPage() {
                         <div className="times-label">Private inspections</div>
                         <p style={{ color: "var(--muted)" }}>
                           {(l.inspections ?? []).map((i, n) => (
-                            <span key={n}>{fmt(i.start)}<br /></span>
+                            <span key={n}>{fmtInspection(i.start, i.end)}<br /></span>
                           ))}
                           or by appointment
                         </p>

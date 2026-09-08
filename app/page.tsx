@@ -15,7 +15,17 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const listings = await getListings();
-  const featured = listings.filter((l) => l.status !== "sold").slice(0, 3);
+  /**
+   * Three live properties, dearest first.
+   *
+   * Sorted on the CRM's price guide (Listing.priceValue), never on the display
+   * string — "Auction" and "Contact Agent" carry no number, and those sort last
+   * rather than jumping the queue on a parse that happened to return zero.
+   */
+  const featured = listings
+    .filter((l) => l.status !== "sold")
+    .sort((a, b) => (b.priceValue ?? 0) - (a.priceValue ?? 0))
+    .slice(0, 3);
 
   return (
     <>
