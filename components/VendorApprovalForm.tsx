@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 /**
  * The last chapter. Name, notes, the authorisation wording, and two clear
@@ -29,23 +29,6 @@ export default function VendorApprovalForm({
   const [name, setName] = useState(vendorName ?? "");
   const [notes, setNotes] = useState("");
   const notesRef = useRef<HTMLTextAreaElement>(null);
-
-  // "Suggest a change" from the copy chapter lands here as a quote.
-  useEffect(() => {
-    const onSuggest = (e: Event) => {
-      const quote = String((e as CustomEvent).detail ?? "").trim();
-      if (!quote) return;
-      setNotes((n) => `${n ? n.trimEnd() + "\n\n" : ""}“${quote}” — `);
-      setTimeout(() => {
-        const el = notesRef.current;
-        if (!el) return;
-        el.focus();
-        el.setSelectionRange(el.value.length, el.value.length);
-      }, 400);
-    };
-    window.addEventListener("vendor:suggest", onSuggest);
-    return () => window.removeEventListener("vendor:suggest", onSuggest);
-  }, []);
 
   async function submit(action: "approve" | "changes") {
     if (preview) {

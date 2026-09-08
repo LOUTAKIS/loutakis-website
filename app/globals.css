@@ -669,12 +669,9 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .vb-page span { position: absolute; left: 10px; bottom: 10px; font-size: 10px; letter-spacing: .16em; color: var(--muted); background: rgba(255,255,255,.85); padding: 3px 7px; }
 
 /* Copy, editorial */
-.vcopy { max-width: 64ch; position: relative; }
+.vcopy { max-width: 64ch; }
 .vcopy h3 { font-family: var(--serif); font-weight: 400; font-size: clamp(26px, 3vw, 38px); line-height: 1.15; margin: 0 0 30px; text-wrap: balance; }
 .vcopy p { font-size: clamp(17px, 1.35vw, 19px); line-height: 1.75; margin: 0 0 22px; }
-.vcopy p.vp-note { font-size: 13.5px; line-height: 1.5; }
-.vcopy-chip { position: absolute; transform: translate(-50%, -100%); z-index: 20; background: var(--ink); color: #fff; border: 0; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; padding: 9px 13px; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,.2); }
-.vcopy-chip::after { content: ""; position: absolute; left: 50%; bottom: -5px; width: 10px; height: 10px; background: var(--ink); transform: translateX(-50%) rotate(45deg); }
 
 /* Photos */
 /* Photographs: one at a time, sized to --fit less the filmstrip; strip beneath. */
@@ -769,8 +766,10 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
   /* Phone: the object first, at full width; the words beneath it. */
   .va2 { --vch-pad: 28px; }
   .vch { grid-template-columns: 1fr; gap: 22px; }
-  .vch-body { order: 0; }
-  .vch-head { position: static; order: 1; }
+  /* The title introduces its media, so it stays above it on a phone; an
+     earlier order swap put "The photographs" underneath the photographs. */
+  .vch-body { order: 1; }
+  .vch-head { position: static; order: 0; }
   .vch h2 { font-size: 26px; margin-bottom: 10px; }
   .vch-blurb { font-size: 15px; }
   .bf-controls { margin-top: 18px; flex-direction: row; flex-wrap: wrap; }
