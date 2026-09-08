@@ -384,29 +384,64 @@ export async function instagramDiagnostics(): Promise<Record<string, unknown>> {
 
     /**
      * Ten posts, one page, none newer than June 2025, against a claimed 64.
-     * That is not a short feed — it is the wrong set. /me returns two ids, and
-     * we have been asking /{user_id}/media; the documented call for Instagram
-     * Login is /me/media. If this returns the recent posts, the id is the bug.
+     * That is not a short feed, it is the wrong set — so ask every way there is
+     * to ask, in one round trip, and let the answers rule each other out.
+     *
+     *   me            the documented call for Instagram Login
+     *   user_id       the id we have been using (17841…, from /me)
+     *   appScoped     the OTHER id /me returns (28129…)
+     *   since         the same id, asked only for anything after the window
+     *
+     * If one of them sees newer posts, that call is the fix. If they all agree,
+     * the API's view of the account genuinely ends in June 2025 and no code
+     * change can help — which is itself the answer, and points at Meta.
      */
-    const meMediaRes = await fetch(
-      `${GRAPH}/me/media?fields=id,media_type,timestamp,permalink&limit=${FETCH_WINDOW}&access_token=${encodeURIComponent(token)}`,
-      { cache: "no-store" }
+    const appScoped = String(me?.id ?? "");
+    const since = Math.floor(Date.parse("2025-07-01T00:00:00Z") / 1000);
+    const probes: Array<[string, string]> = [
+      ["me", `${GRAPH}/me/media?fields=id,timestamp&limit=${FETCH_WINDOW}`],
+      ["user_id", `${GRAPH}/${userId}/media?fields=id,timestamp&limit=${FETCH_WINDOW}`],
+      ...(appScoped && appScoped !== userId
+        ? ([["appScoped", `${GRAPH}/${appScoped}/media?fields=id,timestamp&limit=${FETCH_WINDOW}`]] as Array<[string, string]>)
+        : []),
+      ["since2025-07", `${GRAPH}/${userId}/media?fields=id,timestamp&limit=${FETCH_WINDOW}&since=${since}`],
+    ];
+
+    const results = await Promise.all(
+      probes.map(async ([name, url]) => {
+        try {
+          const r = await fetch(`${url}&access_token=${encodeURIComponent(token)}`, { cache: "no-store" });
+          const t = await r.text();
+          if (!r.ok) return [name, { status: r.status, error: t.slice(0, 160) }] as const;
+          const rows: any[] = JSON.parse(t)?.data ?? [];
+          const dates = rows.map((m) => m.timestamp).filter(Boolean).sort();
+          return [
+            name,
+            {
+              status: r.status,
+              count: rows.length,
+              newest: dates[dates.length - 1] ?? null,
+              oldest: dates[0] ?? null,
+              hasNextPage: Boolean(JSON.parse(t)?.paging?.next),
+            },
+          ] as const;
+        } catch (e) {
+          return [name, { error: e instanceof Error ? e.message : String(e) }] as const;
+        }
+      })
     );
-    const meMediaText = await meMediaRes.text();
-    out.meMediaStatus = meMediaRes.status;
-    if (meMediaRes.ok) {
-      const rows: any[] = JSON.parse(meMediaText)?.data ?? [];
-      const dates = rows.map((m) => m.timestamp).filter(Boolean).sort();
-      out.meMediaCount = rows.length;
-      out.meMediaNewest = dates[dates.length - 1] ?? null;
-      out.meMediaOldest = dates[0] ?? null;
-      out.verdict =
-        out.meMediaNewest && out.meMediaNewest > (out.newestSeen as string)
-          ? "/me/media sees NEWER posts than /{user_id}/media — the id is the bug, switch the feed to /me/media."
-          : "Both ids return the same window, so the API's view of the account really does stop there — the cause is on Meta's side.";
-    } else {
-      out.meMediaBody = meMediaText.slice(0, 300);
-    }
+    const probeOut = Object.fromEntries(results) as Record<string, any>;
+    out.probes = probeOut;
+
+    const best = results
+      .map(([name, r]) => [name, (r as any).newest as string | null] as const)
+      .filter(([, n]) => Boolean(n))
+      .sort((a, b) => String(b[1]).localeCompare(String(a[1])))[0];
+
+    out.verdict =
+      best && best[1] && best[1] > (out.newestSeen as string)
+        ? `"${best[0]}" sees newer posts (${best[1]}) — that call is the fix.`
+        : `Every way of asking returns the same ${out.totalSeen} posts ending ${out.newestSeen}. The API's view of @${out.username} stops there, so this is an account/app problem at Meta, not a code one.`;
     out.verdict = renderable
       ? `Working — ${renderable} of ${items.length} posts can be shown for @${out.username}.`
       : `Instagram returns ${items.length} posts but NONE has a usable picture, so the row hides itself — see items.`;
