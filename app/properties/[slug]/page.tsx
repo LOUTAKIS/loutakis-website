@@ -7,6 +7,8 @@ import EnquiryForm from "@/components/EnquiryForm";
 import Gallery from "@/components/Gallery";
 import PropertyVideoHero from "@/components/PropertyVideoHero";
 import { fmtInspection, fmtMoment } from "@/lib/when";
+import AddToCalendar from "@/components/AddToCalendar";
+import { inspectionEvent, auctionEvent } from "@/lib/listing-events";
 
 /** Extract a YouTube video id from a Box & Dice video link. */
 function youTubeId(url?: string): string | null {
@@ -46,6 +48,13 @@ export default async function PropertyPage({ params }: { params: { slug: string 
   if (!l) notFound();
 
   const vid = youTubeId(l.videoUrl);
+
+  /**
+   * Built here from the same helpers the .ics route uses, so the Google link
+   * beside a time and the file behind it can never disagree about that time.
+   */
+  const auction = auctionEvent(l);
+  const inspections = (l.inspections ?? []).map((_, i) => inspectionEvent(l, i));
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -104,6 +113,13 @@ export default async function PropertyPage({ params }: { params: { slug: string 
                   <div style={{ marginBottom: 18 }}>
                     <div className="times-label">Auction</div>
                     <p>{fmtMoment(l.auctionAt)}</p>
+                    {auction && (
+                      <AddToCalendar
+                        event={auction}
+                        href={`/api/calendar/${l.slug}?auction=1`}
+                        label="Add auction to calendar"
+                      />
+                    )}
                   </div>
                 )}
                 {/* Same again for inspections — a sold property must never
@@ -112,10 +128,17 @@ export default async function PropertyPage({ params }: { params: { slug: string 
                 {l.inspections && l.inspections.length > 0 && l.status !== "sold" && l.status !== "leased" && (
                   <div>
                     <div className="times-label">Inspections</div>
-                    <p style={{ color: "var(--muted)" }}>
-                      {l.inspections.map((insp, i) => <span key={i}>{fmtInspection(insp.start, insp.end)}<br /></span>)}
-                      or by private appointment
-                    </p>
+                    <ul className="insp-list">
+                      {l.inspections.map((insp, i) => (
+                        <li key={i}>
+                          <span className="insp-when">{fmtInspection(insp.start, insp.end)}</span>
+                          {inspections[i] && (
+                            <AddToCalendar event={inspections[i]!} href={`/api/calendar/${l.slug}?i=${i}`} />
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                    <p style={{ color: "var(--muted)" }}>or by private appointment</p>
                   </div>
                 )}
               </div>
