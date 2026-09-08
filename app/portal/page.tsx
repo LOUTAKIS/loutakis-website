@@ -95,7 +95,9 @@ export default async function PortalPage() {
           <div className="portal-done">
             <h3>Nothing off-market right now</h3>
             <p>
-              We&rsquo;ll email you when something comes up that fits what you&rsquo;re looking for.
+              {/* The alert fires on anything NEW to the private list, not on a
+                  match against buying criteria — so it must not promise a fit. */}
+              When someone decides it&rsquo;s time to move, you&rsquo;ll be the first to know.
             </p>
           </div>
         ) : (
