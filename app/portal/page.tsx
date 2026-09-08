@@ -80,7 +80,9 @@ export default async function PortalPage() {
         <div className="section-head">
           <div>
             <div className="eyebrow">Off-market</div>
-            <h2>Available now{viewer.firstName ? `, ${viewer.firstName}` : ""}</h2>
+            {/* Without a first name it becomes "Is it time to move?" — still a
+                whole sentence, so the greeting is never left dangling. */}
+            <h2>Is it time to move{viewer.firstName ? `, ${viewer.firstName}` : ""}?</h2>
           </div>
         </div>
 
