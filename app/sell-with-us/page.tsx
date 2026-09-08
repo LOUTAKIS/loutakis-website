@@ -1,4 +1,4 @@
-import { getConsultantOptions } from "@/lib/boxdice";
+import { getConsultantOptions, defaultConsultant } from "@/lib/boxdice";
 import AppraisalForm from "@/components/AppraisalForm";
 
 export const metadata = {
@@ -48,6 +48,7 @@ const SERVICES = [
 
 export default async function SellWithUsPage() {
   const consultants = await getConsultantOptions();
+  const preferred = defaultConsultant(consultants);
   return (
     <>
       <section>
@@ -97,7 +98,7 @@ export default async function SellWithUsPage() {
             The more you can tell us, the more useful our first conversation will be. Only your name,
             the address and an email are needed — skip anything you&rsquo;re unsure about.
           </p>
-          <AppraisalForm consultants={consultants} />
+          <AppraisalForm consultants={consultants} defaultConsultantId={preferred?.id ?? null} />
         </div>
       </section>
 

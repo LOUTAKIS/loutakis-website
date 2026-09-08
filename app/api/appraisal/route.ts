@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendMail, officeRecipients, esc, mailIsConfigured } from "@/lib/mail";
-import { getConsultantOptions } from "@/lib/boxdice";
+import { getConsultantOptions, defaultConsultant } from "@/lib/boxdice";
 import { createContact, createAppraisalLead, type AppraisalAddress } from "@/lib/boxdice-write";
 
 export const runtime = "nodejs";
@@ -93,11 +93,12 @@ export async function POST(req: Request) {
   /**
    * The agent is sent as a Box & Dice consultant id and checked against the
    * CRM's own list. Nothing from the browser is trusted as an identity, and an
-   * unknown id simply means "no preference" rather than a rejected lead.
+   * unknown or missing id falls back to the default consultant rather than
+   * losing the lead.
    */
   const consultants = await getConsultantOptions();
   const wantedId = Number(body.consultantId);
-  const chosen = consultants.find((c) => c.id === wantedId) ?? null;
+  const chosen = consultants.find((c) => c.id === wantedId) ?? defaultConsultant(consultants);
 
   const answers: Array<[string, string]> = [
     ["Last sold", clean(body.lastSold, 120)],
@@ -105,7 +106,7 @@ export async function POST(req: Request) {
     ["Hoping to come to market", clean(body.timeframe, 80)],
     ["Thinks it's worth", clean(body.expectedValue, 80)],
     ["Improvements made", clean(body.improvements, 400)],
-    ["Preferred agent", chosen?.name ?? "No preference"],
+    ["Agent", chosen?.name ?? "unassigned"],
     ["Best time to call", clean(body.contactWhen, 120)],
     ["Heard about us via", (Array.isArray(body.heardAbout) ? body.heardAbout : []).map((h: unknown) => clean(h, 60)).filter(Boolean).join(", ")],
   ].filter(([, v]) => Boolean(v)) as Array<[string, string]>;
@@ -140,8 +141,8 @@ export async function POST(req: Request) {
     if (!contactId) {
       crm = { ok: false, detail: `contact create returned ${contact.status}` };
     } else if (!chosen) {
-      // A lead needs a consultant; without one there is nobody to assign it to.
-      crm = { ok: false, detail: "no agent chosen — contact created, no lead" };
+      // Only reachable when the CRM returned no consultants at all.
+      crm = { ok: false, detail: "no consultants available — contact created, no lead" };
     } else {
       const lead = await createAppraisalLead({
         consultantId: chosen.id,

@@ -409,6 +409,26 @@ export async function getConsultantOptions(): Promise<ConsultantOption[]> {
 }
 
 /**
+ * Who a lead belongs to when the seller doesn't choose.
+ *
+ * Every appraisal lead needs a `consultant_id`, so there must always be an
+ * answer — an unassigned lead is a lost one. Michael by default; set
+ * BOXDICE_DEFAULT_CONSULTANT_ID to override without a deploy, and if neither
+ * the id nor the name matches, the first consultant is better than nobody.
+ */
+const DEFAULT_CONSULTANT_NAME = "michael loutakis";
+
+export function defaultConsultant(list: ConsultantOption[]): ConsultantOption | null {
+  if (!list.length) return null;
+  const envId = Number(process.env.BOXDICE_DEFAULT_CONSULTANT_ID);
+  if (envId) {
+    const byId = list.find((c) => c.id === envId);
+    if (byId) return byId;
+  }
+  return list.find((c) => c.name.trim().toLowerCase() === DEFAULT_CONSULTANT_NAME) ?? list[0];
+}
+
+/**
  * Raw, unfiltered sales listings straight from Box & Dice.
  *
  * DIAGNOSTIC USE ONLY. getListings() below is what the site renders — it

@@ -25,7 +25,13 @@ const HEARD = [
  * it. The suburb is picked from the CRM's own list rather than typed, because
  * a lead that lands on the right suburb record is worth more than free text.
  */
-export default function AppraisalForm({ consultants }: { consultants: ConsultantOption[] }) {
+export default function AppraisalForm({
+  consultants,
+  defaultConsultantId,
+}: {
+  consultants: ConsultantOption[];
+  defaultConsultantId: number | null;
+}) {
   const [state, setState] = useState<"idle" | "sending" | "done">("idle");
   const [error, setError] = useState("");
 
@@ -40,7 +46,9 @@ export default function AppraisalForm({ consultants }: { consultants: Consultant
   const [expectedValue, setExpectedValue] = useState("");
   const [improvements, setImprovements] = useState<"" | "Yes" | "No">("");
   const [improvementsDetail, setImprovementsDetail] = useState("");
-  const [consultantId, setConsultantId] = useState("");
+  // Michael by default — every lead needs an owner, and "no preference"
+  // only left the seller wondering who would ring.
+  const [consultantId, setConsultantId] = useState(defaultConsultantId ? String(defaultConsultantId) : "");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [when, setWhen] = useState("");
@@ -175,9 +183,8 @@ export default function AppraisalForm({ consultants }: { consultants: Consultant
       )}
 
       <label className="ap-field">
-        <span>Is there an agent you&rsquo;d like to speak with?</span>
+        <span>Which agent would you like to speak with?</span>
         <select className="field" value={consultantId} onChange={(e) => setConsultantId(e.target.value)}>
-          <option value="">No preference</option>
           {consultants.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
