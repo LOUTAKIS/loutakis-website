@@ -4,6 +4,7 @@ import { listCampaigns, type Campaign, type CampaignStatus, campaignVendors } fr
 import StaffSignInForm from "@/components/StaffSignInForm";
 import StaffSignOut from "@/components/StaffSignOut";
 import DeleteCampaign from "@/components/DeleteCampaign";
+import RefreshListings from "@/components/RefreshListings";
 
 export const metadata = {
   title: "Vendor approvals — Loutakis Real Estate",
@@ -78,6 +79,7 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
             <h2>Vendor approvals</h2>
           </div>
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+            <RefreshListings />
             <Link href="/staff/new" className="btn">New approval</Link>
             <StaffSignOut />
           </div>

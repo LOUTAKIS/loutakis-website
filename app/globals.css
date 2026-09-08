@@ -969,3 +969,10 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
   .bf-stage.s2 { --wf: .25; }
 }
 @media (prefers-reduced-motion: reduce) { .bf-stage, .bf-card { transition: none; } }
+
+/* Refresh from Box & Dice, on the staff dashboard. The message sits beside the
+   button rather than replacing it, so the button stays where the hand expects
+   it after a refresh. */
+.refresh-wrap { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.refresh-msg { font-size: 12px; letter-spacing: .04em; color: var(--muted); max-width: 220px; line-height: 1.35; }
+.refresh-msg.bad { color: #a3231f; }
