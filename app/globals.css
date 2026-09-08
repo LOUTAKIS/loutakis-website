@@ -211,8 +211,12 @@ section { padding: 96px 0; }
 .ap-chip.on { border-color: var(--ink); background: var(--ink); color: var(--paper); }
 .ap-chip:focus-within { outline: 2px solid var(--ink); outline-offset: 2px; }
 
+/* The label's line box is set to the control's height so the two centre on
+   each other. Inheriting the body's 1.6 line-height made the text box taller
+   than the box beside it, which is what threw the words off centre. */
 .ap-check { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); cursor: pointer; height: 44px; }
-.ap-check input { width: 16px; height: 16px; }
+.ap-check input { width: 16px; height: 16px; flex: 0 0 auto; margin: 0; }
+.ap-check span { line-height: 16px; }
 
 .ap-done { text-align: center; padding: clamp(30px, 5vw, 60px) 0; }
 .ap-done h3 { font-family: var(--serif); font-weight: 400; font-size: clamp(24px, 3vw, 34px); margin-bottom: 14px; }
