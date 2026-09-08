@@ -1,10 +1,18 @@
 /**
- * Re-rendered hourly. The page itself rarely changes, but the Instagram row
- * does — and a statically-built page would freeze the feed at whatever was
- * posted on the day of the deploy. It also matters that Instagram's image
- * URLs are signed and expire within a day or so.
+ * Rendered per request, for one reason: the Instagram token.
+ *
+ * `revalidate` was the obvious choice and it was wrong. An ISR page is built
+ * during the deploy, and INSTAGRAM_TOKEN is not available to a build — so the
+ * row rendered empty, that empty HTML was what every visitor got, and the empty
+ * result was written into the shared feed cache on the way past. Redeploying
+ * repeated it; purging the cache did not help, because the next regeneration
+ * read the same emptiness straight back in.
+ *
+ * A page that shows live data from a runtime-only secret cannot be built ahead
+ * of time. The feed itself is still cached for an hour inside getInstagramPosts,
+ * so this costs a render, not an Instagram call.
  */
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "About — Loutakis Real Estate",
