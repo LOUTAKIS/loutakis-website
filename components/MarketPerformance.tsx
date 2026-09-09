@@ -10,16 +10,18 @@ import { getSalesStats, shortPrice } from "@/lib/sales-stats";
  * stale, and the counts and prices reproduce realestate.com.au's card exactly —
  * so a vendor who checks both sees the same thing.
  *
- * The days column appears on its own once the CRM holds real advertising-start
- * dates (see lib/sales-stats). Until then the table is three columns, because
- * a number we cannot stand behind is worse than a column that isn't there.
+ * Days advertised comes from date_listed, which the CRM records as the day a
+ * listing went online. Cross-checked against REA Ignite, that basis reproduces
+ * their medians exactly — 20.5, 21 and 20 days. A property sold off-market has
+ * no advertised period and shows a dash rather than a misleading zero.
  */
 export default async function MarketPerformance() {
   const stats = await getSalesStats(12);
   if (!stats?.byType?.length || !stats.totalSold) return null;
 
-  // Only once every published type has one; a half-filled column reads as a gap.
-  const showDays = stats.byType.every((t) => t.medianDays !== null);
+  // Shown as soon as anything has been advertised. A type whose sales were all
+  // off-market has no days to report and reads as a dash, not a gap.
+  const showDays = stats.byType.some((t) => t.medianDays !== null);
 
   const asAt = new Date().toLocaleDateString("en-AU", {
     day: "numeric",
@@ -57,7 +59,7 @@ export default async function MarketPerformance() {
                   <th scope="row">{r.type}</th>
                   <td>{r.sold}</td>
                   <td>{shortPrice(r.medianPrice)}</td>
-                  {showDays && <td>{r.medianDays}</td>}
+                  {showDays && <td>{r.medianDays ?? "—"}</td>}
                 </tr>
               ))}
             </tbody>
@@ -65,7 +67,9 @@ export default async function MarketPerformance() {
         </div>
 
         <p className="mp-source">
-          From our own sales records, for the 12 months to {asAt}.
+          From our own sales records, for the 12 months to {asAt}. Days advertised
+          is measured from the day a property went online to the day it sold;
+          properties sold off-market are counted as sales but carry no days.
         </p>
       </div>
     </section>

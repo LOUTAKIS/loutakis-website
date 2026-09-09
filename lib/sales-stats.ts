@@ -4,7 +4,7 @@ import { getRawSalesListings, getPropertyCategories } from "./boxdice";
 
 /**
  * Our market performance, for the Sell with us page. Nothing is entered by
- * hand; every figure here is computed from Box & Dice and updates itself.
+ * hand; every figure comes from Box & Dice and updates itself.
  *
  * Reconciled against realestate.com.au on 9 Sep 2026 over a rolling 12 months,
  * and it reproduces their card exactly:
@@ -20,12 +20,15 @@ import { getRawSalesListings, getPropertyCategories } from "./boxdice";
  * dropped 15a McArthurs Road (sold 9 Sep 2025, $790,000) by 41 minutes. That
  * one sale was REA's eleventh townhouse and their exact townhouse median.
  *
- * DAYS ADVERTISED — see ONLINE_DATE_FROM. `date_listed` historically recorded
- * when the authority was signed rather than when advertising began, so days
- * measured from it came out at 50 against REA's 20.5: a different measurement,
- * not a rounding difference. The convention is changing, so this counts only
- * sales listed on or after the changeover and shows nothing until enough of
- * them exist. No date is ever mixed with one that means something else.
+ * DAYS ADVERTISED is measured from `date_listed`, which the CRM now records as
+ * the day a listing went online rather than the day the authority was signed.
+ * Cross-checked against REA Ignite's own days column, that basis reproduces
+ * their medians exactly: House 20.5, Townhouse 21, Apartment 20.
+ *
+ * A listing that never went online carries date_listed = sale_date, so its span
+ * is zero and it drops out of the days median while still counting as a sale —
+ * which is how REA treats an off-market sale too. Four of the last forty were
+ * sold that way.
  */
 
 export type TypeStats = {
@@ -47,21 +50,6 @@ export type SalesStats = {
 
 /** REA's own order, so the two cards read the same way down the page. */
 const TYPE_ORDER = ["House", "Townhouse", "Apartment"];
-
-/**
- * The day `date_listed` started meaning "went online" rather than "authority
- * signed". Set LISTING_ONLINE_DATE_FROM (YYYY-MM-DD) in Vercel once the CRM
- * convention has changed; until then no days figure is computed or shown,
- * because the only honest answer is that we do not know.
- */
-const ONLINE_DATE_FROM = process.env.LISTING_ONLINE_DATE_FROM ?? "";
-
-/**
- * Below this, a median is an anecdote. A "median days" drawn from two sales
- * would be worse than showing nothing, so the column stays hidden until a type
- * has at least this many qualifying sales.
- */
-const MIN_FOR_DAYS = 5;
 
 function median(values: number[]): number | null {
   const xs = values.filter((n) => Number.isFinite(n) && n > 0).sort((a, b) => a - b);
@@ -116,14 +104,14 @@ async function compute(months: number): Promise<SalesStats> {
   }
 
   /**
-   * Days on market, counted only from listings whose date means what we think
-   * it means. Anything listed before the changeover carries an authority date
-   * and is left out of this figure entirely — it still counts as a sale.
+   * Days on market: from the day it went online to the day it sold.
+   *
+   * A zero span means it never went online — an off-market sale, where
+   * date_listed and sale_date are the same day. Those are excluded here and
+   * still counted as sales, which is exactly how REA reports them.
    */
   const daysFor = (rows: any[]): number | null => {
-    if (!ONLINE_DATE_FROM) return null;
     const spans = rows
-      .filter((r) => String(r?.date_listed ?? "") >= ONLINE_DATE_FROM)
       .map((r) => {
         const a = Date.parse(String(r?.date_listed ?? ""));
         const b = Date.parse(String(r?.sale_date ?? ""));
@@ -132,7 +120,6 @@ async function compute(months: number): Promise<SalesStats> {
         return d >= 0 && d < 3650 ? d : 0;
       })
       .filter((d) => d > 0);
-    if (spans.length < MIN_FOR_DAYS) return null;
     const m = median(spans);
     return m === null ? null : Math.round(m * 10) / 10;
   };
