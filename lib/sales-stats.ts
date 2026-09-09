@@ -88,7 +88,18 @@ async function compute(months: number): Promise<SalesStats> {
    * other agent reports, so a vendor comparing the two is comparing like
    * with like.
    */
-  const sold = raw.filter((r) => {
+  /**
+   * DE-DUPLICATE FIRST. The collection is paginated by update timestamp, so a
+   * record edited while we are paging through can be returned twice — once on
+   * an early page and again after its timestamp moves. getListings has always
+   * done this; these figures did not, and the first time someone bulk-edited
+   * sold listings the page reported 41 sales, 12 townhouses and a median of
+   * $880,000 against a true 40, 11 and $907,500. One duplicate row moved a
+   * published performance claim by $27,500.
+   */
+  const unique = [...new Map(raw.map((r) => [String(r?.id ?? Math.random()), r])).values()];
+
+  const sold = unique.filter((r) => {
     const t = Date.parse(String(r?.sale_date ?? ""));
     return !isNaN(t) && t >= +since;
   });

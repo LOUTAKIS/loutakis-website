@@ -82,7 +82,11 @@ export async function GET(req: Request) {
    * Sold, counted at the sale date rather than settlement — which is how REA
    * and every other agent reports, so the numbers are comparable.
    */
-  const sold = raw.filter((r) => {
+  // De-duplicated the same way as lib/sales-stats: a record edited mid-page
+  // comes back twice, and a duplicate silently inflates every figure here.
+  const unique = [...new Map(raw.map((r) => [String(r?.id ?? Math.random()), r])).values()];
+
+  const sold = unique.filter((r) => {
     const t = Date.parse(String(r?.sale_date ?? ""));
     return !isNaN(t) && t >= +since;
   });
@@ -125,6 +129,7 @@ export async function GET(req: Request) {
   return NextResponse.json({
     window: `${months} months, sales on or after ${since.toISOString().slice(0, 10)}`,
     crmTotalRecords: raw.length,
+    duplicatesInFeed: raw.length - unique.length,
 
     ours: { total: summarise(rows), byType },
     rea: REA_PUBLISHED,
