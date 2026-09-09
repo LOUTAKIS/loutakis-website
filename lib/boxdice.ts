@@ -405,6 +405,24 @@ async function getConsultants(): Promise<Map<number, Agent>> {
   return map;
 }
 
+/**
+ * One consultant's email address, for routing a lead to them.
+ *
+ * Deliberately NOT part of ConsultantOption: that list is sent to the browser
+ * to populate the agent dropdown, and there is no reason to publish every
+ * staff address in the page source. The chosen agent is resolved here, on the
+ * server, from an id the server has already validated.
+ */
+export async function consultantEmail(id: number): Promise<string | null> {
+  try {
+    const map = await getConsultants();
+    const email = map.get(Number(id))?.email;
+    return email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? email : null;
+  } catch {
+    return null;
+  }
+}
+
 /** A consultant a seller can choose on the appraisal form. */
 export type ConsultantOption = { id: number; name: string; title: string | null };
 

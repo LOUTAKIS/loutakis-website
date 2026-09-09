@@ -71,6 +71,8 @@ export async function getAccessToken(): Promise<string> {
  */
 export async function sendMail(opts: {
   to: string[];
+  /** Kept in the loop without being the person expected to act. */
+  cc?: string[];
   subject: string;
   html: string;
   replyTo?: { address: string; name?: string };
@@ -89,6 +91,21 @@ export async function sendMail(opts: {
           subject: opts.subject,
           body: { contentType: "HTML", content: opts.html },
           toRecipients: opts.to.map((address) => ({ emailAddress: { address } })),
+          /**
+           * Anyone already in `to` is dropped from cc — Graph accepts the
+           * duplicate and Outlook shows the same person twice, which reads as
+           * a mistake. Matched case-insensitively, since addresses are.
+           */
+          ...(opts.cc?.length
+            ? {
+                ccRecipients: opts.cc
+                  .filter(
+                    (address) =>
+                      !opts.to.some((t) => t.toLowerCase() === address.toLowerCase())
+                  )
+                  .map((address) => ({ emailAddress: { address } })),
+              }
+            : {}),
           ...(opts.replyTo
             ? {
                 replyTo: [

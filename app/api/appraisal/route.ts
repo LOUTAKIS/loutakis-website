@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendMail, officeRecipients, esc, mailIsConfigured } from "@/lib/mail";
-import { getConsultantOptions, defaultConsultant } from "@/lib/boxdice";
+import { getConsultantOptions, defaultConsultant, consultantEmail } from "@/lib/boxdice";
 import { createContact, createAppraisalLead, type AppraisalAddress } from "@/lib/boxdice-write";
 
 export const runtime = "nodejs";
@@ -162,13 +162,28 @@ export async function POST(req: Request) {
     crm = { ok: false, detail: err instanceof Error ? err.message : "unknown error" };
   }
 
+  /**
+   * The seller picked an agent, so that agent gets the email — not the office
+   * inbox, with the agent's name buried in a table. The office is copied so a
+   * lead can never sit unread with nobody else aware of it.
+   *
+   * If the CRM has no usable address for them, this falls back to the office
+   * alone: a lead delivered to the wrong inbox is recoverable, a lead sent
+   * nowhere is not.
+   */
+  const office = officeRecipients();
+  const agentEmail = chosen ? await consultantEmail(chosen.id) : null;
+  const to = agentEmail ? [agentEmail] : office;
+  const cc = agentEmail ? office : [];
+
   let mailed = false;
   if (mailIsConfigured()) {
     const rows = answers
       .map(([k, v]) => `<tr><td style="padding:6px 16px 6px 0;color:#666;vertical-align:top">${esc(k)}</td><td style="padding:6px 0">${esc(v)}</td></tr>`)
       .join("");
     mailed = await sendMail({
-      to: officeRecipients(),
+      to,
+      cc,
       /**
        * The CRM outcome goes in the SUBJECT, not just the body. A failed write
        * that is only mentioned three paragraphs down gets skimmed past, and the
@@ -182,6 +197,9 @@ export async function POST(req: Request) {
         <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
           <p style="font-size:17px"><strong>${esc(firstName)} ${esc(lastName)}</strong> wants an appraisal for <strong>${esc(address)}</strong>.</p>
           <p><a href="mailto:${esc(email)}">${esc(email)}</a>${phone ? ` · <a href="tel:${esc(phone.replace(/\s+/g, ""))}">${esc(phone)}</a>` : ""}</p>
+          <p style="font-size:15px">They asked for <strong>${esc(chosen?.name ?? "any agent")}</strong>${
+            agentEmail ? "" : " — no email address on file, so this went to the office"
+          }.</p>
           <table style="margin:18px 0;border-collapse:collapse;font-size:14px">${rows}</table>
           <p style="color:#666;font-size:13px">${crm.ok ? `In Box &amp; Dice: ${esc(crm.detail)}.` : `<strong>Not in Box &amp; Dice</strong> (${esc(crm.detail)}) — add it by hand.`}</p>
         </div>
