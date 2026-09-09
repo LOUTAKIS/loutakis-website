@@ -27,7 +27,8 @@ export default async function MarketPerformance() {
     <section className="mp">
       <div className="wrap">
         <div className="mp-head">
-          <div className="eyebrow">Our market performance</div>
+          {/* No eyebrow. The sentence below already says what these numbers
+              are, and a label above it only said it twice. */}
           <h2 className="lead">
             {stats.totalSold} properties sold in the last 12 months, at a median of{" "}
             {price(stats.medianPrice)}.

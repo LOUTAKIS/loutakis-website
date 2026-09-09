@@ -606,56 +606,42 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .pl-clear:hover, .pl-clear:focus-visible { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
 .pl-none { color: var(--muted); padding: 30px 0; }
 
-.pl { margin-top: 22px; border-top: 1px solid var(--ink); }
-.pl-head, .pl-row {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr 56px 56px 56px 0.9fr 0.9fr 110px;
-  gap: 16px; align-items: baseline;
-}
-.pl-head { padding: 10px 0; border-bottom: 1px solid var(--line); }
-/* Every heading is a sort control, so every heading looks alike — an arrow
-   appears only on the one actually sorting. */
-.pl-sort {
-  background: none; border: 0; padding: 4px 0; cursor: pointer; text-align: left;
-  font-family: var(--sans); font-size: 10px; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--muted);
-}
-.pl-sort:hover { color: var(--ink); }
-.pl-sort.on { color: var(--ink); }
-.pl-sort.pl-n { text-align: left; }
-.pl-row { border-bottom: 1px solid var(--line); padding: 18px 0; }
-/* Street name only — the number is never published. See streetOnly().
-   The suburb is set identically: the two together are the address, and
-   demoting half of it to grey small-caps made the row read as a label and a
-   value rather than one line. */
-.pl-street, .pl-suburb { font-family: var(--serif); font-size: clamp(17px, 2vw, 21px); color: var(--ink); }
-.pl-n, .pl-land, .pl-type { color: var(--muted); font-variant-numeric: tabular-nums; }
-.pl-typehead {
-  font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
-  color: var(--muted); padding: 4px 0;
-}
-/* Houses together, townhouses together. The heading is the section's only
-   chrome — a rule above it and the count beside it, nothing more. */
+.pl { margin-top: 26px; }
+
+/* A section per property type. The heading is what tells you where you are, so
+   it carries a rule above it and reads as a label, not another row — as a
+   sibling of the rows it was indistinguishable from them. */
+.pl-section { border-top: 1px solid var(--ink); margin-top: 34px; }
+.pl-section:first-of-type { margin-top: 0; }
 .pl-sectionhead {
-  display: flex; align-items: baseline; gap: 14px;
-  padding: 26px 0 10px;
-  font-family: var(--serif); font-size: clamp(18px, 2.2vw, 23px);
+  display: flex; align-items: baseline; gap: 12px;
+  margin: 0; padding: 14px 0 4px;
+  font-family: var(--sans); font-weight: 400;
+  font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
 }
-.pl-section:first-of-type .pl-sectionhead { padding-top: 18px; }
-.pl-count { font-family: var(--sans); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
-/* The heading row carries the labels on desktop; each cell repeats them only
-   once the grid collapses on a phone. */
-.pl-lbl { display: none; font-weight: 400; }
-/* The only thing on the row that does anything — text, like every other
-   button here, with the rule appearing under it on hover. */
+.pl-count { color: var(--muted); }
+
+/* TWO LINES, NOT SEVEN COLUMNS. The address and its specs sit together on the
+   left and the button on the right; nothing has to line up with anything in
+   another row, so nothing floats in the middle of the page. Capped at 780px
+   because the eye should not have to cross a 1,800px row to reach Enquire. */
+.pl-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 24px;
+  max-width: 780px; padding: 16px 0; border-bottom: 1px solid var(--line);
+}
+.pl-addr { font-family: var(--serif); font-size: clamp(17px, 2vw, 21px); }
+.pl-specs { color: var(--muted); font-size: 14px; margin-top: 5px; }
+
+/* The only thing on the row that does anything — text, like every other button
+   here, with the rule appearing under it on hover. */
 .pl-cta {
-  position: relative; justify-self: end; align-self: center;
+  position: relative; flex: none;
   font-family: var(--sans); font-size: 10px; letter-spacing: .16em;
   text-transform: uppercase; color: var(--ink);
-  background: none; border: 0; padding: 10px 0; cursor: pointer; white-space: nowrap;
+  background: none; border: 0; padding: 8px 0; cursor: pointer; white-space: nowrap;
 }
 .pl-cta::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 6px; height: 1px;
+  content: ""; position: absolute; left: 0; right: 0; bottom: 4px; height: 1px;
   background: currentColor; transform: scaleX(0); transform-origin: left;
   transition: transform .22s ease;
 }
@@ -663,27 +649,16 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .pl-cta:focus-visible { outline: none; }
 .pl-cta:disabled { color: var(--muted); cursor: default; }
 /* What the row says once it has been sent. It replaces the button rather than
-   sitting beside it: there is nothing left to click, and a greyed-out button
-   would invite a second try. */
+   greying it out, because there is nothing left to click. */
 .pl-sent {
-  justify-self: end; align-self: center; text-align: right;
+  flex: none; text-align: right;
   font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink);
 }
-/* Across the row, because a failure has to be readable, not squeezed into the
-   last column. */
-.pl-error { grid-column: 1 / -1; color: #a11; font-size: 13px; padding-top: 8px; }
-@media (max-width: 760px) {
-  .pl-sent { grid-column: 1 / -1; justify-self: start; text-align: left; margin-top: 6px; }
-}
-@media (max-width: 760px) {
-  .pl-head { display: none; }
-  .pl-row { grid-template-columns: repeat(3, auto); gap: 6px 20px; padding: 20px 0; }
-  .pl-street, .pl-suburb, .pl-land { grid-column: 1 / -1; }
-  /* The section heading already says the type, so the cell is redundant once
-     the columns collapse. */
-  .pl-type { display: none; }
-  .pl-lbl { display: inline; }
-  .pl-cta { grid-column: 1 / -1; justify-self: start; margin-top: 6px; }
+.pl-error { flex-basis: 100%; color: #a11; font-size: 13px; padding-top: 8px; }
+
+@media (max-width: 620px) {
+  .pl-row { flex-wrap: wrap; }
+  .pl-cta, .pl-sent { text-align: left; margin-top: 4px; }
 }
 
 .portal-headline { color: var(--muted); font-size: 17px; margin-bottom: 18px; }

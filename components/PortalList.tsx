@@ -4,18 +4,20 @@ import { useMemo, useState } from "react";
 import PortalEnquire from "./PortalEnquire";
 
 /**
- * The private list: search, filter, sort.
+ * The private list: search, filter, sort, sectioned by property type.
  *
  * WHAT THE BROWSER RECEIVES IS THE WHOLE POINT. This component is handed rows,
- * not listings — street name, suburb, four numbers and an id. No photograph,
- * no description, no agent details, and no street number, because anything
- * passed to a client component is in the page source whether it is rendered or
- * not. A vendor on a quiet campaign is entitled to that, and "we didn't show
- * it" is not the same as "we didn't send it".
+ * not listings — street name, suburb, type, four numbers and an id. No
+ * photograph, no description, no agent details, and no street number, because
+ * anything passed to a client component is in the page source whether it is
+ * rendered or not. A vendor on a quiet campaign is entitled to that, and "we
+ * didn't show it" is not the same as "we didn't send it".
  *
- * Everything here runs on those rows in memory. There is no search endpoint
- * and no round trip: the list is a handful of properties, and a buyer typing
- * "Yarraville" should see it filter as they type.
+ * TWO LINES PER PROPERTY, NOT A TABLE. It was a seven-column table, and at
+ * full width the eye had to cross three empty gaps to get from the address to
+ * the button; Type repeated the heading directly above it, and Land was a
+ * column of dashes because almost nothing carries one. An address and a line
+ * of specs need no columns to line up, and read the same on a phone.
  */
 export type PortalRow = {
   id: string;
@@ -28,40 +30,44 @@ export type PortalRow = {
   bed: number;
   bath: number;
   car: number;
-  /** As shown, e.g. "696m² approx." — empty when the CRM has none. */
+  /** As shown, e.g. "696m²" — empty when the CRM has none, and then omitted. */
   land: string;
   /** Sortable land size. Null sorts last in both directions. */
   landValue: number | null;
 };
 
-type Key = "street" | "suburb" | "bed" | "bath" | "car" | "land";
+type SortKey = "latest" | "address" | "beds" | "land";
 
-const COLUMNS: { key: Key; label: string; numeric?: boolean }[] = [
-  { key: "street", label: "Street" },
-  { key: "suburb", label: "Suburb" },
-  { key: "bed", label: "Bed", numeric: true },
-  { key: "bath", label: "Bath", numeric: true },
-  { key: "car", label: "Car", numeric: true },
-  { key: "land", label: "Land approx.", numeric: true },
+const SORTS: { key: SortKey; label: string }[] = [
+  { key: "latest", label: "Latest first" },
+  { key: "address", label: "Street A–Z" },
+  { key: "beds", label: "Most bedrooms" },
+  { key: "land", label: "Largest land" },
 ];
 
 /**
  * REA's order, and the order a buyer thinks in. Anything the CRM calls
- * something else sorts after these three rather than disappearing.
+ * something else sorts after these, and "Other" always sits last.
  */
 const TYPE_ORDER = ["House", "Townhouse", "Apartment", "Unit", "Villa", "Land"];
 
 function typeRank(t: string): number {
+  if (t === "Other") return 999;
   const i = TYPE_ORDER.indexOf(t);
   return i < 0 ? 99 : i;
+}
+
+/** "House" → "Houses". Left alone where an -s would be wrong. */
+function plural(type: string, n: number): string {
+  if (n === 1 || type === "Other" || type === "Land" || type.endsWith("s")) return type;
+  return `${type}s`;
 }
 
 export default function PortalList({ rows }: { rows: PortalRow[] }) {
   const [q, setQ] = useState("");
   const [suburb, setSuburb] = useState("all");
   const [minBeds, setMinBeds] = useState(0);
-  /** Null means the order the CRM gave us: most recently updated first. */
-  const [sort, setSort] = useState<{ key: Key; dir: 1 | -1 } | null>(null);
+  const [sort, setSort] = useState<SortKey>("latest");
 
   const suburbs = useMemo(
     () => [...new Set(rows.map((r) => r.suburb))].sort((a, b) => a.localeCompare(b)),
@@ -79,29 +85,28 @@ export default function PortalList({ rows }: { rows: PortalRow[] }) {
           r.suburb.toLowerCase().includes(needle))
     );
 
-    if (!sort) return filtered;
+    // "latest" is the order the CRM gave us — most recently updated first.
+    if (sort === "latest") return filtered;
 
     // Sorted on a copy: mutating the memo input would reorder the source list
-    // under React and make the next render's "no sort" state a lie.
+    // under React and make the next render's "latest" a lie.
     return [...filtered].sort((a, b) => {
-      if (sort.key === "street" || sort.key === "suburb") {
-        return a[sort.key].localeCompare(b[sort.key]) * sort.dir;
+      if (sort === "address") {
+        return a.street.localeCompare(b.street) || a.suburb.localeCompare(b.suburb);
       }
-      if (sort.key === "land") {
-        // A property with no land figure has nothing to compare, so it sits at
-        // the bottom whichever way the column is pointing.
-        if (a.landValue === null) return 1;
-        if (b.landValue === null) return -1;
-        return (a.landValue - b.landValue) * sort.dir;
-      }
-      return (a[sort.key] - b[sort.key]) * sort.dir;
+      if (sort === "beds") return b.bed - a.bed;
+      // A property with no land figure has nothing to compare, so it sits at
+      // the bottom rather than reading as the smallest block here.
+      if (a.landValue === null) return 1;
+      if (b.landValue === null) return -1;
+      return b.landValue - a.landValue;
     });
   }, [rows, q, suburb, minBeds, sort]);
 
   /**
    * Sectioned by property type, because a buyer looking for a house is not
-   * looking for an apartment and shouldn't have to read past them. Sorting and
-   * searching happen first and then divide into sections, so a sort orders
+   * looking for an apartment and shouldn't have to read past them. Filtering
+   * and sorting happen first and then divide into sections, so a sort orders
    * within each type rather than tearing the sections apart.
    */
   const sections = useMemo(() => {
@@ -115,15 +120,12 @@ export default function PortalList({ rows }: { rows: PortalRow[] }) {
       .sort((a, b) => typeRank(a.type) - typeRank(b.type) || a.type.localeCompare(b.type));
   }, [shown]);
 
-  function toggle(key: Key) {
-    setSort((s) =>
-      // Third click clears it, back to the order the CRM gave us — otherwise
-      // there is no way to get the newest-first view back without a reload.
-      s?.key !== key ? { key, dir: 1 } : s.dir === 1 ? { key, dir: -1 } : null
-    );
-  }
-
   const filtering = Boolean(q.trim()) || suburb !== "all" || minBeds > 0;
+  function clear() {
+    setQ("");
+    setSuburb("all");
+    setMinBeds(0);
+  }
 
   return (
     <>
@@ -158,69 +160,64 @@ export default function PortalList({ rows }: { rows: PortalRow[] }) {
             <option key={n} value={n}>{n}+ beds</option>
           ))}
         </select>
+        {/* Sorting moved here from the column headings, which no longer exist. */}
+        <select
+          className="field"
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortKey)}
+          aria-label="Sort the list"
+        >
+          {SORTS.map((s) => (
+            <option key={s.key} value={s.key}>{s.label}</option>
+          ))}
+        </select>
         {filtering && (
-          <button
-            type="button"
-            className="pl-clear"
-            onClick={() => { setQ(""); setSuburb("all"); setMinBeds(0); }}
-          >
+          <button type="button" className="pl-clear" onClick={clear}>
             Clear
           </button>
         )}
       </div>
 
       <div className="pl">
-        <div className="pl-head">
-          {COLUMNS.map((c) => (
-            <button
-              key={c.key}
-              type="button"
-              className={`pl-sort${c.numeric ? " pl-n" : ""}${sort?.key === c.key ? " on" : ""}`}
-              onClick={() => toggle(c.key)}
-              aria-label={`Sort by ${c.label}`}
-            >
-              {c.label}
-              {/* An arrow only on the column actually sorting, so the header
-                  row does not read as six arrows and one meaning. */}
-              {sort?.key === c.key && <span aria-hidden>{sort.dir === 1 ? " ↑" : " ↓"}</span>}
-            </button>
-          ))}
-          {/* Type is not sortable: the sections already order by it, and a
-              sort control that only reproduces the existing order is a lie
-              about what it does. */}
-          <span className="pl-typehead">Type</span>
-          <span />
-        </div>
-
         {sections.map((s) => (
-          <div key={s.type} className="pl-section">
-            <div className="pl-sectionhead">
-              {s.type}
-              <span className="pl-count">
-                {s.rows.length} {s.rows.length === 1 ? "property" : "properties"}
-              </span>
-            </div>
+          <section key={s.type} className="pl-section">
+            <h3 className="pl-sectionhead">
+              {plural(s.type, s.rows.length)}
+              <span className="pl-count">{s.rows.length}</span>
+            </h3>
 
             {s.rows.map((r) => (
               <div key={r.id} className="pl-row" id={r.slug}>
-                <span className="pl-street">{r.street}</span>
-                <span className="pl-suburb">{r.suburb}</span>
-                <span className="pl-n"><b className="pl-lbl">Bed </b>{r.bed}</span>
-                <span className="pl-n"><b className="pl-lbl">Bath </b>{r.bath}</span>
-                <span className="pl-n"><b className="pl-lbl">Car </b>{r.car}</span>
-                {/* Never state a land size as fact: the measurement is
-                    indicative, and the column heading says approx. */}
-                <span className="pl-land">{r.land || "—"}</span>
-                <span className="pl-type">{r.type || "—"}</span>
+                <div>
+                  <div className="pl-addr">
+                    {r.street}, {r.suburb}
+                  </div>
+                  {/* One line of specs. Land appears only when the CRM has a
+                      figure — a dash in every row taught nobody anything — and
+                      it is never stated as fact, hence "approx.". */}
+                  <div className="pl-specs">
+                    {r.bed} bed <span aria-hidden>·</span> {r.bath} bath <span aria-hidden>·</span>{" "}
+                    {r.car} car
+                    {r.land && (
+                      <>
+                        {" "}
+                        <span aria-hidden>·</span> {r.land} approx.
+                      </>
+                    )}
+                  </div>
+                </div>
                 <PortalEnquire listingId={r.id} />
               </div>
             ))}
-          </div>
+          </section>
         ))}
 
         {shown.length === 0 && (
           <p className="pl-none">
-            Nothing on the private list matches that. <button type="button" className="pl-clear" onClick={() => { setQ(""); setSuburb("all"); setMinBeds(0); }}>Clear the filters</button>
+            Nothing on the private list matches that.{" "}
+            <button type="button" className="pl-clear" onClick={clear}>
+              Clear the filters
+            </button>
           </p>
         )}
       </div>
