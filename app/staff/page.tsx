@@ -60,7 +60,9 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
       <div className="wrap">
         <div className="section-head">
           <div>
-            <div className="eyebrow">Staff</div>
+            {/* "Staff" was the sign-in page's label, and it said nothing once
+                you were through it. */}
+            <div className="eyebrow">Dashboard</div>
             <h2>{staff.name}</h2>
           </div>
           <StaffSignOut />
