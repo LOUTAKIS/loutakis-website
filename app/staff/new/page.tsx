@@ -23,7 +23,7 @@ export default async function NewApprovalPage({ searchParams }: { searchParams?:
   return (
     <section className="portal-page">
       <div className="wrap" style={{ maxWidth: 760 }}>
-        <Link href="/staff" className="backlink">← Vendor approvals</Link>
+        <Link href="/staff/approvals" className="backlink">← Vendor approvals</Link>
         <div className="eyebrow" style={{ marginTop: 18 }}>New approval</div>
         <h2>Which property?</h2>
         <p className="portal-intro">

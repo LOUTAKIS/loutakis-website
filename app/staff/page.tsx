@@ -1,55 +1,25 @@
 import Link from "next/link";
 import { getStaff } from "@/lib/staff-auth";
-import { listCampaigns, type Campaign, type CampaignStatus, campaignVendors } from "@/lib/campaigns";
+import { listCampaigns } from "@/lib/campaigns";
 import StaffSignInForm from "@/components/StaffSignInForm";
 import StaffSignOut from "@/components/StaffSignOut";
-import DeleteCampaign from "@/components/DeleteCampaign";
-import RefreshListings from "@/components/RefreshListings";
 
 export const metadata = {
-  title: "Vendor approvals — Loutakis Real Estate",
+  title: "Staff — Loutakis Real Estate",
   robots: { index: false, follow: false },
 };
 export const dynamic = "force-dynamic";
 
-const STATUS_LABEL: Record<CampaignStatus, string> = {
-  draft: "Draft",
-  sent: "Sent",
-  opened: "Opened",
-  approved: "Approved",
-  changes: "Changes requested",
-};
-
-/** "3 hours ago", "yesterday", "12 Aug". Enough to know whether to ring. */
-function ago(iso: string | null): string {
-  if (!iso) return "";
-  const ms = Date.now() - +new Date(iso);
-  const m = Math.round(ms / 60000);
-  if (m < 2) return "just now";
-  if (m < 60) return `${m} min ago`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h} hour${h === 1 ? "" : "s"} ago`;
-  const d = Math.round(h / 24);
-  if (d === 1) return "yesterday";
-  if (d < 14) return `${d} days ago`;
-  return new Date(iso).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "Australia/Melbourne" });
-}
-
-function StatusLine({ c }: { c: Campaign }) {
-  switch (c.status) {
-    case "draft":
-      return <span className="vc-status draft">Not sent</span>;
-    case "sent":
-      return <span className="vc-status sent">Sent {ago(c.sentAt)} · not opened yet</span>;
-    case "opened":
-      return <span className="vc-status opened">Opened {ago(c.openedAt)}{c.openCount > 1 ? ` · ${c.openCount} times` : ""}</span>;
-    case "approved":
-      return <span className="vc-status approved">Approved {ago(c.approvedAt)} by {c.approvedName}</span>;
-    case "changes":
-      return <span className="vc-status changes">Changes requested {ago(c.amendments.at(-1)?.at ?? null)}</span>;
-  }
-}
-
+/**
+ * The staff dashboard — the one door into everything behind the sign-in.
+ *
+ * Vendor approvals used to BE this page, which worked while it was the only
+ * tool. It isn't the last one we'll build, and a landing page that is really
+ * one feature has to be dismantled the first time a second arrives. So the
+ * approvals list moved to /staff/approvals and this became what it says: a
+ * short list of what you can do, each with the one number that says whether it
+ * needs you today.
+ */
 export default async function StaffPage({ searchParams }: { searchParams?: { expired?: string } }) {
   const staff = getStaff();
 
@@ -58,81 +28,59 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
       <section className="portal-page">
         <div className="wrap" style={{ maxWidth: 520 }}>
           <div className="eyebrow">Staff</div>
-          <h2>Vendor approvals</h2>
-          <p className="portal-intro">Sign in with your Loutakis email to send and track marketing approvals.</p>
+          <h2>Sign in</h2>
+          <p className="portal-intro">
+            Sign in with your Loutakis email to send and track vendor approvals.
+          </p>
           <StaffSignInForm expired={searchParams?.expired === "1"} />
         </div>
       </section>
     );
   }
 
-  const campaigns = await listCampaigns();
-  const live = campaigns.filter((c) => c.status !== "approved");
-  const done = campaigns.filter((c) => c.status === "approved");
+  /**
+   * The count is the whole reason the tile is worth reading. A dashboard that
+   * only names its tools tells you nothing you didn't know; "2 waiting on a
+   * vendor" tells you whether to open it.
+   *
+   * A failure here must not take the dashboard down — the tile can lose its
+   * subtitle and still be a working link to the page that will report the
+   * error properly.
+   */
+  let waiting: number | null = null;
+  try {
+    const campaigns = await listCampaigns();
+    waiting = campaigns.filter((c) => c.status !== "approved").length;
+  } catch (err) {
+    console.error("[staff] campaign counts unavailable", err);
+  }
 
   return (
     <section className="portal-page">
       <div className="wrap">
         <div className="section-head">
           <div>
-            <div className="eyebrow">Staff · {staff.name}</div>
-            <h2>Vendor approvals</h2>
+            <div className="eyebrow">Staff</div>
+            <h2>{staff.name}</h2>
           </div>
-          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            <RefreshListings />
-            <Link href="/staff/new" className="btn">New approval</Link>
-            <StaffSignOut />
-          </div>
+          <StaffSignOut />
         </div>
 
-        {campaigns.length === 0 ? (
-          <div className="portal-done" style={{ marginTop: 40 }}>
-            <h3>Nothing in flight</h3>
-            <p>Start one with New approval — pick the property, review what’s been gathered, send the vendor a link.</p>
-          </div>
-        ) : (
-          <>
-            {live.length > 0 && (
-              <ul className="vc-list">
-                {live.map((c) => (
-                  <li key={c.id} className="vc-row">
-                    <Link href={`/staff/${c.id}`}>
-                      <div className="vc-addr">{c.address}</div>
-                      {(campaignVendors(c).length > 0 || c.sentBy) && (
-                        <div className="vc-meta">
-                          {[
-                            campaignVendors(c).map((v) => v.name || v.email).filter(Boolean).join(" & "),
-                            c.sentBy ? `sent by ${c.sentBy.split("@")[0]}` : "",
-                          ].filter(Boolean).join(" · ")}
-                        </div>
-                      )}
-                      <StatusLine c={c} />
-                      {c.status === "changes" && c.amendments.at(-1) && (
-                        <blockquote className="vc-quote">{c.amendments.at(-1)!.text}</blockquote>
-                      )}
-                    </Link>
-                    <DeleteCampaign id={c.id} address={c.address} />
-                  </li>
-                ))}
-              </ul>
-            )}
-            {done.length > 0 && (
-              <>
-                <div className="eyebrow" style={{ marginTop: 48 }}>Approved</div>
-                <ul className="vc-list done">
-                  {done.map((c) => (
-                    <li key={c.id}>
-                      <Link href={`/staff/${c.id}`}>
-                        <div className="vc-addr">{c.address}</div>
-                        <StatusLine c={c} />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </>
-        )}
+        <div className="sd-grid">
+          <Link href="/staff/approvals" className="sd-tile">
+            <div className="sd-name">Vendor approvals</div>
+            <p className="sd-desc">
+              Send a vendor their marketing to sign off, and see who has opened it.
+            </p>
+            <div className="sd-count">
+              {waiting === null
+                ? "Open"
+                : waiting === 0
+                  ? "Nothing in flight"
+                  : `${waiting} in flight`}
+            </div>
+          </Link>
+        </div>
       </div>
     </section>
   );

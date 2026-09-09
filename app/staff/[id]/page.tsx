@@ -28,7 +28,7 @@ export default async function CampaignPage({ params }: { params: { id: string } 
   return (
     <section className="portal-page">
       <div className="wrap">
-        <Link href="/staff" className="backlink">← Vendor approvals</Link>
+        <Link href="/staff/approvals" className="backlink">← Vendor approvals</Link>
         <CampaignReview
           campaign={campaign}
           source={source}
