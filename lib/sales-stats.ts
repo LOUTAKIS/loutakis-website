@@ -178,12 +178,14 @@ export async function getSalesStats(months = 12): Promise<SalesStats | null> {
   }
 }
 
-/** "$985k", the way REA writes it. */
-export function shortPrice(n: number | null): string {
+/**
+ * "$907,500" — the figure in full.
+ *
+ * REA abbreviates to $908k; we do not. A price is what a vendor is here to
+ * read, and rounding it to three digits both loses precision and makes the
+ * claim look softer than it is.
+ */
+export function price(n: number | null): string {
   if (!n) return "—";
-  if (n >= 1_000_000) {
-    const m = n / 1_000_000;
-    return `$${m % 1 === 0 ? m.toFixed(0) : m.toFixed(2).replace(/0$/, "")}m`;
-  }
-  return `$${Math.round(n / 1000)}k`;
+  return `$${Math.round(n).toLocaleString("en-AU")}`;
 }

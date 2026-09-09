@@ -1,4 +1,4 @@
-import { getSalesStats, shortPrice } from "@/lib/sales-stats";
+import { getSalesStats, price } from "@/lib/sales-stats";
 
 /**
  * Our market performance, on the Sell with us page.
@@ -30,7 +30,7 @@ export default async function MarketPerformance() {
           <div className="eyebrow">Our market performance</div>
           <h2 className="lead">
             {stats.totalSold} properties sold in the last 12 months, at a median of{" "}
-            {shortPrice(stats.medianPrice)}.
+            {price(stats.medianPrice)}.
           </h2>
         </div>
 
@@ -51,7 +51,7 @@ export default async function MarketPerformance() {
                 <tr key={r.type}>
                   <th scope="row">{r.type}</th>
                   <td>{r.sold}</td>
-                  <td>{shortPrice(r.medianPrice)}</td>
+                  <td>{price(r.medianPrice)}</td>
                   {showDays && <td>{r.medianDays ?? "—"}</td>}
                 </tr>
               ))}
