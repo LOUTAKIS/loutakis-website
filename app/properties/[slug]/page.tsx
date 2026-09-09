@@ -93,13 +93,14 @@ export default async function PropertyPage({ params }: { params: { slug: string 
                 <div className="price-big">{l.priceDisplay}</div>
                 {l.videoUrl && !vid && (
                   <a href={l.videoUrl} target="_blank" rel="noopener noreferrer" className="btn"
-                    style={{ marginTop: 16, marginRight: 10 }}>
+                    style={{ marginTop: 16, marginRight: 28 }}>
                     &#9654;&nbsp; Watch video
                   </a>
                 )}
                 {l.soiUrl && (
+                  // The padding here was sized for a box that no longer exists.
                   <a href={l.soiUrl} target="_blank" rel="noopener noreferrer" className="btn"
-                    style={{ marginTop: 16, fontSize: 9, padding: "10px 21px", letterSpacing: ".15em" }}>
+                    style={{ marginTop: 16, fontSize: 9, letterSpacing: ".15em" }}>
                     Statement of Information
                   </a>
                 )}
