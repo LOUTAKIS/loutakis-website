@@ -450,6 +450,22 @@ textarea.field { min-height: 90px; resize: vertical; }
   padding-top: 14px; border-top: 1px solid var(--line);
 }
 
+/* ── Website numbers ──────────────────────────────────────────────────────
+   Figures first and large, because they are read at a glance between calls;
+   the tables underneath are for when one of them looks wrong. */
+.wa-figures { display: flex; flex-wrap: wrap; gap: 14px 64px; margin: 26px 0 44px; }
+.wa-n { font-family: var(--serif); font-size: clamp(32px, 5vw, 46px); line-height: 1; }
+.wa-n.wa-bad { color: #a11; }
+.wa-l { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-top: 10px; }
+.wa-up { color: #157347; }
+.wa-down { color: #a11; }
+.wa-sub { color: var(--line); }
+.wa-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 48px; }
+.wa-table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+.wa-table th, .wa-table td { padding: 9px 0; border-bottom: 1px solid var(--line); font-weight: 400; text-align: left; }
+.wa-table th { color: var(--ink); word-break: break-all; padding-right: 16px; }
+.wa-table td { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
 /* Footer */
 footer.site { background: var(--paper); color: var(--muted); padding: 72px 0 36px; border-top: 1px solid var(--line); }
 /* The brand block sits on the left margin; Hours and Contact are right-aligned

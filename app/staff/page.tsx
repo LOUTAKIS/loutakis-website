@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getStaff } from "@/lib/staff-auth";
 import { listCampaigns } from "@/lib/campaigns";
+import { getSiteStats, analyticsConfigured } from "@/lib/web-analytics";
 import StaffSignInForm from "@/components/StaffSignInForm";
 import StaffSignOut from "@/components/StaffSignOut";
 import RefreshListings from "@/components/RefreshListings";
@@ -56,6 +57,10 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
     console.error("[staff] campaign counts unavailable", err);
   }
 
+  // Same rule for the website tile: a headline figure if we have one, a working
+  // link either way.
+  const stats = analyticsConfigured() ? await getSiteStats(30).catch(() => null) : null;
+
   return (
     <section className="portal-page">
       <div className="wrap">
@@ -89,6 +94,18 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
                 : waiting === 0
                   ? "Nothing in flight"
                   : `${waiting} in flight`}
+            </div>
+          </Link>
+
+          <Link href="/staff/website" className="sd-tile">
+            <div className="sd-name">Website</div>
+            <p className="sd-desc">
+              Who came, what they looked at, and whether the forms worked.
+            </p>
+            <div className="sd-count">
+              {stats
+                ? `${stats.totals.visitors.toLocaleString("en-AU")} visitors · 30 days`
+                : "Open"}
             </div>
           </Link>
         </div>
