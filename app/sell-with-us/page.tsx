@@ -3,6 +3,13 @@ import { getConsultantOptions, defaultConsultant } from "@/lib/boxdice";
 import AppraisalForm from "@/components/AppraisalForm";
 import MarketPerformance from "@/components/MarketPerformance";
 
+/**
+ * Re-rendered hourly. The page copy never changes, but the market performance
+ * figures do — every time a property sells — and a statically built page would
+ * hold whatever was true on the day of the deploy.
+ */
+export const revalidate = 3600;
+
 export const metadata = {
   title: "Sell with us — Loutakis Real Estate",
   description:

@@ -73,7 +73,15 @@ async function compute(months: number): Promise<SalesStats> {
   since.setMonth(since.getMonth() - months);
   since.setUTCHours(0, 0, 0, 0);
 
-  const [raw, categories] = await Promise.all([getRawSalesListings(), getPropertyCategories()]);
+  /**
+   * fresh=false on both: this function runs inside unstable_cache, and a
+   * no-store fetch in that context throws. That is what emptied this section
+   * on its first deploy — the error was caught and the page simply hid it.
+   */
+  const [raw, categories] = await Promise.all([
+    getRawSalesListings(false),
+    getPropertyCategories(false),
+  ]);
 
   /**
    * Counted at the sale date, not settlement — which is how REA and every

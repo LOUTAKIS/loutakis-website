@@ -483,11 +483,18 @@ export function defaultConsultant(list: ConsultantOption[]): ConsultantOption | 
  * so we can inspect fields the UI never reads (tags, sensitivity flags) while
  * designing the off-market portal. Never render this to a visitor.
  */
-export async function getRawSalesListings(): Promise<any[]> {
+export async function getRawSalesListings(fresh = true): Promise<any[]> {
   if (USE_MOCK) return [];
-  // noStore: a diagnostic that reads a ten-minute-old cache is worse than
-  // useless — it reports the state before whatever you just changed.
-  return paginate("/sales_listings", "sales_listings", true);
+  /**
+   * `fresh` skips the data cache, which a diagnostic wants — reading a
+   * ten-minute-old cache reports the state before whatever you just changed.
+   *
+   * BUT A NO-STORE FETCH CANNOT RUN INSIDE unstable_cache: Next refuses it and
+   * throws, which is exactly how the market-performance figures silently
+   * vanished from Sell with us. Anything wrapping this in a cache must pass
+   * fresh=false.
+   */
+  return paginate("/sales_listings", "sales_listings", fresh);
 }
 
 /**
@@ -497,8 +504,9 @@ export async function getRawSalesListings(): Promise<any[]> {
  * groups its performance figures. NOT property_type_id, which is the far
  * coarser Residential / Rental / Business split.
  */
-export async function getPropertyCategories(): Promise<Map<number, string>> {
-  const rows = await paginate("/property_categories", "property_categories", true);
+export async function getPropertyCategories(fresh = true): Promise<Map<number, string>> {
+  // Same rule as getRawSalesListings: pass fresh=false from inside a cache.
+  const rows = await paginate("/property_categories", "property_categories", fresh);
   return new Map(rows.filter((r: any) => r?.id).map((r: any) => [Number(r.id), String(r.name ?? "")]));
 }
 
