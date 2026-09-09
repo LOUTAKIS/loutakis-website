@@ -93,12 +93,16 @@ export default async function WebsitePage() {
                 <div className="wa-l">Page views</div>
               </div>
               <div>
-                <div className="wa-n">{approved.length}</div>
-                {/* Ours, not Vercel's — the off-market list, counted exactly. */}
-                <div className="wa-l">
-                  Off-market members
-                  {optedOut.length > 0 && <span className="wa-sub"> · {optedOut.length} opted out of alerts</span>}
-                </div>
+                {/* Ours, not Vercel's — the off-market list, counted exactly,
+                    and the only figure here you can act on, so it opens the
+                    list rather than just stating it. */}
+                <Link href="/staff/members" className="wa-link">
+                  <div className="wa-n">{approved.length}</div>
+                  <div className="wa-l">
+                    Off-market members
+                    {optedOut.length > 0 && <span className="wa-sub"> · {optedOut.length} opted out of alerts</span>}
+                  </div>
+                </Link>
               </div>
             </div>
 

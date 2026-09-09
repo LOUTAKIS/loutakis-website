@@ -144,6 +144,39 @@ async function readList(key: string): Promise<number[]> {
 export const listApprovedContacts = () => readList(KEY_APPROVED);
 export const listOptedOut = () => readList(KEY_OPTOUT);
 
+/**
+ * Every contact id we have ever stored — the people who registered through
+ * this website, whatever became of them.
+ *
+ * There is no way to ask Box & Dice "who is in this category": the contacts
+ * collection takes no category filter, and crawling every contact in the CRM
+ * to find eleven of them would be both slow and rate-limited. But we wrote a
+ * key for each registration ourselves, so the ids are already here.
+ *
+ * Keys are `e_<hash>` and `m_<hash>` — an email and a mobile for the same
+ * person point at the same id, hence the Set. Still no addresses or phone
+ * numbers in the store: the values are ids, and the keys are one-way hashes.
+ *
+ * The approved list is folded in so nobody who has access can be missing from
+ * the roll, even if their lookup key was written before this existed.
+ */
+export async function listRegisteredContacts(): Promise<number[]> {
+  if (!client) return [];
+  const ids = new Set<number>();
+  try {
+    const all = await client.getAll<Record<string, unknown>>();
+    for (const [key, value] of Object.entries(all ?? {})) {
+      if (!key.startsWith("e_") && !key.startsWith("m_")) continue;
+      const id = Number(value);
+      if (Number.isFinite(id) && id > 0) ids.add(id);
+    }
+  } catch (err) {
+    console.error("[portal-store] listRegisteredContacts failed", err);
+  }
+  for (const id of await listApprovedContacts()) ids.add(id);
+  return [...ids];
+}
+
 export async function addApprovedContact(contactId: number | string): Promise<void> {
   const id = Number(contactId);
   const current = await listApprovedContacts();

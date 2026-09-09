@@ -489,7 +489,32 @@ textarea.field { min-height: 90px; resize: vertical; }
 .wa-up { color: #157347; }
 .wa-down { color: #a11; }
 .wa-sub { color: var(--line); }
+/* The one figure on this page you can act on. Underlines the label on hover so
+   it reads as a way through, not just a number. */
+.wa-link { text-decoration: none; color: inherit; display: block; }
+.wa-link:hover .wa-l { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
 .wa-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 48px; }
+
+/* ── Off-market members ───────────────────────────────────────────────────
+   A row per person: who they are and how to reach them on the left, where they
+   stand and what you can do about it on the right. */
+.mb-list { margin-top: 30px; border-top: 1px solid var(--ink); }
+.mb-row {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: 16px 24px; padding: 18px 0; border-bottom: 1px solid var(--line);
+}
+.mb-name { font-family: var(--serif); font-size: clamp(17px, 2vw, 21px); }
+.mb-contact { color: var(--muted); font-size: 14px; margin-top: 5px; }
+.mb-contact a { color: inherit; text-decoration: none; }
+.mb-contact a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.mb-flag { color: var(--line); }
+.mb-right { display: flex; align-items: baseline; gap: 22px; flex-wrap: wrap; }
+.mb-status { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+/* Waiting is the only state that wants your attention. */
+.mb-pending .mb-status { color: var(--ink); }
+.mb-actions { display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; }
+.mb-actions .btn { font-size: 10px; letter-spacing: .16em; }
+.mb-error { color: #a11; font-size: 13px; }
 .wa-table { width: 100%; border-collapse: collapse; margin-top: 14px; }
 .wa-table th, .wa-table td { padding: 9px 0; border-bottom: 1px solid var(--line); font-weight: 400; text-align: left; }
 .wa-table th { color: var(--ink); word-break: break-all; padding-right: 16px; }

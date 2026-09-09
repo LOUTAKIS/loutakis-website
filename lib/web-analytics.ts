@@ -124,10 +124,17 @@ function nameOf(row: any, preferred: string): string {
   return "—";
 }
 
-function named(json: any, key: string, limit: number): NamedCount[] {
+function named(json: any, key: string, limit: number, blankAs = "—"): NamedCount[] {
   const rows: any[] = Array.isArray(json?.data) ? json.data : [];
   return rows
-    .map((r) => ({ name: nameOf(r, key), visitors: num(r?.visitors), pageviews: num(r?.pageviews) }))
+    .map((r) => {
+      const name = nameOf(r, key);
+      return {
+        name: name === "—" ? blankAs : name,
+        visitors: num(r?.visitors),
+        pageviews: num(r?.pageviews),
+      };
+    })
     .sort((a, b) => b.pageviews - a.pageviews || b.visitors - a.visitors)
     .slice(0, limit);
 }
@@ -140,31 +147,50 @@ export async function getSiteStats(days = 30): Promise<SiteStats | null> {
   const prevUntil = day(daysAgo(days + 1));
   const prevSince = day(daysAgo(days * 2 + 1));
 
-  const [daily, prior, pages, refs, events] = await Promise.all([
+  /**
+   * The four form events, one query each, filtered by name.
+   *
+   * Grouping by `eventName` was the obvious way to do this in one call and it
+   * failed against the live API — the documented dimensions for the events
+   * dataset are eventData/<property> and flags/<name>, and eventName appears
+   * only as something to FILTER on. Four small queries that work beat one
+   * elegant one that doesn't.
+   */
+  const EVENTS = ["form_started", "form_submitted", "form_succeeded", "form_failed"] as const;
+
+  const [daily, prior, pages, refs, ...eventResults] = await Promise.all([
     query("visits/aggregate", { since, until, by: "day" }),
     query("visits/aggregate", { since: prevSince, until: prevUntil, by: "day" }),
     query("visits/aggregate", { since, until, by: "requestPath", limit: 8 }),
     query("visits/aggregate", { since, until, by: "referrerHostname", limit: 6 }),
-    query("events/aggregate", { since, until, by: "eventName", limit: 20 }),
+    ...EVENTS.map((name) =>
+      query("events/aggregate", { since, until, by: "day", filter: `eventName eq '${name}'` })
+    ),
   ]);
 
   const missing: string[] = [];
   if (!daily) missing.push("visitors");
-  if (!prior) missing.push("the previous period");
   if (!pages) missing.push("top pages");
   if (!refs) missing.push("referrers");
-  if (!events) missing.push("form events");
+  if (eventResults.every((r) => !r)) missing.push("form events");
+  /**
+   * A missing previous period is not worth reporting. On Hobby the reporting
+   * window is shorter than sixty days, so the comparison simply isn't there
+   * yet — the page drops the change line and says nothing, rather than
+   * claiming a fault.
+   */
 
   const dailyRows: any[] = Array.isArray(daily?.data) ? daily.data : [];
 
   /**
-   * Form events, matched by name. `visitors` rather than `count` for started
-   * and succeeded: one person hammering submit is one enquiry, not four.
-   * `failed` uses count, because every failure is a separate thing going wrong.
+   * `visitors` rather than `count` for started, submitted and succeeded: one
+   * person hammering the button is one enquiry, not four. `failed` uses count,
+   * because every failure is a separate thing that went wrong.
    */
-  const eventRows: any[] = Array.isArray(events?.data) ? events.data : [];
-  const pick = (name: string, field: "visitors" | "count") =>
-    num(eventRows.find((r) => nameOf(r, "eventName") === name)?.[field]);
+  const tally = (i: number, field: "visitors" | "count") => {
+    const rows: any[] = Array.isArray(eventResults[i]?.data) ? eventResults[i].data : [];
+    return rows.reduce((t, r) => t + num(r?.[field]), 0);
+  };
 
   return {
     since,
@@ -177,13 +203,19 @@ export async function getSiteStats(days = 30): Promise<SiteStats | null> {
       pageviews: num(r?.pageviews),
     })),
     topPages: pages ? named(pages, "requestPath", 8) : [],
-    referrers: refs ? named(refs, "referrerHostname", 6) : [],
-    funnel: events
+    /**
+     * An empty referrer hostname means there wasn't one: typed in, opened from
+     * a bookmark, scanned off a board, or followed from an app that strips the
+     * referrer. That is "Direct", and it is usually the largest row — showing
+     * it as a dash made the most important number on the page unreadable.
+     */
+    referrers: refs ? named(refs, "referrerHostname", 6, "Direct") : [],
+    funnel: eventResults.some((r) => r)
       ? {
-          started: pick("form_started", "visitors"),
-          submitted: pick("form_submitted", "visitors"),
-          succeeded: pick("form_succeeded", "visitors"),
-          failed: pick("form_failed", "count"),
+          started: tally(0, "visitors"),
+          submitted: tally(1, "visitors"),
+          succeeded: tally(2, "visitors"),
+          failed: tally(3, "count"),
         }
       : null,
     missing,

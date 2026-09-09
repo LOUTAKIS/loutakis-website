@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getStaff } from "@/lib/staff-auth";
 import { listCampaigns } from "@/lib/campaigns";
 import { getSiteStats, analyticsConfigured } from "@/lib/web-analytics";
+import { listMembers } from "@/lib/portal-members";
 import StaffSignInForm from "@/components/StaffSignInForm";
 import StaffSignOut from "@/components/StaffSignOut";
 import RefreshListings from "@/components/RefreshListings";
@@ -61,6 +62,21 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
   // link either way.
   const stats = analyticsConfigured() ? await getSiteStats(30).catch(() => null) : null;
 
+  /**
+   * The members tile leads with whoever is waiting, because that is the only
+   * number on this dashboard that is asking you to do something today.
+   */
+  let members: { approved: number; waiting: number } | null = null;
+  try {
+    const all = await listMembers();
+    members = {
+      approved: all.filter((m) => m.status === "approved").length,
+      waiting: all.filter((m) => m.status === "pending").length,
+    };
+  } catch (err) {
+    console.error("[staff] member counts unavailable", err);
+  }
+
   return (
     <section className="portal-page">
       <div className="wrap">
@@ -94,6 +110,20 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
                 : waiting === 0
                   ? "Nothing in flight"
                   : `${waiting} in flight`}
+            </div>
+          </Link>
+
+          <Link href="/staff/members" className="sd-tile">
+            <div className="sd-name">Off-market members</div>
+            <p className="sd-desc">
+              Who is on the private list, who is waiting, and who should come off it.
+            </p>
+            <div className="sd-count">
+              {members === null
+                ? "Open"
+                : members.waiting > 0
+                  ? `${members.waiting} waiting on you`
+                  : `${members.approved} with access`}
             </div>
           </Link>
 
