@@ -1,4 +1,4 @@
-import { getListings } from "@/lib/boxdice";
+import { getListings, getOffMarketCount } from "@/lib/boxdice";
 import PropertyFilters from "@/components/PropertyFilters";
 
 // Per request, not at build — see the note in app/page.tsx. The underlying
@@ -12,6 +12,9 @@ export const metadata = {
 
 export default async function PropertiesPage() {
   const listings = await getListings();
+  // Only the count crosses to the browser — never an off-market listing. A CRM
+  // hiccup drops the number, not the page.
+  const offMarketCount = await getOffMarketCount().catch(() => 0);
 
   return (
     <section className="properties-page">
@@ -24,7 +27,7 @@ export default async function PropertiesPage() {
         </div>
         {/* The off-market card lives inside PropertyFilters — it only shows on
             the Current tab, so it needs the tab state. */}
-        <PropertyFilters listings={listings} />
+        <PropertyFilters listings={listings} offMarketCount={offMarketCount} />
 
         {/* Sale of Land Act 1962 (Vic) ss 33B–33C — the due diligence checklist
             must be available to prospective purchasers from the time the land is

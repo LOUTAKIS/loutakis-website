@@ -576,6 +576,26 @@ export async function getOffMarketListings(): Promise<Listing[]> {
     .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
 }
 
+/**
+ * How many properties are on the private list — the only thing about it that
+ * is safe to say in public.
+ *
+ * A sign-in wall with nothing behind it is a wall. A number tells someone
+ * standing in front of it that registering is worth the two minutes, and a
+ * bare count gives away nothing a vendor who asked for a quiet campaign would
+ * mind: no address, no suburb, no size, no price.
+ *
+ * Counted from the raw records rather than getOffMarketListings() so it never
+ * normalises or ships listing content to a page that must not have any.
+ */
+export async function getOffMarketCount(): Promise<number> {
+  if (USE_MOCK) return 0;
+  const raw = await cachedSalesListings();
+  const byId = new Map<string, any>();
+  for (const r of raw) byId.set(String(r.id), r);
+  return [...byId.values()].filter(isOffMarket).length;
+}
+
 export async function getListings(): Promise<Listing[]> {
   if (USE_MOCK) return MOCK_LISTINGS;
   try {

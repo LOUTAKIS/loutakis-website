@@ -10,7 +10,18 @@ const TABS: { key: string; label: string }[] = [
   { key: "sold", label: "Sold" },
 ];
 
-export default function PropertyFilters({ listings }: { listings: Listing[] }) {
+export default function PropertyFilters({
+  listings,
+  /**
+   * How many properties are on the private list. Counted on the server and
+   * passed in as a bare number — no listing ever reaches this page, which is
+   * the whole promise the private list rests on.
+   */
+  offMarketCount = 0,
+}: {
+  listings: Listing[];
+  offMarketCount?: number;
+}) {
   const [tab, setTab] = useState("current");
   const [suburb, setSuburb] = useState("all");
 
@@ -83,7 +94,21 @@ export default function PropertyFilters({ listings }: { listings: Listing[] }) {
           <div>
             <div className="eyebrow">Off-market</div>
             <h3>Not everything we sell is here.</h3>
-            <p>Some owners prefer a quiet campaign. Those homes go to a private list.</p>
+            <p>
+              Some owners prefer a quiet campaign. Those homes go to a private list
+              {/* Only when there is something on it. At zero the sentence ends
+                  where it did before, rather than admitting to an empty list on
+                  the page that is meant to open it. */}
+              {offMarketCount > 0 && (
+                <>
+                  {" — "}
+                  <strong>
+                    {offMarketCount} {offMarketCount === 1 ? "is" : "are"} on it right now
+                  </strong>
+                </>
+              )}
+              .
+            </p>
           </div>
           <Link href="/portal/register" className="btn">Request access</Link>
         </aside>

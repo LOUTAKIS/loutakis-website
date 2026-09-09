@@ -1,4 +1,8 @@
 import PortalRegisterForm from "@/components/PortalRegisterForm";
+import OffMarketCount from "@/components/OffMarketCount";
+
+// Per request, not at build — the count must be today's.
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Off-market access — Loutakis Real Estate",
@@ -21,6 +25,7 @@ export default function PortalRegisterPage() {
           the market before committing, and some are simply not ready for a board out the front. We
           keep a private list, and share it with buyers we know.
         </p>
+        <OffMarketCount className="portal-intro" />
         <p className="portal-intro">
           Access is granted individually — Michael reviews every request, so tell us enough to know
           what you&rsquo;re looking for.
