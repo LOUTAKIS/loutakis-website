@@ -60,7 +60,8 @@ function toRow(l: Listing): PortalRow {
       const n = parseFloat(String(l.landSize ?? "").replace(/[^\d.]/g, ""));
       return Number.isFinite(n) && n > 0 ? n : null;
     })(),
-    agentNames: l.agents.map((a) => a.name),
+    // Agent names no longer cross to the browser at all: the enquiry is routed
+    // server-side from the listing id, so the page never needed them.
   };
 }
 

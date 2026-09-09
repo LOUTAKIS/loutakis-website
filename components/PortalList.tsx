@@ -32,7 +32,6 @@ export type PortalRow = {
   land: string;
   /** Sortable land size. Null sorts last in both directions. */
   landValue: number | null;
-  agentNames: string[];
 };
 
 type Key = "street" | "suburb" | "bed" | "bath" | "car" | "land";
@@ -213,7 +212,7 @@ export default function PortalList({ rows }: { rows: PortalRow[] }) {
                     indicative, and the column heading says approx. */}
                 <span className="pl-land">{r.land || "—"}</span>
                 <span className="pl-type">{r.type || "—"}</span>
-                <PortalEnquire listingId={r.id} agentNames={r.agentNames} />
+                <PortalEnquire listingId={r.id} />
               </div>
             ))}
           </div>
