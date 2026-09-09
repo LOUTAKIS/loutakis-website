@@ -80,6 +80,7 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
           </div>
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
             <RefreshListings />
+            <Link href="/staff/market" className="btn">Market figures</Link>
             <Link href="/staff/new" className="btn">New approval</Link>
             <StaffSignOut />
           </div>

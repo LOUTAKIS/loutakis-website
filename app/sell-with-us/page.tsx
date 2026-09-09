@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { getConsultantOptions, defaultConsultant } from "@/lib/boxdice";
 import AppraisalForm from "@/components/AppraisalForm";
+import MarketPerformance from "@/components/MarketPerformance";
 
 export const metadata = {
   title: "Sell with us — Loutakis Real Estate",
@@ -78,6 +79,11 @@ export default async function SellWithUsPage() {
       {/* The appraisal request. The old "Interested in working together?"
           button pointed at a general contact page; a seller who has read this
           far should be able to start here instead. */}
+      {/* Proof, between what we do and the ask. A vendor should have seen the
+          numbers before being invited to fill in nine questions. Renders
+          nothing until the figures are entered and published in /staff/market. */}
+      <MarketPerformance />
+
       <section id="start">
         <div className="wrap swu-form">
           <div className="eyebrow">Get started</div>
