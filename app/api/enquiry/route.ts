@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendEnquiry, mailIsConfigured } from "@/lib/mail";
-import { getListings } from "@/lib/boxdice";
+import { getListings, getOffMarketListings } from "@/lib/boxdice";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +22,28 @@ function clean(v: unknown, max = 200): string {
  * an open relay for mail originating from our own domain. Anything outside our
  * domain is ignored, and we fall back to ENQUIRY_TO rather than lose a lead.
  */
+/**
+ * The full address for a listing id, straight from the CRM.
+ *
+ * Same principle as the recipients above: what the office is told a property
+ * IS should come from Box & Dice, not from a form field anyone can edit. It
+ * also lets the private list send no address whatsoever — see the portal,
+ * where even the street number is withheld from the page.
+ *
+ * Off-market listings are not in getListings(), so both lists are searched.
+ */
+async function addressFor(listingId: string): Promise<string | undefined> {
+  if (!listingId) return undefined;
+  try {
+    const [current, offMarket] = await Promise.all([getListings(), getOffMarketListings()]);
+    const l = [...current, ...offMarket].find((x) => x.id === listingId);
+    return l ? `${l.address.street}, ${l.address.suburb}` : undefined;
+  } catch (err) {
+    console.error("[enquiry] address lookup failed", err);
+    return undefined;
+  }
+}
+
 async function resolveRecipients(
   listingId: string,
   agentIndex?: number
@@ -29,8 +51,14 @@ async function resolveRecipients(
   if (!listingId) return undefined;
 
   try {
-    const listings = await getListings();
-    const listing = listings.find((l) => l.id === listingId);
+    /**
+     * Both lists. An off-market listing is not in getListings() — it is
+     * excluded from the public site by definition — so searching only that one
+     * sent every private-list enquiry to ENQUIRY_TO instead of the agent
+     * running the campaign.
+     */
+    const [current, offMarket] = await Promise.all([getListings(), getOffMarketListings()]);
+    const listing = [...current, ...offMarket].find((l) => l.id === listingId);
     if (!listing) return undefined;
 
     const agentEmails = listing.agents
@@ -118,7 +146,13 @@ export async function POST(req: Request) {
       phone: phone || undefined,
       message,
       listingId: listingId || undefined,
-      listingAddress: clean(body?.listingAddress) || undefined,
+      /**
+       * Resolved from the id where we can, and only otherwise taken from the
+       * browser. The private list never sends an address at all — it does not
+       * even render the street number — so without this the office would get an
+       * enquiry it could not tie to a property.
+       */
+      listingAddress: (await addressFor(listingId)) || clean(body?.listingAddress) || undefined,
       pageUrl: clean(body?.pageUrl, 500) || undefined,
       to,
     });

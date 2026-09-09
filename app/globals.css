@@ -545,20 +545,44 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 
    One grid, declared once and shared by the heading row and every listing row,
    so the columns cannot drift apart. */
-.pl { margin-top: 34px; border-top: 1px solid var(--ink); }
+/* Search, suburb, bedrooms. Above the list, not beside it: on a phone they
+   stack, and a buyer standing still with one hand free can reach all three. */
+.pl-controls {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 30px;
+}
+.pl-controls .field { margin-bottom: 0; width: auto; min-width: 190px; }
+.pl-controls input[type="search"] { flex: 1 1 260px; }
+.pl-clear {
+  background: none; border: 0; padding: 6px 2px; cursor: pointer;
+  font-family: var(--sans); font-size: 10px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--muted); text-decoration: underline;
+}
+.pl-clear:hover { color: var(--ink); }
+.pl-none { color: var(--muted); padding: 30px 0; }
+
+.pl { margin-top: 22px; border-top: 1px solid var(--ink); }
 .pl-head, .pl-row {
   display: grid;
   grid-template-columns: 1.7fr 1.1fr 62px 62px 62px 1fr 110px;
   gap: 16px; align-items: baseline;
 }
-.pl-head {
-  font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
-  color: var(--muted); padding: 12px 0; border-bottom: 1px solid var(--line);
+.pl-head { padding: 10px 0; border-bottom: 1px solid var(--line); }
+/* Every heading is a sort control, so every heading looks alike — an arrow
+   appears only on the one actually sorting. */
+.pl-sort {
+  background: none; border: 0; padding: 4px 0; cursor: pointer; text-align: left;
+  font-family: var(--sans); font-size: 10px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--muted);
 }
+.pl-sort:hover { color: var(--ink); }
+.pl-sort.on { color: var(--ink); }
+.pl-sort.pl-n { text-align: left; }
 .pl-row { border-bottom: 1px solid var(--line); padding: 18px 0; }
-/* Street name only — the number is never published. See streetOnly(). */
-.pl-street { font-family: var(--serif); font-size: clamp(17px, 2vw, 21px); }
-.pl-suburb { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+/* Street name only — the number is never published. See streetOnly().
+   The suburb is set identically: the two together are the address, and
+   demoting half of it to grey small-caps made the row read as a label and a
+   value rather than one line. */
+.pl-street, .pl-suburb { font-family: var(--serif); font-size: clamp(17px, 2vw, 21px); color: var(--ink); }
 .pl-n, .pl-land { color: var(--muted); font-variant-numeric: tabular-nums; }
 /* The heading row carries the labels on desktop; each cell repeats them only
    once the grid collapses on a phone. */

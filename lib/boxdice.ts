@@ -333,7 +333,24 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
     priceValue,
     bed: Number(p.beds ?? 0),
     bath: Number(p.baths ?? 0),
-    car: Number(p.cars ?? p.garages ?? 0),
+    /**
+     * Car spaces, which Box & Dice records in more than one field.
+     *
+     * This was `p.cars ?? p.garages`, and `??` only falls through on null or
+     * undefined — so a property entered as cars 0 with a three-car garage
+     * published a 0. The API also omits empty fields entirely, which is why
+     * their own examples show `cars` with no `garages` on one record and
+     * `garages` with no `cars` on the next.
+     *
+     * Taking the larger of "cars" and "garages + open spaces" is right under
+     * either reading of the fields: if `cars` is the total then the sum can
+     * never exceed it, and if `cars` is absent the sum IS the total. It cannot
+     * double-count and it cannot under-report.
+     */
+    car: Math.max(
+      Number(p.cars ?? 0) || 0,
+      (Number(p.garages ?? 0) || 0) + (Number(p.open_spaces ?? 0) || 0)
+    ),
     landSize: p.land_size ? `${p.land_size}${landUnit(p.land_measure)}` : undefined,
     description: raw.advertising_copy?.text ?? raw.description ?? "",
     features: p.property_features ?? [],

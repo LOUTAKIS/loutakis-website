@@ -21,12 +21,14 @@ import EnquiryForm from "./EnquiryForm";
  */
 export default function PortalEnquire({
   listingId,
-  listingAddress,
   agentNames,
 }: {
+  /**
+   * The id and nothing else. /api/enquiry resolves the address from Box & Dice
+   * server-side, so the street number never has to be sent to the browser to
+   * come back again — the office still gets the full address in the email.
+   */
   listingId: string;
-  /** The FULL address, number included — this reaches the office, not the page. */
-  listingAddress: string;
   agentNames: string[];
 }) {
   const [open, setOpen] = useState(false);
@@ -44,11 +46,7 @@ export default function PortalEnquire({
 
       {open && (
         <div className="pl-form">
-          <EnquiryForm
-            listingId={listingId}
-            listingAddress={listingAddress}
-            agentNames={agentNames}
-          />
+          <EnquiryForm listingId={listingId} agentNames={agentNames} />
         </div>
       )}
     </>

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/portal-session";
 import { getOffMarketListings } from "@/lib/boxdice";
 import type { Listing } from "@/lib/types";
-import PortalEnquire from "@/components/PortalEnquire";
+import PortalList, { type PortalRow } from "@/components/PortalList";
 
 export const metadata = {
   title: "Off-market properties — Loutakis Real Estate",
@@ -32,6 +32,34 @@ function streetOnly(street: string): string {
     .replace(/^\d+[A-Za-z]?(\s*-\s*\d+[A-Za-z]?)?\s+/, "")
     .trim();
   return stripped || String(street ?? "");
+}
+
+/**
+ * A Listing reduced to the only fields the browser is allowed to see.
+ *
+ * This is the privacy boundary of the whole portal, and it is a whitelist on
+ * purpose: adding a field is a decision someone has to make, rather than
+ * something that happens by passing an object through.
+ */
+function toRow(l: Listing): PortalRow {
+  return {
+    id: l.id,
+    slug: l.slug,
+    street: streetOnly(l.address.street),
+    suburb: l.address.suburb,
+    bed: l.bed,
+    bath: l.bath,
+    car: l.car,
+    land: l.landSize ?? "",
+    // "696m² approx." → 696, for the column sort. Anything unparseable sorts
+    // last rather than as zero, which would claim a block with no size is the
+    // smallest one here.
+    landValue: (() => {
+      const n = parseFloat(String(l.landSize ?? "").replace(/[^\d.]/g, ""));
+      return Number.isFinite(n) && n > 0 ? n : null;
+    })(),
+    agentNames: l.agents.map((a) => a.name),
+  };
 }
 
 
@@ -119,39 +147,13 @@ export default async function PortalPage() {
            * decide whether to ask: the street, the suburb, the rooms and the
            * land. Everything past that happens in a phone call, which is how a
            * quiet campaign is supposed to work.
+           *
+           * The rows are built HERE, on the server, and only the rows cross to
+           * the browser. Handing the component a Listing would put every image
+           * URL and the full advertising copy into the page source, rendered or
+           * not — the omission has to happen before the boundary, not at it.
            */
-          <div className="pl">
-            <div className="pl-head" aria-hidden>
-              <span>Street</span>
-              <span>Suburb</span>
-              <span className="pl-n">Bed</span>
-              <span className="pl-n">Bath</span>
-              <span className="pl-n">Car</span>
-              <span>Land approx.</span>
-              <span />
-            </div>
-
-            {listings.map((l) => (
-              <div key={l.id} className="pl-row" id={l.slug}>
-                <span className="pl-street">{streetOnly(l.address.street)}</span>
-                <span className="pl-suburb">{l.address.suburb}</span>
-                <span className="pl-n"><b className="pl-lbl">Bed </b>{l.bed}</span>
-                <span className="pl-n"><b className="pl-lbl">Bath </b>{l.bath}</span>
-                <span className="pl-n"><b className="pl-lbl">Car </b>{l.car}</span>
-                {/* Never state a land size as fact: the measurement is
-                    indicative, and the column heading says approx. */}
-                <span className="pl-land">{l.landSize || "—"}</span>
-                {/* Button in the last column, form underneath it across the
-                    whole row. The office still receives the full street number
-                    in the enquiry — it is only the page that omits it. */}
-                <PortalEnquire
-                  listingId={l.id}
-                  listingAddress={`${l.address.street}, ${l.address.suburb}`}
-                  agentNames={l.agents.map((a) => a.name)}
-                />
-              </div>
-            ))}
-          </div>
+          <PortalList rows={listings.map(toRow)} />
         )}
       </div>
     </section>
