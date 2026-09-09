@@ -535,6 +535,30 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .portal-page h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 4vw, 46px); margin-bottom: 26px; }
 .portal-intro { color: var(--muted); max-width: 62ch; margin-bottom: 14px; }
 
+/* ── The other door ───────────────────────────────────────────────────────
+   Registering is half of what the sign-in page is for, and most people who
+   land here have never heard of the list. It was one grey 11px sentence under
+   the button and got read past. Given its own block, a rule above it and a
+   real link, it competes with the form instead of hiding beneath it. */
+.portal-alt { margin-top: 52px; padding-top: 26px; border-top: 1px solid var(--line); }
+.portal-alt-label {
+  font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--ink); margin-bottom: 10px;
+}
+.portal-alt p { color: var(--muted); max-width: 46ch; margin-bottom: 18px; }
+.portal-alt-cta {
+  position: relative; display: inline-block; text-decoration: none;
+  font-family: var(--serif); font-size: clamp(20px, 2.4vw, 25px); color: var(--ink);
+  padding-bottom: 6px;
+}
+/* Underlined by default here, unlike the site's buttons: this one has to look
+   like the way out before anybody points at it. */
+.portal-alt-cta::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: currentColor; transform-origin: left; transition: transform .22s ease;
+}
+.portal-alt-cta:hover::after, .portal-alt-cta:focus-visible::after { transform: scaleX(1.04); }
+
 .portal-form { margin-top: 42px; display: flex; flex-direction: column; gap: 4px; }
 .portal-form label { display: block; }
 .portal-form label > span { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }

@@ -107,6 +107,7 @@ export default function PortalSignInForm({ expired = false }: { expired?: boolea
   }
 
   return (
+    <>
     <form className="portal-form" onSubmit={onSubmit} noValidate>
       {expired && (
         <p className="form-note" role="alert" style={{ marginBottom: 14 }}>
@@ -125,9 +126,26 @@ export default function PortalSignInForm({ expired = false }: { expired?: boolea
           {error}
         </p>
       )}
-      <p className="form-note">
-        Not registered yet? <a href="/portal/register">Request access</a>.
-      </p>
     </form>
+
+    {/**
+      * Registering is the other half of this page, not a footnote to it.
+      *
+      * It was one grey sentence in 13px under the button, and someone who has
+      * never heard of the list — which is most people who reach this screen —
+      * read past it and left. Half of the visitors here cannot sign in, because
+      * they have no account yet: this is their door, and it now looks like one.
+      */}
+    <div className="portal-alt">
+      <div className="portal-alt-label">Not registered?</div>
+      <p>
+        Access is granted individually — Michael reviews every request himself,
+        so tell us what you&rsquo;re looking for.
+      </p>
+      <a href="/portal/register" className="portal-alt-cta">
+        Request access <span aria-hidden>→</span>
+      </a>
+    </div>
+    </>
   );
 }
