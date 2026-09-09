@@ -1,4 +1,3 @@
-import { plural } from "@/lib/plural";
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/portal-session";
 import { getOffMarketListings } from "@/lib/boxdice";
@@ -90,29 +89,47 @@ export default async function PortalPage() {
             </p>
           </div>
         ) : (
-          <div className="portal-list">
-            {listings.map((l) => (
-              <article key={l.id} className="portal-listing" id={l.slug}>
-                {l.images[0] && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img className="portal-hero" src={l.images[0].url} alt={l.images[0].alt} />
-                )}
+          /**
+           * A LIST, NOT A GALLERY. No photographs anywhere on this page.
+           *
+           * A vendor selling quietly has usually not agreed to their house
+           * appearing on a screen at all — the whole point of the private list
+           * is that nothing is on display. Text also lets a buyer read six
+           * properties in the time one hero image takes to load.
+           *
+           * Each row opens in place for the detail and the enquiry form, so
+           * nobody has to leave the page or lose their place in it.
+           */
+          <div className="pl">
+            <div className="pl-head" aria-hidden>
+              <span>Suburb</span>
+              <span>Address</span>
+              <span className="pl-n">Bed</span>
+              <span className="pl-n">Bath</span>
+              <span className="pl-n">Car</span>
+              <span>Land approx.</span>
+              <span />
+            </div>
 
-                <div className="portal-body">
-                  <div className="portal-main">
-                    <h3>
-                      {l.address.street}, {l.address.suburb}
-                    </h3>
+            {listings.map((l) => (
+              <details key={l.id} className="pl-row" id={l.slug}>
+                <summary>
+                  <span className="pl-suburb">{l.address.suburb}</span>
+                  <span className="pl-street">{l.address.street}</span>
+                  <span className="pl-n"><b className="pl-lbl">Bed </b>{l.bed}</span>
+                  <span className="pl-n"><b className="pl-lbl">Bath </b>{l.bath}</span>
+                  <span className="pl-n"><b className="pl-lbl">Car </b>{l.car}</span>
+                  {/* Never state a land size as fact: the measurement is
+                      indicative, and the column heading says approx. */}
+                  <span className="pl-land">{l.landSize || "—"}</span>
+                  <span className="pl-more">Details</span>
+                </summary>
+
+                <div className="pl-detail">
+                  <div>
                     {l.headline && l.headline !== `${l.address.street}, ${l.address.suburb}` && (
                       <p className="portal-headline">{l.headline}</p>
                     )}
-
-                    <div className="feat">
-                      <div><span className="n">{l.bed}</span>{plural(l.bed, "Bed")}</div>
-                      <div><span className="n">{l.bath}</span>{plural(l.bath, "Bath")}</div>
-                      <div><span className="n">{l.car}</span>{plural(l.car, "Car")}</div>
-                      {l.landSize && <div><span className="n">{l.landSize}</span>Land approx.</div>}
-                    </div>
 
                     {l.description && (
                       <div className="portal-desc">
@@ -133,24 +150,13 @@ export default async function PortalPage() {
                         </p>
                       </div>
                     )}
-
-                    {l.images.length > 1 && (
-                      <div className="portal-gallery">
-                        {l.images.slice(1, 7).map((img, i) => (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img key={i} src={img.url} alt={img.alt} loading="lazy" />
-                        ))}
-                      </div>
-                    )}
                   </div>
 
+                  {/* The agent, by name and number only — no photograph here
+                      either, so the page stays a list all the way down. */}
                   <aside className="agent">
                     {l.agents.map((a, i) => (
                       <div key={i} className={i > 0 ? "agent-extra" : undefined}>
-                        {a.photo && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img className="agent-photo" src={a.photo} alt={a.name} />
-                        )}
                         <div className="nm">{a.name}</div>
                         <div className="ttl">{a.title ?? "Sales"}</div>
                         {(a.phone || a.email) && (
@@ -168,7 +174,7 @@ export default async function PortalPage() {
                     />
                   </aside>
                 </div>
-              </article>
+              </details>
             ))}
           </div>
         )}
