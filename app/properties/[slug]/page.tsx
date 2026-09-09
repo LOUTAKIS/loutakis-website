@@ -113,14 +113,19 @@ export default async function PropertyPage({ params }: { params: { slug: string 
                 {l.auctionAt && l.status !== "sold" && l.status !== "leased" && (
                   <div style={{ marginBottom: 18 }}>
                     <div className="times-label">Auction</div>
-                    <p>{fmtMoment(l.auctionAt)}</p>
-                    {auction && (
-                      <AddToCalendar
-                        event={auction}
-                        href={`/api/calendar/${l.slug}?auction=1`}
-                        label="Add auction to calendar"
-                      />
-                    )}
+                    {/* The glyph sits beside the date, not under it — one line
+                        that reads "when, and add it", the same shape as each
+                        inspection below. */}
+                    <div className="when-row">
+                      <span>{fmtMoment(l.auctionAt)}</span>
+                      {auction && (
+                        <AddToCalendar
+                          event={auction}
+                          href={`/api/calendar/${l.slug}?auction=1`}
+                          label="Add auction to calendar"
+                        />
+                      )}
+                    </div>
                   </div>
                 )}
                 {/* Same again for inspections — a sold property must never

@@ -1190,8 +1190,9 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
    it is used most: standing outside a house on a Friday night. */
 .insp-list { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 /* Centred, not baseline-aligned: the row is a line of text and a glyph, and a
-   glyph has no baseline to share. */
-.insp-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+   glyph has no baseline to share. Same shape for the auction date above. */
+.insp-list li,
+.when-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
 .insp-when { color: var(--muted); }
 /* One glyph, no label. The time is the information; this is only the action,
    so it sits quietly beside it — but the tap target is 40px square, because
