@@ -77,6 +77,17 @@ section { padding: 96px 0; }
 .nav { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.9); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
 .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 78px; }
 .brand { font-family: var(--serif); font-size: 20px; letter-spacing: .42em; padding-left: .42em; }
+.nav-right { display: flex; align-items: center; gap: 34px; }
+/* The account glyph. Off-market moved out of the nav and became this: the list
+   is behind a sign-in, so it is an account, not a page. Full 44px tap target
+   with the icon sitting flush right. */
+.nav-account {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; margin-right: -12px;
+  color: var(--muted); transition: color .2s;
+}
+.nav-account:hover, .nav-account:focus-visible { color: var(--ink); }
+@media (max-width: 760px) { .nav-account { margin-right: 4px; } }
 .nav-links { display: flex; gap: 38px; }
 .nav-links a { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); transition: color .2s; }
 .nav-links a:hover { color: var(--ink); }
@@ -579,7 +590,7 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .pl { margin-top: 22px; border-top: 1px solid var(--ink); }
 .pl-head, .pl-row {
   display: grid;
-  grid-template-columns: 1.7fr 1.1fr 62px 62px 62px 1fr 110px;
+  grid-template-columns: 1.6fr 1fr 56px 56px 56px 0.9fr 0.9fr 110px;
   gap: 16px; align-items: baseline;
 }
 .pl-head { padding: 10px 0; border-bottom: 1px solid var(--line); }
@@ -599,7 +610,20 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
    demoting half of it to grey small-caps made the row read as a label and a
    value rather than one line. */
 .pl-street, .pl-suburb { font-family: var(--serif); font-size: clamp(17px, 2vw, 21px); color: var(--ink); }
-.pl-n, .pl-land { color: var(--muted); font-variant-numeric: tabular-nums; }
+.pl-n, .pl-land, .pl-type { color: var(--muted); font-variant-numeric: tabular-nums; }
+.pl-typehead {
+  font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--muted); padding: 4px 0;
+}
+/* Houses together, townhouses together. The heading is the section's only
+   chrome — a rule above it and the count beside it, nothing more. */
+.pl-sectionhead {
+  display: flex; align-items: baseline; gap: 14px;
+  padding: 26px 0 10px;
+  font-family: var(--serif); font-size: clamp(18px, 2.2vw, 23px);
+}
+.pl-section:first-of-type .pl-sectionhead { padding-top: 18px; }
+.pl-count { font-family: var(--sans); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
 /* The heading row carries the labels on desktop; each cell repeats them only
    once the grid collapses on a phone. */
 .pl-lbl { display: none; font-weight: 400; }
@@ -620,6 +644,9 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
   .pl-head { display: none; }
   .pl-row { grid-template-columns: repeat(3, auto); gap: 6px 20px; padding: 20px 0; }
   .pl-street, .pl-suburb, .pl-land { grid-column: 1 / -1; }
+  /* The section heading already says the type, so the cell is redundant once
+     the columns collapse. */
+  .pl-type { display: none; }
   .pl-lbl { display: inline; }
   .pl-cta { grid-column: 1 / -1; justify-self: start; margin-top: 6px; }
 }

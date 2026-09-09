@@ -48,6 +48,15 @@ export interface Listing {
   bed: number;
   bath: number;
   car: number;
+  /**
+   * "House", "Townhouse", "Apartment" — the CRM's property category, resolved
+   * from `property_category_id` against the categories collection. Distinct
+   * from `category` above, which is the broad residential/commercial split.
+   *
+   * Optional because the id can be missing or unknown to us, and a wrong type
+   * on a listing is worse than none.
+   */
+  propertyType?: string;
   landSize?: string;
   description: string;
   features: string[];

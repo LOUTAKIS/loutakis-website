@@ -47,6 +47,8 @@ function toRow(l: Listing): PortalRow {
     slug: l.slug,
     street: streetOnly(l.address.street),
     suburb: l.address.suburb,
+    // "Other" rather than a blank: a row still has to sit under a heading.
+    type: l.propertyType || "Other",
     bed: l.bed,
     bath: l.bath,
     car: l.car,

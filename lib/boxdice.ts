@@ -583,13 +583,22 @@ function isOffMarket(raw: any): boolean {
  */
 export async function getOffMarketListings(): Promise<Listing[]> {
   if (USE_MOCK) return [];
-  const consultants = await getConsultants();
-  const raw = await cachedSalesListings();
+  const [consultants, categories, raw] = await Promise.all([
+    getConsultants(),
+    // House, Townhouse, Apartment — the private list groups by this, so it is
+    // worth one cached read. `false` shares the cache rather than re-fetching.
+    getPropertyCategories(false).catch(() => new Map<number, string>()),
+    cachedSalesListings(),
+  ]);
   const byId = new Map<string, any>();
   for (const r of raw) byId.set(String(r.id), r);
   return [...byId.values()]
     .filter(isOffMarket)
-    .map((r) => ({ ...normalise(r, consultants), priceDisplay: "" }))
+    .map((r) => ({
+      ...normalise(r, consultants),
+      priceDisplay: "",
+      propertyType: categories.get(Number(r?.property?.property_category_id)) || undefined,
+    }))
     .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
 }
 

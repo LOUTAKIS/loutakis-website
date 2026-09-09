@@ -7,7 +7,6 @@ import { createPortal } from "react-dom";
 const LINKS = [
   { href: "/sell-with-us", label: "Sell with us" },
   { href: "/properties", label: "Properties" },
-  { href: "/portal", label: "Off-market" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];

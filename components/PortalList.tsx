@@ -23,6 +23,8 @@ export type PortalRow = {
   /** Street NAME only — never the number. */
   street: string;
   suburb: string;
+  /** "House", "Townhouse", "Apartment" — the section this row sits under. */
+  type: string;
   bed: number;
   bath: number;
   car: number;
@@ -43,6 +45,17 @@ const COLUMNS: { key: Key; label: string; numeric?: boolean }[] = [
   { key: "car", label: "Car", numeric: true },
   { key: "land", label: "Land approx.", numeric: true },
 ];
+
+/**
+ * REA's order, and the order a buyer thinks in. Anything the CRM calls
+ * something else sorts after these three rather than disappearing.
+ */
+const TYPE_ORDER = ["House", "Townhouse", "Apartment", "Unit", "Villa", "Land"];
+
+function typeRank(t: string): number {
+  const i = TYPE_ORDER.indexOf(t);
+  return i < 0 ? 99 : i;
+}
 
 export default function PortalList({ rows }: { rows: PortalRow[] }) {
   const [q, setQ] = useState("");
@@ -85,6 +98,23 @@ export default function PortalList({ rows }: { rows: PortalRow[] }) {
       return (a[sort.key] - b[sort.key]) * sort.dir;
     });
   }, [rows, q, suburb, minBeds, sort]);
+
+  /**
+   * Sectioned by property type, because a buyer looking for a house is not
+   * looking for an apartment and shouldn't have to read past them. Sorting and
+   * searching happen first and then divide into sections, so a sort orders
+   * within each type rather than tearing the sections apart.
+   */
+  const sections = useMemo(() => {
+    const byType = new Map<string, PortalRow[]>();
+    for (const r of shown) {
+      const t = r.type || "Other";
+      byType.set(t, [...(byType.get(t) ?? []), r]);
+    }
+    return [...byType.entries()]
+      .map(([type, rows]) => ({ type, rows }))
+      .sort((a, b) => typeRank(a.type) - typeRank(b.type) || a.type.localeCompare(b.type));
+  }, [shown]);
 
   function toggle(key: Key) {
     setSort((s) =>
@@ -156,20 +186,36 @@ export default function PortalList({ rows }: { rows: PortalRow[] }) {
               {sort?.key === c.key && <span aria-hidden>{sort.dir === 1 ? " ↑" : " ↓"}</span>}
             </button>
           ))}
+          {/* Type is not sortable: the sections already order by it, and a
+              sort control that only reproduces the existing order is a lie
+              about what it does. */}
+          <span className="pl-typehead">Type</span>
           <span />
         </div>
 
-        {shown.map((r) => (
-          <div key={r.id} className="pl-row" id={r.slug}>
-            <span className="pl-street">{r.street}</span>
-            <span className="pl-suburb">{r.suburb}</span>
-            <span className="pl-n"><b className="pl-lbl">Bed </b>{r.bed}</span>
-            <span className="pl-n"><b className="pl-lbl">Bath </b>{r.bath}</span>
-            <span className="pl-n"><b className="pl-lbl">Car </b>{r.car}</span>
-            {/* Never state a land size as fact: the measurement is indicative,
-                and the column heading says approx. */}
-            <span className="pl-land">{r.land || "—"}</span>
-            <PortalEnquire listingId={r.id} agentNames={r.agentNames} />
+        {sections.map((s) => (
+          <div key={s.type} className="pl-section">
+            <div className="pl-sectionhead">
+              {s.type}
+              <span className="pl-count">
+                {s.rows.length} {s.rows.length === 1 ? "property" : "properties"}
+              </span>
+            </div>
+
+            {s.rows.map((r) => (
+              <div key={r.id} className="pl-row" id={r.slug}>
+                <span className="pl-street">{r.street}</span>
+                <span className="pl-suburb">{r.suburb}</span>
+                <span className="pl-n"><b className="pl-lbl">Bed </b>{r.bed}</span>
+                <span className="pl-n"><b className="pl-lbl">Bath </b>{r.bath}</span>
+                <span className="pl-n"><b className="pl-lbl">Car </b>{r.car}</span>
+                {/* Never state a land size as fact: the measurement is
+                    indicative, and the column heading says approx. */}
+                <span className="pl-land">{r.land || "—"}</span>
+                <span className="pl-type">{r.type || "—"}</span>
+                <PortalEnquire listingId={r.id} agentNames={r.agentNames} />
+              </div>
+            ))}
           </div>
         ))}
 
