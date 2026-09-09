@@ -3,10 +3,11 @@ import { unstable_cache } from "next/cache";
 import { getRawSalesListings, getPropertyCategories } from "./boxdice";
 
 /**
- * Our market performance, for the Sell with us page.
+ * Our market performance, for the Sell with us page. Nothing is entered by
+ * hand; every figure here is computed from Box & Dice and updates itself.
  *
- * COMPUTED FROM OUR OWN CRM, and it reproduces realestate.com.au exactly.
- * Reconciled 9 Sep 2026 over a rolling 12 months:
+ * Reconciled against realestate.com.au on 9 Sep 2026 over a rolling 12 months,
+ * and it reproduces their card exactly:
  *
  *              ours              REA
  *   House      26 · $985,000     26 · $985k
@@ -14,24 +15,25 @@ import { getRawSalesListings, getPropertyCategories } from "./boxdice";
  *   Apartment   3 · $400,000      3 · $400k
  *   Total      40 · $907,500     40 · $908k
  *
- * It did not agree at first — we had 39 sales and a $935,000 median. The cause
- * was a window starting at the current time of day rather than midnight, which
- * dropped 15a McArthurs Road (sold 9 Sep 2025, $790,000) by 41 minutes. See
- * `since` below; that one sale was also REA's eleventh townhouse and their
- * exact townhouse median.
+ * It did not agree at first — 39 sales and a $935,000 median. The cause was a
+ * window starting at the current time of day rather than midnight, which
+ * dropped 15a McArthurs Road (sold 9 Sep 2025, $790,000) by 41 minutes. That
+ * one sale was REA's eleventh townhouse and their exact townhouse median.
  *
- * DAYS ADVERTISED IS NOT COMPUTED HERE, and cannot be. `date_listed` is when
- * the authority was signed, not when advertising began, and
- * `campaign_start_date` is empty on every sale. Measured from the authority our
- * median is 50 days against REA's 20.5 — a different measurement, not a
- * rounding difference, and publishing it as "days advertised" would be false.
- * That column alone comes from lib/rea-stats, read off REA by hand.
+ * DAYS ADVERTISED — see ONLINE_DATE_FROM. `date_listed` historically recorded
+ * when the authority was signed rather than when advertising began, so days
+ * measured from it came out at 50 against REA's 20.5: a different measurement,
+ * not a rounding difference. The convention is changing, so this counts only
+ * sales listed on or after the changeover and shows nothing until enough of
+ * them exist. No date is ever mixed with one that means something else.
  */
 
 export type TypeStats = {
   type: string;
   sold: number;
   medianPrice: number | null;
+  /** Null until enough sales carry a real advertising-start date. */
+  medianDays: number | null;
 };
 
 export type SalesStats = {
@@ -45,6 +47,21 @@ export type SalesStats = {
 
 /** REA's own order, so the two cards read the same way down the page. */
 const TYPE_ORDER = ["House", "Townhouse", "Apartment"];
+
+/**
+ * The day `date_listed` started meaning "went online" rather than "authority
+ * signed". Set LISTING_ONLINE_DATE_FROM (YYYY-MM-DD) in Vercel once the CRM
+ * convention has changed; until then no days figure is computed or shown,
+ * because the only honest answer is that we do not know.
+ */
+const ONLINE_DATE_FROM = process.env.LISTING_ONLINE_DATE_FROM ?? "";
+
+/**
+ * Below this, a median is an anecdote. A "median days" drawn from two sales
+ * would be worse than showing nothing, so the column stays hidden until a type
+ * has at least this many qualifying sales.
+ */
+const MIN_FOR_DAYS = 5;
 
 function median(values: number[]): number | null {
   const xs = values.filter((n) => Number.isFinite(n) && n > 0).sort((a, b) => a - b);
@@ -98,8 +115,35 @@ async function compute(months: number): Promise<SalesStats> {
     seen.set(t, [...(seen.get(t) ?? []), r]);
   }
 
+  /**
+   * Days on market, counted only from listings whose date means what we think
+   * it means. Anything listed before the changeover carries an authority date
+   * and is left out of this figure entirely — it still counts as a sale.
+   */
+  const daysFor = (rows: any[]): number | null => {
+    if (!ONLINE_DATE_FROM) return null;
+    const spans = rows
+      .filter((r) => String(r?.date_listed ?? "") >= ONLINE_DATE_FROM)
+      .map((r) => {
+        const a = Date.parse(String(r?.date_listed ?? ""));
+        const b = Date.parse(String(r?.sale_date ?? ""));
+        if (isNaN(a) || isNaN(b)) return 0;
+        const d = (b - a) / 86_400_000;
+        return d >= 0 && d < 3650 ? d : 0;
+      })
+      .filter((d) => d > 0);
+    if (spans.length < MIN_FOR_DAYS) return null;
+    const m = median(spans);
+    return m === null ? null : Math.round(m * 10) / 10;
+  };
+
   const byType = [...seen.entries()]
-    .map(([type, rows]) => ({ type, sold: rows.length, medianPrice: median(priced(rows)) }))
+    .map(([type, rows]) => ({
+      type,
+      sold: rows.length,
+      medianPrice: median(priced(rows)),
+      medianDays: daysFor(rows),
+    }))
     .sort((a, b) => {
       const ai = TYPE_ORDER.indexOf(a.type);
       const bi = TYPE_ORDER.indexOf(b.type);

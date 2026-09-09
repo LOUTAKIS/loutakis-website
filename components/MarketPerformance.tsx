@@ -1,44 +1,32 @@
 import { getSalesStats, shortPrice } from "@/lib/sales-stats";
-import { getReaDays, REA_PROFILE } from "@/lib/rea-stats";
 
 /**
  * Our market performance, on the Sell with us page.
  *
- * A vendor choosing between agents wants three things: how much you sell, what
- * you sell it for, and how long it takes. This is that argument, in nine
- * numbers.
+ * A vendor choosing between agents wants to know how much you sell, what you
+ * sell it for, and how long it takes. This is that argument, in numbers.
  *
- * Sold counts and median prices are computed from our own CRM and update
- * themselves — and they reproduce realestate.com.au's card exactly, which is
- * the point: a vendor who checks both sees the same figures.
+ * EVERY FIGURE IS COMPUTED FROM BOX & DICE. Nothing is typed in, nothing goes
+ * stale, and the counts and prices reproduce realestate.com.au's card exactly —
+ * so a vendor who checks both sees the same thing.
  *
- * Days advertised is read off REA by hand, because the CRM has no advertising
- * start date to compute it from. The footnote says so; a performance claim we
- * cannot substantiate is not one worth making.
- *
- * The section renders only when both halves are present. Half a table of
- * figures is worse than none.
+ * The days column appears on its own once the CRM holds real advertising-start
+ * dates (see lib/sales-stats). Until then the table is three columns, because
+ * a number we cannot stand behind is worse than a column that isn't there.
  */
 export default async function MarketPerformance() {
-  const [stats, rea] = await Promise.all([getSalesStats(12), getReaDays()]);
-  if (!stats?.byType?.length || !rea?.published) return null;
+  const stats = await getSalesStats(12);
+  if (!stats?.byType?.length || !stats.totalSold) return null;
 
-  const rows = stats.byType
-    .map((t) => ({ ...t, medianDays: rea.days?.[t.type] ?? null }))
-    // Only the types REA reports days for; anything else has an empty column.
-    .filter((r) => r.medianDays !== null);
+  // Only once every published type has one; a half-filled column reads as a gap.
+  const showDays = stats.byType.every((t) => t.medianDays !== null);
 
-  if (!rows.length) return null;
-
-  const checked = new Date(rea.checkedOn);
-  const checkedLabel = isNaN(+checked)
-    ? ""
-    : checked.toLocaleDateString("en-AU", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        timeZone: "Australia/Melbourne",
-      });
+  const asAt = new Date().toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Australia/Melbourne",
+  });
 
   return (
     <section className="mp">
@@ -51,7 +39,7 @@ export default async function MarketPerformance() {
           </h2>
         </div>
 
-        {/* A table, because it is one: three measures across three kinds of
+        {/* A table, because it is one: the same measures across three kinds of
             home, and a vendor reads the row that is theirs. */}
         <div className="mp-scroll">
           <table className="mp-table">
@@ -60,16 +48,16 @@ export default async function MarketPerformance() {
                 <th scope="col">Property</th>
                 <th scope="col">Sold</th>
                 <th scope="col">Median price</th>
-                <th scope="col">Median days advertised</th>
+                {showDays && <th scope="col">Median days advertised</th>}
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {stats.byType.map((r) => (
                 <tr key={r.type}>
                   <th scope="row">{r.type}</th>
                   <td>{r.sold}</td>
                   <td>{shortPrice(r.medianPrice)}</td>
-                  <td>{r.medianDays}</td>
+                  {showDays && <td>{r.medianDays}</td>}
                 </tr>
               ))}
             </tbody>
@@ -77,18 +65,7 @@ export default async function MarketPerformance() {
         </div>
 
         <p className="mp-source">
-          Sales and prices from our own records for the 12 months to{" "}
-          {new Date().toLocaleDateString("en-AU", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-            timeZone: "Australia/Melbourne",
-          })}
-          . Days advertised as published on{" "}
-          <a href={REA_PROFILE} target="_blank" rel="noopener noreferrer">
-            realestate.com.au
-          </a>
-          {checkedLabel ? `, read on ${checkedLabel}` : ""}.
+          From our own sales records, for the 12 months to {asAt}.
         </p>
       </div>
     </section>

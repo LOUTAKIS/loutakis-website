@@ -79,9 +79,9 @@ export default async function SellWithUsPage() {
       {/* The appraisal request. The old "Interested in working together?"
           button pointed at a general contact page; a seller who has read this
           far should be able to start here instead. */}
-      {/* Proof, between what we do and the ask. A vendor should have seen the
-          numbers before being invited to fill in nine questions. Renders
-          nothing until the figures are entered and published in /staff/market. */}
+      {/* Proof, between what we do and the ask: a vendor should see the numbers
+          before being invited to fill in nine questions. Computed from the CRM,
+          and it hides itself if the CRM is unreachable. */}
       <MarketPerformance />
 
       <section id="start">
