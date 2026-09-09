@@ -19,7 +19,7 @@ export default function BrochurePages({ src, name }: { src: string; name: string
       try {
         const pdfjs = await import("pdfjs-dist");
         pdfjs.GlobalWorkerOptions.workerSrc =
-          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.worker.min.mjs";
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/pdf.worker.min.mjs";
         const doc = await pdfjs.getDocument({ url: src }).promise;
         const out: string[] = [];
         for (let n = 1; n <= doc.numPages && n <= 24; n++) {
@@ -30,7 +30,7 @@ export default function BrochurePages({ src, name }: { src: string; name: string
           canvas.width = viewport.width;
           canvas.height = viewport.height;
           const ctx = canvas.getContext("2d")!;
-          await page.render({ canvasContext: ctx, viewport }).promise;
+          await page.render({ canvas, canvasContext: ctx, viewport }).promise;
           out.push(canvas.toDataURL("image/jpeg", 0.88));
           if (cancelled) return;
           setPages([...out]);

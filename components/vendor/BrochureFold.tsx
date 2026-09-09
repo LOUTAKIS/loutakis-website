@@ -126,8 +126,11 @@ export default function BrochureFold({ src, name, panels }: { src: string; name:
     (async () => {
       try {
         const pdfjs = await import("pdfjs-dist");
+        // Pinned to the version we depend on: an older worker renders a
+        // soft-masked gradient as a flat block, which is what put a hard-edged
+        // dark slab across the brochure cover. See lib/brochure-render.
         pdfjs.GlobalWorkerOptions.workerSrc =
-          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.worker.min.mjs";
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/pdf.worker.min.mjs";
         const doc = await pdfjs.getDocument({ url: src }).promise;
         if (doc.numPages < 2) throw new Error(`expected 2 pages, got ${doc.numPages}`);
 
@@ -140,7 +143,7 @@ export default function BrochureFold({ src, name, panels }: { src: string; name:
           const canvas = document.createElement("canvas");
           canvas.width = vp.width;
           canvas.height = vp.height;
-          await page.render({ canvasContext: canvas.getContext("2d")!, viewport: vp }).promise;
+          await page.render({ canvas, canvasContext: canvas.getContext("2d")!, viewport: vp }).promise;
 
           const pw = Math.floor(vp.width / 4);
           if (n === 1) setRatio(vp.height / pw);

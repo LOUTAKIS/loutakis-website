@@ -10,6 +10,19 @@ import { downloadFile } from "./sharepoint";
  * Rendered sets are kept in memory per server instance and the panel URLs
  * carry a signature so the CDN can cache them for a year: the URL changes if
  * the brochure file does, and cannot be guessed.
+ *
+ * PDF.JS 6 IS A CORRECTNESS REQUIREMENT, NOT HOUSEKEEPING. On 4.6.82 a soft-
+ * masked gradient renders as a flat opaque block: the brochure cover's scrim,
+ * which should fade from dark sky to clear by the roofline, came out as a
+ * solid slab with a hard edge across the photograph. Measured down the sky at
+ * 200dpi, the blue channel read 80, 77, 80, 82, 83, 84 — no gradient at all —
+ * where the real file (checked against poppler) reads 61, 74, 112, 147, 185,
+ * 221. On 6.3 it reads 80, 88, 123, 156, 191, 225 and tracks the original.
+ *
+ * A vendor approving their marketing has to be looking at their marketing, so
+ * this is not cosmetic. 4.10 and 5.7 both segfault against Skia here; 6.3 is
+ * the first version that renders it, and it requires @napi-rs/canvas 1.x —
+ * pdf.js 6 hands it canvas types 0.1.x rejects outright.
  */
 
 export type RenderedBrochure = { ratio: number; panels: Buffer[][] }; // [page][panel]
@@ -66,7 +79,12 @@ async function render(brochureId: string): Promise<RenderedBrochure> {
     }
   }
 
-  const doc = await pdfjs.getDocument({ data, canvasFactory: new CanvasFactory(), useSystemFonts: true }).promise;
+  // `canvasFactory` at load time is untyped in v6 (it wants a CanvasFactory
+  // class, not an instance) but is still honoured, and it is what routes every
+  // internal canvas — masks and transparency groups included — through Skia
+  // rather than a DOM that isn't here.
+  const task = pdfjs.getDocument({ data, canvasFactory: new CanvasFactory(), useSystemFonts: true } as any);
+  const doc = await task.promise;
   if (doc.numPages < 2) throw new Error(`brochure has ${doc.numPages} page(s); expected 2`);
 
   const panels: Buffer[][] = [];
@@ -78,7 +96,8 @@ async function render(brochureId: string): Promise<RenderedBrochure> {
     const vp = page.getViewport({ scale });
     const W = Math.round(vp.width), H = Math.round(vp.height);
     const full = napi.createCanvas(W, H);
-    await page.render({ canvasContext: full.getContext("2d") as any, viewport: vp, canvasFactory: new CanvasFactory() } as any).promise;
+    // pdf.js 6 wants the canvas itself, not only its context.
+    await page.render({ canvas: full as any, canvasContext: full.getContext("2d") as any, viewport: vp, canvasFactory: new CanvasFactory() } as any).promise;
     const pw = Math.floor(W / 4);
     if (n === 1) ratio = H / pw;
     const row: Buffer[] = [];
@@ -89,6 +108,7 @@ async function render(brochureId: string): Promise<RenderedBrochure> {
     }
     panels.push(row);
   }
-  await doc.destroy();
+  // pdf.js 6 moved destroy() onto the loading task.
+  await task.destroy();
   return { ratio, panels };
 }
