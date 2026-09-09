@@ -36,8 +36,8 @@ export default function MarketStatsForm({
       return existing ?? { type, sold: 0, medianPrice: 0, medianDays: 0 };
     })
   );
-  const [totalSold, setTotalSold] = useState(String(current?.totalSold ?? ""));
-  const [medianPrice, setMedianPrice] = useState(String(current?.medianPrice ?? ""));
+  const [totalSold, setTotalSold] = useState(current?.totalSold ? String(current.totalSold) : "");
+  const [medianPrice, setMedianPrice] = useState(current?.medianPrice ? String(current.medianPrice) : "");
   const [checkedOn, setCheckedOn] = useState(
     current?.checkedOn ?? new Date().toISOString().slice(0, 10)
   );
@@ -86,7 +86,13 @@ export default function MarketStatsForm({
           <tbody>
             {rows.map((r) => {
               const o = oursFor(r.type);
-              const soldGap = o ? Number(r.sold) - o.sold : 0;
+              /**
+               * Only compare once a figure has actually been typed. An empty
+               * field is not a discrepancy — before this guard a blank form
+               * accused itself of being 26 sales out on every row.
+               */
+              const entered = Number(r.sold) > 0;
+              const soldGap = o && entered ? Number(r.sold) - o.sold : 0;
               return (
                 <tr key={r.type}>
                   <th scope="row">{r.type}</th>
@@ -94,7 +100,7 @@ export default function MarketStatsForm({
                     <input
                       className="field"
                       inputMode="numeric"
-                      value={String(r.sold ?? "")}
+                      value={r.sold ? String(r.sold) : ""}
                       onChange={(e) => setRow(r.type, "sold", e.target.value)}
                       aria-label={`${r.type} sold`}
                     />
@@ -102,7 +108,7 @@ export default function MarketStatsForm({
                   <td>
                     <input
                       className="field"
-                      value={String(r.medianPrice ?? "")}
+                      value={r.medianPrice ? String(r.medianPrice) : ""}
                       onChange={(e) => setRow(r.type, "medianPrice", e.target.value)}
                       placeholder="985k"
                       aria-label={`${r.type} median price`}
@@ -112,7 +118,7 @@ export default function MarketStatsForm({
                     <input
                       className="field"
                       inputMode="decimal"
-                      value={String(r.medianDays ?? "")}
+                      value={r.medianDays ? String(r.medianDays) : ""}
                       onChange={(e) => setRow(r.type, "medianDays", e.target.value)}
                       aria-label={`${r.type} median days`}
                     />
