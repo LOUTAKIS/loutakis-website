@@ -2,8 +2,7 @@ import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/portal-session";
 import { getOffMarketListings } from "@/lib/boxdice";
 import type { Listing } from "@/lib/types";
-import EnquiryForm from "@/components/EnquiryForm";
-import { fmtInspection } from "@/lib/when";
+import PortalEnquire from "@/components/PortalEnquire";
 
 export const metadata = {
   title: "Off-market properties — Loutakis Real Estate",
@@ -12,6 +11,28 @@ export const metadata = {
 
 // Never cached: who can see this is decided per request, from the CRM.
 export const dynamic = "force-dynamic";
+
+/**
+ * "19 William Street" → "William Street".
+ *
+ * The number is the one field that names the house. Without it a buyer still
+ * knows the street, the suburb and what is on the block — enough to decide
+ * whether to ask — while a neighbour reading over a shoulder cannot work out
+ * which of their neighbours is selling. That is the deal we make with a vendor
+ * who asks for a quiet campaign, and it costs the buyer nothing: they get the
+ * address in the phone call that follows.
+ *
+ * Handles a unit prefix too ("12/34 Smith Street"), and leaves anything it
+ * does not recognise alone rather than guessing a street name out of it.
+ */
+function streetOnly(street: string): string {
+  const stripped = String(street ?? "")
+    .trim()
+    .replace(/^[\dA-Za-z]+\s*\/\s*/, "")
+    .replace(/^\d+[A-Za-z]?(\s*-\s*\d+[A-Za-z]?)?\s+/, "")
+    .trim();
+  return stripped || String(street ?? "");
+}
 
 
 export default async function PortalPage() {
@@ -90,20 +111,19 @@ export default async function PortalPage() {
           </div>
         ) : (
           /**
-           * A LIST, NOT A GALLERY. No photographs anywhere on this page.
+           * A LIST, NOTHING ELSE. No photographs, no descriptions, no street
+           * numbers — and no house identifiable from the page.
            *
-           * A vendor selling quietly has usually not agreed to their house
-           * appearing on a screen at all — the whole point of the private list
-           * is that nothing is on display. Text also lets a buyer read six
-           * properties in the time one hero image takes to load.
-           *
-           * Each row opens in place for the detail and the enquiry form, so
-           * nobody has to leave the page or lose their place in it.
+           * A vendor selling quietly has usually not agreed to their home
+           * appearing on a screen at all. What is left is what a buyer needs to
+           * decide whether to ask: the street, the suburb, the rooms and the
+           * land. Everything past that happens in a phone call, which is how a
+           * quiet campaign is supposed to work.
            */
           <div className="pl">
             <div className="pl-head" aria-hidden>
+              <span>Street</span>
               <span>Suburb</span>
-              <span>Address</span>
               <span className="pl-n">Bed</span>
               <span className="pl-n">Bath</span>
               <span className="pl-n">Car</span>
@@ -112,69 +132,24 @@ export default async function PortalPage() {
             </div>
 
             {listings.map((l) => (
-              <details key={l.id} className="pl-row" id={l.slug}>
-                <summary>
-                  <span className="pl-suburb">{l.address.suburb}</span>
-                  <span className="pl-street">{l.address.street}</span>
-                  <span className="pl-n"><b className="pl-lbl">Bed </b>{l.bed}</span>
-                  <span className="pl-n"><b className="pl-lbl">Bath </b>{l.bath}</span>
-                  <span className="pl-n"><b className="pl-lbl">Car </b>{l.car}</span>
-                  {/* Never state a land size as fact: the measurement is
-                      indicative, and the column heading says approx. */}
-                  <span className="pl-land">{l.landSize || "—"}</span>
-                  <span className="pl-more">Details</span>
-                </summary>
-
-                <div className="pl-detail">
-                  <div>
-                    {l.headline && l.headline !== `${l.address.street}, ${l.address.suburb}` && (
-                      <p className="portal-headline">{l.headline}</p>
-                    )}
-
-                    {l.description && (
-                      <div className="portal-desc">
-                        {l.description.split(/\n{2,}/).map((p, i) => (
-                          <p key={i}>{p}</p>
-                        ))}
-                      </div>
-                    )}
-
-                    {(l.inspections?.length ?? 0) > 0 && (
-                      <div className="portal-times">
-                        <div className="times-label">Private inspections</div>
-                        <p style={{ color: "var(--muted)" }}>
-                          {(l.inspections ?? []).map((i, n) => (
-                            <span key={n}>{fmtInspection(i.start, i.end)}<br /></span>
-                          ))}
-                          or by appointment
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* The agent, by name and number only — no photograph here
-                      either, so the page stays a list all the way down. */}
-                  <aside className="agent">
-                    {l.agents.map((a, i) => (
-                      <div key={i} className={i > 0 ? "agent-extra" : undefined}>
-                        <div className="nm">{a.name}</div>
-                        <div className="ttl">{a.title ?? "Sales"}</div>
-                        {(a.phone || a.email) && (
-                          <div className="agent-contact">
-                            {a.phone && <a href={`tel:${a.phone.replace(/\s+/g, "")}`}>{a.phone}</a>}
-                            {a.email && <a href={`mailto:${a.email}`}>{a.email}</a>}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    <EnquiryForm
-                      listingId={l.id}
-                      listingAddress={`${l.address.street}, ${l.address.suburb}`}
-                      agentNames={l.agents.map((a) => a.name)}
-                    />
-                  </aside>
-                </div>
-              </details>
+              <div key={l.id} className="pl-row" id={l.slug}>
+                <span className="pl-street">{streetOnly(l.address.street)}</span>
+                <span className="pl-suburb">{l.address.suburb}</span>
+                <span className="pl-n"><b className="pl-lbl">Bed </b>{l.bed}</span>
+                <span className="pl-n"><b className="pl-lbl">Bath </b>{l.bath}</span>
+                <span className="pl-n"><b className="pl-lbl">Car </b>{l.car}</span>
+                {/* Never state a land size as fact: the measurement is
+                    indicative, and the column heading says approx. */}
+                <span className="pl-land">{l.landSize || "—"}</span>
+                {/* Button in the last column, form underneath it across the
+                    whole row. The office still receives the full street number
+                    in the enquiry — it is only the page that omits it. */}
+                <PortalEnquire
+                  listingId={l.id}
+                  listingAddress={`${l.address.street}, ${l.address.suburb}`}
+                  agentNames={l.agents.map((a) => a.name)}
+                />
+              </div>
             ))}
           </div>
         )}

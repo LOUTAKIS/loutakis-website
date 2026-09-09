@@ -526,47 +526,42 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
    One grid, declared once and shared by the heading row and every listing row,
    so the columns cannot drift apart. */
 .pl { margin-top: 34px; border-top: 1px solid var(--ink); }
-.pl-head, .pl-row > summary {
+.pl-head, .pl-row {
   display: grid;
-  grid-template-columns: 1.1fr 1.7fr 62px 62px 62px 1fr 84px;
+  grid-template-columns: 1.7fr 1.1fr 62px 62px 62px 1fr 110px;
   gap: 16px; align-items: baseline;
 }
 .pl-head {
   font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
   color: var(--muted); padding: 12px 0; border-bottom: 1px solid var(--line);
 }
-.pl-row { border-bottom: 1px solid var(--line); }
-.pl-row > summary {
-  padding: 20px 0; cursor: pointer; list-style: none;
-  transition: background .15s ease;
-}
-.pl-row > summary::-webkit-details-marker { display: none; }
-.pl-row > summary:hover { background: var(--paper-2); }
-.pl-row > summary:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
-.pl-suburb { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.pl-row { border-bottom: 1px solid var(--line); padding: 18px 0; }
+/* Street name only — the number is never published. See streetOnly(). */
 .pl-street { font-family: var(--serif); font-size: clamp(17px, 2vw, 21px); }
+.pl-suburb { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
 .pl-n, .pl-land { color: var(--muted); font-variant-numeric: tabular-nums; }
 /* The heading row carries the labels on desktop; each cell repeats them only
    once the grid collapses on a phone. */
 .pl-lbl { display: none; font-weight: 400; }
-.pl-more {
-  font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
-  color: var(--muted); text-align: right;
+/* The only thing on the row that does anything. */
+.pl-cta {
+  justify-self: end; align-self: center;
+  font-family: var(--sans); font-size: 10px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink);
+  background: none; border: 1px solid var(--ink); border-radius: 0;
+  padding: 9px 14px; cursor: pointer; white-space: nowrap;
+  transition: background .15s ease, color .15s ease;
 }
-.pl-row[open] > summary { background: var(--paper-2); }
-.pl-row[open] .pl-more { color: var(--ink); }
-.pl-detail {
-  display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 48px;
-  align-items: start; padding: 8px 0 44px;
-}
-@media (max-width: 900px) { .pl-detail { grid-template-columns: 1fr; gap: 32px; } }
+.pl-cta:hover { background: var(--ink); color: #fff; }
+/* Full-width track under the row it belongs to — a sibling of the cells, not
+   a child of one, or it would be trapped in a 110px column. */
+.pl-form { grid-column: 1 / -1; max-width: 460px; padding: 14px 0 10px; }
 @media (max-width: 760px) {
   .pl-head { display: none; }
-  .pl-row > summary { grid-template-columns: repeat(3, auto); gap: 4px 20px; }
-  .pl-suburb, .pl-street { grid-column: 1 / -1; }
-  .pl-land { grid-column: 1 / -1; }
+  .pl-row { grid-template-columns: repeat(3, auto); gap: 6px 20px; padding: 20px 0; }
+  .pl-street, .pl-suburb, .pl-land { grid-column: 1 / -1; }
   .pl-lbl { display: inline; }
-  .pl-more { grid-column: 1 / -1; text-align: left; }
+  .pl-cta { grid-column: 1 / -1; justify-self: start; margin-top: 6px; }
 }
 
 .portal-headline { color: var(--muted); font-size: 17px; margin-bottom: 18px; }
