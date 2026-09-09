@@ -3,6 +3,7 @@ import { getStaff } from "@/lib/staff-auth";
 import { listCampaigns } from "@/lib/campaigns";
 import StaffSignInForm from "@/components/StaffSignInForm";
 import StaffSignOut from "@/components/StaffSignOut";
+import RefreshListings from "@/components/RefreshListings";
 
 export const metadata = {
   title: "Staff — Loutakis Real Estate",
@@ -65,7 +66,15 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
             <div className="eyebrow">Dashboard</div>
             <h2>{staff.name}</h2>
           </div>
-          <StaffSignOut />
+          {/* Refresh belongs here, not on the approvals list. It doesn't
+              refresh approvals — it re-reads the whole CRM for the whole site,
+              which is a dashboard-level thing to do, and it is what you want
+              right after editing a listing in Box & Dice with a vendor on the
+              phone. */}
+          <div style={{ display: "flex", gap: 18, alignItems: "center" }}>
+            <RefreshListings />
+            <StaffSignOut />
+          </div>
         </div>
 
         <div className="sd-grid">

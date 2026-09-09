@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/staff-auth";
 import { listCampaigns, type Campaign, type CampaignStatus, campaignVendors } from "@/lib/campaigns";
 import DeleteCampaign from "@/components/DeleteCampaign";
-import RefreshListings from "@/components/RefreshListings";
 
 export const metadata = {
   title: "Vendor approvals — Loutakis Real Estate",
@@ -61,16 +60,15 @@ export default async function ApprovalsPage() {
   return (
     <section className="portal-page">
       <div className="wrap">
-        <Link href="/staff" className="backlink">← Staff</Link>
+        <Link href="/staff" className="backlink">← Dashboard</Link>
         <div className="section-head">
           <div>
-            <div className="eyebrow">Staff · {staff.name}</div>
+            {/* Just the name: the line above already says where you are, and
+                "Staff · Daldy" under "← Staff" was the same word twice. */}
+            <div className="eyebrow">{staff.name}</div>
             <h2>Vendor approvals</h2>
           </div>
-          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            <RefreshListings />
-            <Link href="/staff/new" className="btn">New approval</Link>
-          </div>
+          <Link href="/staff/new" className="btn">New approval</Link>
         </div>
 
         {campaigns.length === 0 ? (
