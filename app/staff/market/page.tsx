@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getStaff } from "@/lib/staff-auth";
-import { getReaStats, daysSinceChecked, STALE_AFTER_DAYS, REA_PROFILE } from "@/lib/rea-stats";
+import { getReaDays, daysSinceChecked, STALE_AFTER_DAYS, REA_PROFILE } from "@/lib/rea-stats";
 import { getSalesStats } from "@/lib/sales-stats";
 import MarketStatsForm from "@/components/MarketStatsForm";
 
@@ -26,7 +26,7 @@ export default async function MarketStatsPage() {
     );
   }
 
-  const [current, ours] = await Promise.all([getReaStats(), getSalesStats(12)]);
+  const [current, ours] = await Promise.all([getReaDays(), getSalesStats(12)]);
   const age = daysSinceChecked(current);
   const stale = age !== null && age > STALE_AFTER_DAYS;
 
@@ -42,14 +42,14 @@ export default async function MarketStatsPage() {
         </div>
 
         <p className="portal-intro">
-          These are the figures shown on{" "}
-          <Link href="/sell-with-us">Sell with us</Link>. They come from{" "}
+          The figures shown on <Link href="/sell-with-us">Sell with us</Link>.
+          Sold counts and median prices come from Box&nbsp;&amp;&nbsp;Dice automatically and
+          match{" "}
           <a href={REA_PROFILE} target="_blank" rel="noopener noreferrer">
-            our REA agency profile
+            our REA profile
           </a>{" "}
-          rather than being calculated here, so they always match what a vendor
-          sees when they check. Open REA, copy the three rows across, set the
-          date, and save.
+          exactly. The only thing to enter is median days advertised — three
+          numbers, worth re-reading off REA every few months.
         </p>
 
         {/* Age is the whole risk with a hand-entered number, so it is stated

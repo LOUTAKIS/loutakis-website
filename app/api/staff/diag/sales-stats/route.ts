@@ -62,8 +62,10 @@ export async function GET(req: Request) {
   }
 
   const months = Number(new URL(req.url).searchParams.get("months") ?? 12);
+  // Floored to the day — see lib/sales-stats for why this matters.
   const since = new Date();
   since.setMonth(since.getMonth() - months);
+  since.setUTCHours(0, 0, 0, 0);
 
   let raw: any[] = [];
   let categories = new Map<number, string>();

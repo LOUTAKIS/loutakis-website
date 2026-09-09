@@ -5,27 +5,27 @@ import { getRawSalesListings, getPropertyCategories } from "./boxdice";
 /**
  * Our market performance, for the Sell with us page.
  *
- * WHY THESE FIGURES AND NOT OTHERS. Reconciled against realestate.com.au on
- * 9 Sep 2026, from the raw CRM feed over a rolling 12 months:
+ * COMPUTED FROM OUR OWN CRM, and it reproduces realestate.com.au exactly.
+ * Reconciled 9 Sep 2026 over a rolling 12 months:
  *
- *              ours                REA
- *   House      26 · $985,000       26 · $985k     exact
- *   Apartment   3 · $400,000        3 · $400k     exact
- *   Townhouse  10 · $772,500       11 · $790k     one sale adrift
- *   Total      39 · $935,000       40 · $908k
+ *              ours              REA
+ *   House      26 · $985,000     26 · $985k
+ *   Townhouse  11 · $790,000     11 · $790k
+ *   Apartment   3 · $400,000      3 · $400k
+ *   Total      40 · $907,500     40 · $908k
  *
- * A single townhouse sale between roughly $790k and $880k reconciles every
- * remaining figure to the dollar — almost certainly one sale sitting a few days
- * either side of REA's window boundary. So counts and medians are computed
- * here, from our own records, and they agree with what a vendor sees on REA.
+ * It did not agree at first — we had 39 sales and a $935,000 median. The cause
+ * was a window starting at the current time of day rather than midnight, which
+ * dropped 15a McArthurs Road (sold 9 Sep 2025, $790,000) by 41 minutes. See
+ * `since` below; that one sale was also REA's eleventh townhouse and their
+ * exact townhouse median.
  *
- * DAYS ADVERTISED IS NOT COMPUTED HERE, and cannot be. The CRM's `date_listed`
- * is when the authority was signed, not when advertising began, and
- * `campaign_start_date` was empty on all 39 sales. Measured from the authority
- * our median is 50 days against REA's 20.5 — a different thing entirely, not a
- * rounding difference. Publishing it as "days advertised" would be false. That
- * column comes from lib/rea-stats.ts, entered by hand and attributed to REA,
- * until we have enough of our own advertising-start dates to do it properly.
+ * DAYS ADVERTISED IS NOT COMPUTED HERE, and cannot be. `date_listed` is when
+ * the authority was signed, not when advertising began, and
+ * `campaign_start_date` is empty on every sale. Measured from the authority our
+ * median is 50 days against REA's 20.5 — a different measurement, not a
+ * rounding difference, and publishing it as "days advertised" would be false.
+ * That column alone comes from lib/rea-stats, read off REA by hand.
  */
 
 export type TypeStats = {
@@ -54,8 +54,19 @@ function median(values: number[]): number | null {
 }
 
 async function compute(months: number): Promise<SalesStats> {
+  /**
+   * Midnight, not "this time of day twelve months ago".
+   *
+   * Box & Dice stores sale_date as a plain date, which parses to midnight. A
+   * window starting at the current time of day therefore drops any sale that
+   * happened exactly twelve months ago — 15a McArthurs Road sold on 9 Sep 2025
+   * for $790,000 and was excluded by 41 minutes, which cost us a townhouse and
+   * put our median $17,500 away from REA's. With the window floored to the day,
+   * our figures reproduce REA's card exactly.
+   */
   const since = new Date();
   since.setMonth(since.getMonth() - months);
+  since.setUTCHours(0, 0, 0, 0);
 
   const [raw, categories] = await Promise.all([getRawSalesListings(), getPropertyCategories()]);
 

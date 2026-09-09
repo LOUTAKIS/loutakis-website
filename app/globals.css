@@ -1030,3 +1030,5 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .ms-msg { font-size: 13px; color: var(--muted); }
 .ms-msg.bad, .ms-age.bad { color: #a3231f; }
 .ms-age { margin-top: 18px; font-size: 13px; color: var(--muted); }
+/* Figures the CRM supplies: shown, not editable. */
+.ms-auto { font-variant-numeric: tabular-nums; color: var(--muted); }
