@@ -284,7 +284,19 @@ section { padding: 96px 0; }
 .tab { font-size: 12px; letter-spacing: .18em; padding: 0 0 14px .18em; text-transform: uppercase; color: var(--muted); cursor: pointer; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; font-family: var(--sans); }
 .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
 /* The off-market tab is a link out, so it never takes the active underline. */
+.tab-link { text-decoration: none; }
 .tab-link:hover { color: var(--ink); }
+/* The count, on the tab. Filled rather than outlined so it reads as a number
+   worth a click and not another label — it is the only thing on this bar that
+   says there is something the page is not showing. The letter-spacing is
+   cancelled: it is a numeral, not a word. */
+.tab-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; margin-left: 8px;
+  border-radius: 9px; background: var(--accent); color: #fff;
+  font-size: 10px; font-weight: 600; letter-spacing: 0; line-height: 1;
+  vertical-align: 1px;
+}
 
 /* Listings grid */
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px 28px; }

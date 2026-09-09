@@ -59,6 +59,14 @@ export default function PropertyFilters({
               one leaves the page rather than switching what's shown. */}
           <Link href="/portal" className="tab tab-link">
             Off-market
+            {/* The count as a badge, so the tab itself carries the reason to
+                click it. Absent at zero rather than showing a "0" that reads
+                as an empty list. */}
+            {offMarketCount > 0 && (
+              <span className="tab-badge" aria-label={`${offMarketCount} available`}>
+                {offMarketCount}
+              </span>
+            )}
           </Link>
         </div>
         <select
