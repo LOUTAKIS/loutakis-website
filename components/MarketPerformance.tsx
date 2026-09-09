@@ -23,13 +23,6 @@ export default async function MarketPerformance() {
   // off-market has no days to report and reads as a dash, not a gap.
   const showDays = stats.byType.some((t) => t.medianDays !== null);
 
-  const asAt = new Date().toLocaleDateString("en-AU", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "Australia/Melbourne",
-  });
-
   return (
     <section className="mp">
       <div className="wrap">
@@ -65,12 +58,6 @@ export default async function MarketPerformance() {
             </tbody>
           </table>
         </div>
-
-        <p className="mp-source">
-          From our own sales records, for the 12 months to {asAt}. Days advertised
-          is measured from the day a property went online to the day it sold;
-          properties sold off-market are counted as sales but carry no days.
-        </p>
       </div>
     </section>
   );
