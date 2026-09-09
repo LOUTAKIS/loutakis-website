@@ -10,6 +10,23 @@ const nextConfig = {
     // canvas. Neither should be bundled by webpack: leave them as real Node
     // packages so the native binary is traced into the function.
     serverComponentsExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
+    /**
+     * Ship pdf.js's worker with the brochure route.
+     *
+     * pdf.mjs loads its worker through a dynamic import built from a string, so
+     * Next's file tracer never sees the reference and leaves pdf.worker.mjs out
+     * of the deployed function. The renderer arrives, its worker does not, and
+     * every panel 502s with:
+     *
+     *   Setting up fake worker failed: "Cannot find module
+     *   '/var/task/node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs'"
+     *
+     * Naming the file here is what puts it in the bundle. Verify after a build
+     * with: grep pdf.worker .next/server/app/api/vendor/panel/**\/*.nft.json
+     */
+    outputFileTracingIncludes: {
+      "/api/vendor/panel/**": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"],
+    },
   },
   // A rate-limited fetch can legitimately wait 30s+ between retries. Next's
   // default 60s per-page limit restarts the page (and re-fetches), which is
