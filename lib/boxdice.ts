@@ -491,6 +491,18 @@ export async function getRawSalesListings(): Promise<any[]> {
 }
 
 /**
+ * property_category_id -> "House", "Townhouse", "Apartment"…
+ *
+ * The dwelling classification, and the only field that maps onto how REA
+ * groups its performance figures. NOT property_type_id, which is the far
+ * coarser Residential / Rental / Business split.
+ */
+export async function getPropertyCategories(): Promise<Map<number, string>> {
+  const rows = await paginate("/property_categories", "property_categories", true);
+  return new Map(rows.filter((r: any) => r?.id).map((r: any) => [Number(r.id), String(r.name ?? "")]));
+}
+
+/**
  * Off-market listings for the portal.
  *
  * The rule, settled against the live CRM:
