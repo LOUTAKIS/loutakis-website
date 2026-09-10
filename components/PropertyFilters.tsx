@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Listing } from "@/lib/types";
 import ListingCard from "./ListingCard";
+import { countPhrase } from "@/lib/off-market-copy";
 
 const TABS: { key: string; label: string }[] = [
   { key: "current", label: "Current" },
@@ -103,19 +104,15 @@ export default function PropertyFilters({
             <div className="eyebrow">Off-market</div>
             <h3>Not everything we sell is here.</h3>
             <p>
-              Some owners prefer a quiet campaign. Those homes go to a private list
-              {/* Only when there is something on it. At zero the sentence ends
-                  where it did before, rather than admitting to an empty list on
+              Some owners prefer a quiet campaign.{" "}
+              {/* Only when there is something on it. At zero this falls back to
+                  the general sentence rather than admitting to an empty list on
                   the page that is meant to open it. */}
-              {offMarketCount > 0 && (
-                <>
-                  {" — "}
-                  <strong>
-                    {offMarketCount} {offMarketCount === 1 ? "is" : "are"} on it right now
-                  </strong>
-                </>
+              {offMarketCount > 0 ? (
+                <strong>{countPhrase(offMarketCount)}.</strong>
+              ) : (
+                "Those homes go to a private list."
               )}
-              .
             </p>
           </div>
           <Link href="/portal/register" className="btn">Request access</Link>

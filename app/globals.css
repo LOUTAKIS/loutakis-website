@@ -734,12 +734,18 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
    sells. The homepage band sits on the darker paper to separate it from the
    listings above; the properties card is a quiet aside after the grid. */
 
+/* The words and the way in, kept together.
+   `space-between` pushed the button to the far right of a 1900px card, half a
+   screen from the sentence it belongs to — at that distance it stops reading
+   as the answer to what was just said. The text block is capped instead and
+   the button follows it, so the pair sits together at any width. */
 .offmarket-card {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 26px;
+  display: flex; align-items: center; justify-content: flex-start;
+  flex-wrap: wrap; gap: 26px 44px;
   margin-top: 56px; padding: 34px 36px;
   border: 1px solid var(--line); background: var(--paper-2);
 }
+.offmarket-card > div { max-width: 56ch; }
 .offmarket-card h3 { font-family: var(--serif); font-weight: 400; font-size: 24px; margin: 10px 0 8px; }
 .offmarket-card p { color: var(--muted); font-size: 14.5px; max-width: 52ch; }
 @media (max-width: 640px) { .offmarket-card { padding: 28px 24px; } }
