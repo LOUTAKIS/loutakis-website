@@ -50,6 +50,8 @@ export type SiteStats = {
   topPages: NamedCount[];
   referrers: NamedCount[];
   funnel: Funnel | null;
+  /** Views of /listings — see the query. Null when that read failed. */
+  qrScans: Totals | null;
   /** Which parts failed, so the page can say so rather than show a zero. */
   missing: string[];
 };
@@ -158,11 +160,21 @@ export async function getSiteStats(days = 30): Promise<SiteStats | null> {
    */
   const EVENTS = ["form_started", "form_submitted", "form_succeeded", "form_failed"] as const;
 
-  const [daily, prior, pages, refs, ...eventResults] = await Promise.all([
+  const [daily, prior, pages, refs, qr, ...eventResults] = await Promise.all([
     query("visits/aggregate", { since, until, by: "day" }),
     query("visits/aggregate", { since: prevSince, until: prevUntil, by: "day" }),
-    query("visits/aggregate", { since, until, by: "requestPath", limit: 8 }),
+    query("visits/aggregate", { since, until, by: "requestPath", limit: 12 }),
     query("visits/aggregate", { since, until, by: "referrerHostname", limit: 6 }),
+    /**
+     * QR SCANS FROM THE BOARDS AND BROCHURES.
+     *
+     * The printed codes point at /listings, which 308-redirects to /properties
+     * — but Vercel still records the requested path, so views of /listings are
+     * scans. Nobody types that URL: it has not been a page on this site since
+     * before the rebuild, and nothing links to it. Its only remaining source is
+     * a phone camera pointed at a board.
+     */
+    query("visits/aggregate", { since, until, by: "day", filter: `requestPath eq '/listings'` }),
     ...EVENTS.map((name) =>
       query("events/aggregate", { since, until, by: "day", filter: `eventName eq '${name}'` })
     ),
@@ -218,6 +230,7 @@ export async function getSiteStats(days = 30): Promise<SiteStats | null> {
           failed: tally(3, "count"),
         }
       : null,
+    qrScans: qr ? sum(Array.isArray(qr.data) ? qr.data : []) : null,
     missing,
   };
 }

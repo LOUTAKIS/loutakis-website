@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/staff-auth";
 import { getSiteStats, analyticsConfigured } from "@/lib/web-analytics";
 import { listApprovedContacts, listOptedOut } from "@/lib/portal-store";
+import StatTable from "@/components/StatTable";
 
 export const metadata = {
   title: "Website — Loutakis Real Estate",
@@ -92,6 +93,19 @@ export default async function WebsitePage() {
                 <div className="wa-n">{stats.totals.pageviews.toLocaleString("en-AU")}</div>
                 <div className="wa-l">Page views</div>
               </div>
+              {/* The printed boards and brochures point at /listings, which
+                  redirects to /properties. Nobody types that URL, so every
+                  view of it is a phone camera. */}
+              {stats.qrScans && stats.qrScans.pageviews > 0 && (
+                <div>
+                  <div className="wa-n">{stats.qrScans.pageviews.toLocaleString("en-AU")}</div>
+                  <div className="wa-l">
+                    QR scans
+                    <span className="wa-sub"> · {stats.qrScans.visitors} people</span>
+                  </div>
+                </div>
+              )}
+
               <div>
                 {/* Ours, not Vercel's — the off-market list, counted exactly,
                     and the only figure here you can act on, so it opens the
@@ -107,41 +121,20 @@ export default async function WebsitePage() {
             </div>
 
             <div className="wa-cols">
-              <div>
-                <div className="times-label">Most looked at</div>
-                {stats.topPages.length === 0 ? (
-                  <p style={{ color: "var(--muted)" }}>Nothing recorded yet.</p>
-                ) : (
-                  <table className="wa-table">
-                    <tbody>
-                      {stats.topPages.map((p) => (
-                        <tr key={p.name}>
-                          <th scope="row">{prettyPath(p.name)}</th>
-                          <td>{p.pageviews.toLocaleString("en-AU")}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
+              <StatTable
+                label="Most looked at"
+                rows={stats.topPages.map((p) => ({ ...p, name: prettyPath(p.name) }))}
+                initial="views"
+              />
 
-              <div>
-                <div className="times-label">Found us via</div>
-                {stats.referrers.length === 0 ? (
-                  <p style={{ color: "var(--muted)" }}>Mostly direct, or nothing recorded yet.</p>
-                ) : (
-                  <table className="wa-table">
-                    <tbody>
-                      {stats.referrers.map((r) => (
-                        <tr key={r.name}>
-                          <th scope="row">{r.name}</th>
-                          <td>{r.visitors.toLocaleString("en-AU")}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
+              {/* Referrers open on people, because "how many came from
+                  Instagram" is a question about people, not about opens. */}
+              <StatTable
+                label="Found us via"
+                rows={stats.referrers}
+                initial="people"
+                empty="Mostly direct, or nothing recorded yet."
+              />
             </div>
 
             {stats.funnel && (
