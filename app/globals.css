@@ -580,9 +580,8 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .portal-alt { margin-top: 52px; padding-top: 26px; border-top: 1px solid var(--line); }
 .portal-alt-label {
   font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
-  color: var(--ink); margin-bottom: 10px;
+  color: var(--ink); margin-bottom: 14px;
 }
-.portal-alt p { color: var(--muted); max-width: 46ch; margin-bottom: 18px; }
 .portal-alt-cta {
   position: relative; display: inline-block; text-decoration: none;
   font-family: var(--serif); font-size: clamp(20px, 2.4vw, 25px); color: var(--ink);

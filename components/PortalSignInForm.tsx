@@ -138,12 +138,8 @@ export default function PortalSignInForm({ expired = false }: { expired?: boolea
       */}
     <div className="portal-alt">
       <div className="portal-alt-label">Not registered?</div>
-      <p>
-        Access is granted individually — Michael reviews every request himself,
-        so tell us what you&rsquo;re looking for.
-      </p>
       <a href="/portal/register" className="portal-alt-cta">
-        Request access <span aria-hidden>→</span>
+        Request access
       </a>
     </div>
     </>
