@@ -62,7 +62,7 @@ export default async function PortalHomePage() {
           <p className="portal-intro">
             {viewer.status === "pending"
               ? "We're reviewing your request. You'll get an email the moment it's approved."
-              : "Your access to the off-market list isn't active. If you think that's a mistake, call 0409 438 025."}
+              : "Your access to the off-market list isn't active. If you think that's a mistake, call us."}
           </p>
           <PortalSignOut />
         </div>
@@ -113,7 +113,8 @@ export default async function PortalHomePage() {
             <div className="times-label">What we&rsquo;re looking out for</div>
             {criteria.length === 0 ? (
               <p style={{ color: "var(--muted)", marginTop: 12 }}>
-                Nothing recorded yet. Call 0409 438 025 and we&rsquo;ll set it up.
+                Nothing recorded yet. <a href="tel:0409438025">Call us</a> and we&rsquo;ll set it
+                up.
               </p>
             ) : (
               <ul className="mb-plain">
@@ -123,8 +124,8 @@ export default async function PortalHomePage() {
               </ul>
             )}
             <p className="form-note">
-              To change any of this, call <a href="tel:0409438025">0409 438 025</a> — it&rsquo;s
-              faster than a form and we&rsquo;ll know what you mean.
+              To change any of this, <a href="tel:0409438025">call us</a> — it&rsquo;s faster than a
+              form and we&rsquo;ll know what you mean.
             </p>
           </div>
 
@@ -133,7 +134,7 @@ export default async function PortalHomePage() {
             <p style={{ color: "var(--muted)", marginTop: 12 }}>
               {alertsOff
                 ? "You've asked us not to email you about new off-market properties. Sign in here whenever you want to look."
-                : "We'll email you when something new goes on the private list. Every email has a link to stop them."}
+                : "We'll email you when something new goes on the private list."}
             </p>
           </div>
         </div>
