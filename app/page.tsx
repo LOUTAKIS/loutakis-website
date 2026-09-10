@@ -98,8 +98,9 @@ export default async function HomePage() {
       {/* CONTACT */}
       <section id="contact" className="services" style={{ textAlign: "center" }}>
         <div className="wrap">
-          <div className="eyebrow" style={{ textAlign: "center" }}>Get in touch</div>
-          <h2 className="lead" style={{ margin: "0 auto 30px" }}>Thinking of making a move?<br />Let&apos;s talk.</h2>
+          {/* The question is the whole section. "Get in touch" above it and
+              "Let's talk" under it were both saying what the button says. */}
+          <h2 className="lead" style={{ margin: "0 auto 30px" }}>Thinking of making a move?</h2>
           <Link href="/contact" className="btn">Request an appraisal</Link>
         </div>
       </section>
