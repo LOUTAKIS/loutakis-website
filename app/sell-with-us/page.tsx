@@ -1,7 +1,7 @@
-import Image from "next/image";
 import { getConsultantOptions, defaultConsultant } from "@/lib/boxdice";
 import AppraisalForm from "@/components/AppraisalForm";
 import MarketPerformance from "@/components/MarketPerformance";
+import SelfVideo from "@/components/SelfVideo";
 
 /**
  * Re-rendered hourly. The page copy never changes, but the market performance
@@ -19,22 +19,25 @@ export const metadata = {
 const SERVICES = [
   {
     title: "Residential Sales",
-    image: "/brand/sell/sell-residential.jpg",
-    alt: "A living room opening onto a hedged courtyard",
+    video: "/video/sell-residential.mp4",
+    videoSmall: "/video/sell-residential-480.mp4",
+    poster: "/video/sell-residential-poster.jpg",
     blurb:
       "Selling your home is a significant moment, and we take it personally. We bring strategy, energy, and the right advice to ensure your property is positioned to achieve the best possible result.",
   },
   {
     title: "Auctioneering",
-    image: "/brand/sell/sell-auction.jpg",
-    alt: "A double-height living room with a fireplace, opening to the garden",
+    video: "/video/sell-auctioneering.mp4",
+    videoSmall: "/video/sell-auctioneering-480.mp4",
+    poster: "/video/sell-auctioneering-poster.jpg",
     blurb:
       "Not all auctioneers are equal. What separates a win from a missed opportunity is often invisible — until it's too late. We read the room, control the pace, and bring confidence under pressure.",
   },
   {
     title: "Sale Prep & Advice",
-    image: "/brand/sell/sell-advice.jpg",
-    alt: "A kitchen and hallway looking through to the garden beyond",
+    video: "/video/sell-advice.mp4",
+    videoSmall: "/video/sell-advice-480.mp4",
+    poster: "/video/sell-advice-poster.jpg",
     blurb:
       "You don't need to be selling right now, or even own a home, to ask questions and get honest answers. We're part of the community, here to help long before any paperwork is signed.",
   },
@@ -66,15 +69,19 @@ export default async function SellWithUsPage() {
         <div className="wrap sell-grid">
           {SERVICES.map((s) => (
             <div className="sell-col" key={s.title}>
-              {/* 2:3 and shown whole — the three share a shape, so their
-                  bottom edges line up without anything being cropped. */}
-              <Image
-                className="sell-photo"
-                src={s.image}
-                alt={s.alt}
-                width={1000}
-                height={1500}
-                sizes="(max-width: 900px) 100vw, 33vw"
+              {/* All three frames are 2:3 and the film fills the frame, so
+                  two landscape masters and one vertical one read as one band
+                  across the top. Cropping a film to its frame is the norm; the
+                  no-clipping rule is about listing photography, where what is
+                  cut off is somebody's house. */}
+              <SelfVideo
+                className="sell-video"
+                src={s.video}
+                srcSmall={s.videoSmall}
+                poster={s.poster}
+                ambient
+                silent
+                label={s.title}
               />
               <h2>{s.title}</h2>
               <p>{s.blurb}</p>

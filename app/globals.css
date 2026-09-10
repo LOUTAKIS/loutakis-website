@@ -204,6 +204,10 @@ section { padding: 96px 0; }
    as a single band. */
 .sell-grid { max-width: 1480px; margin-inline: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(16px, 2vw, 34px); }
 .sell-photo { width: 100%; height: auto; }
+/* The three service films. A 2:3 frame for all of them, which two landscape
+   masters and one vertical one are cropped into — the band across the top
+   only reads as one thing if every frame is the same shape. */
+.sell-video { aspect-ratio: 2 / 3; }
 .sell-col { text-align: center; }
 .sell-col h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(22px, 2.1vw, 30px); line-height: 1.15; margin: clamp(24px, 2.4vw, 38px) 0 14px; }
 .sell-col p { color: var(--muted); }

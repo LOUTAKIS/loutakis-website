@@ -19,6 +19,7 @@ export default function SelfVideo({
   srcSmall,
   poster,
   ambient = false,
+  silent = false,
   label,
   className,
 }: {
@@ -26,6 +27,12 @@ export default function SelfVideo({
   srcSmall?: string;
   poster?: string;
   ambient?: boolean;
+  /**
+   * The file carries no audio track at all, so there is nothing to unmute.
+   * Offering "Tap for sound" on a silent film is a promise that goes nowhere —
+   * and three of those buttons in a row is clutter besides.
+   */
+  silent?: boolean;
   label?: string;
   className?: string;
 }) {
@@ -81,7 +88,7 @@ export default function SelfVideo({
         </button>
       )}
 
-      {ambient && (
+      {ambient && !silent && (
         <button className="sv-sound" onClick={toggleSound}>
           {muted ? "Tap for sound" : "Sound on"}
         </button>
