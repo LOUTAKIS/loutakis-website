@@ -2,7 +2,7 @@ import { getOffMarketCount } from "@/lib/boxdice";
 import { countPhrase } from "@/lib/off-market-copy";
 
 /**
- * "Eleven homes are selling quietly right now."
+ * "11 homes are selling quietly right now."
  *
  * The one honest reason to register, said before the form. A sign-in wall with
  * nothing visible behind it is just a wall — this is the only thing we can put

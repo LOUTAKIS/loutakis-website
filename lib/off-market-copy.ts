@@ -1,5 +1,5 @@
 /**
- * "Eleven homes are selling quietly right now."
+ * "11 homes are selling quietly right now."
  *
  * One sentence, written once, used on the Properties card, the sign-in page
  * and the register page. It lives in its own file with no imports because the
@@ -13,10 +13,12 @@
  * to someone who has never heard the word.
  */
 
-/** Spelled to ten, digits after, which is how the rest of the site writes. */
-const WORDS = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"];
-
+/**
+ * Digits, always — "3 homes", not "Three homes".
+ *
+ * Prose would spell it, but this is not prose: the number is the reason the
+ * sentence exists, and a digit is what the eye stops on.
+ */
 export function countPhrase(n: number): string {
-  const number = n <= 10 ? WORDS[n] : String(n);
-  return `${number} ${n === 1 ? "home is" : "homes are"} selling quietly right now`;
+  return `${n} ${n === 1 ? "home is" : "homes are"} selling quietly right now`;
 }
