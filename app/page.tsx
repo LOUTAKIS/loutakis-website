@@ -101,7 +101,9 @@ export default async function HomePage() {
           {/* The question is the whole section. "Get in touch" above it and
               "Let's talk" under it were both saying what the button says. */}
           <h2 className="lead" style={{ margin: "0 auto 30px" }}>Thinking of making a move?</h2>
-          <Link href="/contact" className="btn">Request an appraisal</Link>
+          {/* Straight to the appraisal form, not the general contact page. The
+              button names the thing; it should land on the thing. */}
+          <Link href="/sell-with-us#start" className="btn">Request an appraisal</Link>
         </div>
       </section>
     </>
