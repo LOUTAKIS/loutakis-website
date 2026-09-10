@@ -4,6 +4,7 @@ import { getStaff } from "@/lib/staff-auth";
 import { getContact, CATEGORY_APPROVED, CATEGORY_PENDING } from "@/lib/portal";
 import { getRegisteredEmail, listOptedOut } from "@/lib/portal-store";
 import { getActivity, type Activity } from "@/lib/portal-activity";
+import { fmtDate } from "@/lib/when";
 import MemberActions from "@/components/MemberActions";
 
 export const metadata = { robots: { index: false, follow: false } };
@@ -38,12 +39,7 @@ function when(t: number): string {
   const d = Math.round(h / 24);
   if (d === 1) return "yesterday";
   if (d < 14) return `${d} days ago`;
-  return new Date(t).toLocaleDateString("en-AU", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "Australia/Melbourne",
-  });
+  return fmtDate(new Date(t));
 }
 
 /** "$800,000 – $900,000", "3+ beds" — criteria as a person would say them. */

@@ -88,6 +88,29 @@ function time(d: Date): string {
 }
 
 /** "Sat 13 Sep, 11:00am" — a single moment, for an auction. */
+/**
+ * "10-09-2026". The house format for a plain date, everywhere.
+ *
+ * Australian order — never the American one, and never the ISO one the CRM and
+ * the analytics API happen to speak. Those are wire formats: a person reading
+ * "2026-08-11" has to stop and work out which half is the month.
+ *
+ * Returns the input untouched if it cannot be parsed, because a wrong date is
+ * worse than an unformatted one.
+ */
+export function fmtDate(value?: string | Date | null): string {
+  if (!value) return "";
+  const d = value instanceof Date ? value : new Date(String(value));
+  if (isNaN(+d)) return String(value);
+  const p = (n: number) => String(n).padStart(2, "0");
+  /**
+   * UTC parts, deliberately. A plain "2026-08-11" parses as midnight UTC, and
+   * reading it back in Melbourne time would print the 11th as the 11th in
+   * winter and the 12th at some times of year. These are dates, not moments.
+   */
+  return `${p(d.getUTCDate())}-${p(d.getUTCMonth() + 1)}-${d.getUTCFullYear()}`;
+}
+
 export function fmtMoment(iso?: string | null): string {
   const d = valid(iso);
   if (!d) return "";

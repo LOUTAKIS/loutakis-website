@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { SiteStats } from "@/lib/web-analytics";
+import { fmtDate } from "@/lib/when";
 
 /**
  * The website numbers, with ONE switch for the whole page.
@@ -92,7 +93,7 @@ export default function WebsiteStats({
     <>
       <div className="wa-bar">
         <p className="portal-intro" style={{ margin: 0 }}>
-          {stats.since} to {stats.until}.
+          {fmtDate(stats.since)} to {fmtDate(stats.until)}.
           {stats.missing.length > 0 && ` Couldn't load ${stats.missing.join(", ")}.`}
         </p>
         <div className="st-toggle" role="group" aria-label="Count people or page views">

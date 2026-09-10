@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/staff-auth";
 import { listCampaigns, type Campaign, type CampaignStatus, campaignVendors } from "@/lib/campaigns";
+import { fmtDate } from "@/lib/when";
 import DeleteCampaign from "@/components/DeleteCampaign";
 
 export const metadata = {
@@ -18,7 +19,7 @@ const STATUS_LABEL: Record<CampaignStatus, string> = {
   changes: "Changes requested",
 };
 
-/** "3 hours ago", "yesterday", "12 Aug". Enough to know whether to ring. */
+/** "3 hours ago", "yesterday", "12-08-2026". Enough to know whether to ring. */
 function ago(iso: string | null): string {
   if (!iso) return "";
   const ms = Date.now() - +new Date(iso);
@@ -30,7 +31,7 @@ function ago(iso: string | null): string {
   const d = Math.round(h / 24);
   if (d === 1) return "yesterday";
   if (d < 14) return `${d} days ago`;
-  return new Date(iso).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "Australia/Melbourne" });
+  return fmtDate(iso);
 }
 
 function StatusLine({ c }: { c: Campaign }) {

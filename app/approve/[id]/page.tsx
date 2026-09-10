@@ -3,6 +3,7 @@ import { getMarketingSource } from "@/lib/boxdice";
 import { verifyToken } from "@/lib/portal-token";
 import { getStaff } from "@/lib/staff-auth";
 import { recordOpen, AUTHORISATION_WORDING } from "@/lib/vendor";
+import { fmtDate } from "@/lib/when";
 import VendorApprovalForm from "@/components/VendorApprovalForm";
 import VendorVideo from "@/components/VendorVideo";
 import VendorFrame, { type Marker } from "@/components/vendor/VendorFrame";
@@ -166,7 +167,7 @@ export default async function ApprovePage({
               <div className="vdone-mark">✓</div>
               <h3>Approved by {c.approvedName}</h3>
               <p>
-                On {new Date(c.approvedAt!).toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Australia/Melbourne" })}. Production is under way.
+                On {fmtDate(c.approvedAt!)}. Production is under way.
               </p>
             </div>
           ) : (
