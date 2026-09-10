@@ -80,7 +80,7 @@ export default async function PortalPage() {
           <h2>{viewer.status === "pending" ? "Still being reviewed" : "Access not active"}</h2>
           <p className="portal-intro">
             {viewer.status === "pending"
-              ? "Michael reviews every request personally. You'll get an email the moment yours is approved."
+              ? "We're reviewing your request. You'll get an email the moment it's approved."
               : "Your access to the off-market list isn't active. If you think that's a mistake, call 0409 438 025."}
           </p>
         </div>

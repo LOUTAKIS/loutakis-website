@@ -27,8 +27,7 @@ export default function PortalRegisterPage() {
         </p>
         <OffMarketCount className="portal-intro" />
         <p className="portal-intro">
-          Access is granted individually — Michael reviews every request, so tell us enough to know
-          what you&rsquo;re looking for.
+          Tell us what you&rsquo;re looking for and we&rsquo;ll be in touch.
         </p>
 
         <PortalRegisterForm />

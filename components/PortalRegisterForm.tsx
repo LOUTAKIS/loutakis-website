@@ -77,8 +77,7 @@ export default function PortalRegisterForm() {
       <div className="portal-done" role="status">
         <h3>Thanks — we&rsquo;ve got it.</h3>
         <p>
-          Michael reviews every request personally, so this isn&rsquo;t automatic. We&rsquo;ll be in
-          touch shortly to confirm your access.
+          We&rsquo;ll be in touch shortly to confirm your access.
         </p>
         <p className="form-note">
           If you need something sooner, call <a href="tel:0409438025">0409 438 025</a>.

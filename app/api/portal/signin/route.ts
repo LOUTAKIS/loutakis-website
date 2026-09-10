@@ -82,7 +82,7 @@ export async function POST(req: Request) {
       html: `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
         <p>Hi,</p>
         <p>Someone (we hope you) asked for a sign-in link to our off-market list using this address. There's no registration against it yet.</p>
-        <p>Request access here — it takes a minute, and Michael reviews each one personally:</p>
+        <p>Request access here — it takes a minute:</p>
         <p style="margin:24px 0">
           <a href="${siteUrl()}/portal/register" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">Request access</a>
         </p>
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
           subject: "Your off-market request is still being reviewed",
           html: `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111">
             <p>Hi ${esc(contact.first_name || "there")},</p>
-            <p>Your request for off-market access hasn't been approved yet. Michael reviews each one personally, and you'll get an email the moment it's done.</p></div>`,
+            <p>Your request for off-market access hasn't been approved yet. You'll get an email the moment it is.</p></div>`,
         });
       }
       return neutral;
