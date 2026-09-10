@@ -8,6 +8,7 @@ import Gallery from "@/components/Gallery";
 import PropertyVideoHero from "@/components/PropertyVideoHero";
 import { fmtInspection, fmtMoment } from "@/lib/when";
 import AddToCalendar from "@/components/AddToCalendar";
+import ActivityBeacon from "@/components/ActivityBeacon";
 import { inspectionEvent, auctionEvent } from "@/lib/listing-events";
 
 /** Extract a YouTube video id from a Box & Dice video link. */
@@ -67,6 +68,11 @@ export default async function PropertyPage({ params }: { params: { slug: string 
 
   return (
     <section style={{ paddingTop: vid ? 0 : 40 }}>
+      {/* If a signed-in member is looking at this, it goes on their activity.
+          The page itself learns nothing about who they are — it posts what was
+          opened and the server decides whether there is anyone to attribute it
+          to. A visitor who is not a member is recorded nowhere. */}
+      <ActivityBeacon kind="view" listingId={l.id} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {vid && <PropertyVideoHero id={vid} />}
       {/* detail-body sits above the sticky hero and paints its own background,

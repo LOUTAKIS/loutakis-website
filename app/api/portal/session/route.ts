@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyToken } from "@/lib/portal-token";
 import { setSession } from "@/lib/portal-session";
+import { recordActivity } from "@/lib/portal-activity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,5 +16,6 @@ export async function GET(req: Request) {
   }
 
   setSession(payload.c);
+  await recordActivity(payload.c, { k: "signin" });
   return NextResponse.redirect(new URL("/portal", url.origin));
 }

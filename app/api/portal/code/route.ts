@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { readSignInCode, clearSignInCode, bumpSignInTries } from "@/lib/portal-store";
 import { setSession } from "@/lib/portal-session";
+import { recordActivity } from "@/lib/portal-activity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,5 +49,8 @@ export async function POST(req: Request) {
 
   await clearSignInCode(device);
   setSession(String(stored.contactId));
+  // Awaited deliberately: the redirect that follows lands on a page which
+  // reads this log, and a write that has not happened yet reads as never.
+  await recordActivity(stored.contactId, { k: "signin" });
   return NextResponse.json({ ok: true });
 }

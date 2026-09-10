@@ -80,7 +80,11 @@ export default async function MembersPage() {
               {members.map((m) => (
                 <div key={m.contactId} className={`mb-row mb-${m.status}`}>
                   <div>
-                    <div className="mb-name">{m.name}</div>
+                    {/* The name opens them: criteria, what they have opened,
+                        and every sign-in since. */}
+                    <Link href={`/staff/members/${m.contactId}`} className="mb-name">
+                      {m.name}
+                    </Link>
                     <div className="mb-contact">
                       {m.email ? <a href={`mailto:${m.email}`}>{m.email}</a> : "no email on file"}
                       {m.mobile && (

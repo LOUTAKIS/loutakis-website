@@ -3,6 +3,7 @@ import { getViewer } from "@/lib/portal-session";
 import { getOffMarketListings } from "@/lib/boxdice";
 import type { Listing } from "@/lib/types";
 import PortalList, { type PortalRow } from "@/components/PortalList";
+import ActivityBeacon from "@/components/ActivityBeacon";
 
 export const metadata = {
   title: "Off-market properties — Loutakis Real Estate",
@@ -156,7 +157,12 @@ export default async function PortalPage() {
            * URL and the full advertising copy into the page source, rendered or
            * not — the omission has to happen before the boundary, not at it.
            */
-          <PortalList rows={listings.map(toRow)} />
+          <>
+            {/* They opened the list. One line in their activity, so a member
+                who visits weekly and never enquires is visible as such. */}
+            <ActivityBeacon kind="list" />
+            <PortalList rows={listings.map(toRow)} />
+          </>
         )}
       </div>
     </section>

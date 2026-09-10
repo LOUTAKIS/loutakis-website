@@ -4,6 +4,7 @@ import { getContact, addNote } from "@/lib/portal";
 import { getRegisteredEmail } from "@/lib/portal-store";
 import { getOffMarketListings } from "@/lib/boxdice";
 import { sendEnquiry } from "@/lib/mail";
+import { recordActivity } from "@/lib/portal-activity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -113,6 +114,10 @@ export async function POST(req: Request) {
   addNote(viewer.contactId, `Enquired about ${address} from the off-market list on the website.`).catch(
     (err) => console.error("[portal enquiry] note failed", err)
   );
+
+  // And on their activity, so the member page shows the enquiry in the same
+  // timeline as the visits that led to it.
+  await recordActivity(viewer.contactId, { k: "enquiry", p: listing.id, a: address });
 
   return NextResponse.json({ ok: true });
 }

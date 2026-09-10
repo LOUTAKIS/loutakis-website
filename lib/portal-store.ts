@@ -141,6 +141,30 @@ async function readList(key: string): Promise<number[]> {
   }
 }
 
+/* ── Member activity ───────────────────────────────────────────────────────
+   One key per contact holding their recent account activity, newest first.
+   See lib/portal-activity for what is recorded and why this store is an
+   acceptable home for it. The value is timestamps, event kinds and listing
+   ids — no names, no addresses of people, nothing about anyone who has not
+   signed in. */
+
+const activityKey = (contactId: number | string) => `act_${Number(contactId)}`;
+
+export async function readActivity(contactId: number | string): Promise<any[]> {
+  if (!client) return [];
+  try {
+    const v = await client.get<any[]>(activityKey(contactId));
+    return Array.isArray(v) ? v : [];
+  } catch (err) {
+    console.error("[portal-store] activity read failed", err);
+    return [];
+  }
+}
+
+export async function writeActivity(contactId: number | string, events: any[]): Promise<void> {
+  await upsert([{ operation: "upsert", key: activityKey(contactId), value: events }]);
+}
+
 export const listApprovedContacts = () => readList(KEY_APPROVED);
 export const listOptedOut = () => readList(KEY_OPTOUT);
 
