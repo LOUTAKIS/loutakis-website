@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/staff-auth";
 import { getSiteStats, analyticsConfigured } from "@/lib/web-analytics";
 import { listApprovedContacts, listOptedOut } from "@/lib/portal-store";
-import StatTable from "@/components/StatTable";
+import WebsiteStats from "@/components/WebsiteStats";
 
 export const metadata = {
   title: "Website — Loutakis Real Estate",
@@ -19,22 +19,13 @@ export const dynamic = "force-dynamic";
  * The last one is the only page on this site that would tell us a form has
  * started failing before a buyer does.
  *
+ * The reading of it — people or page views — belongs to the browser, so
+ * everything below the heading lives in one client component with a single
+ * switch. This page only fetches.
+ *
  * There is deliberately no "time on site". Vercel Web Analytics does not
  * measure it, and a number nobody measured is worse than no number.
  */
-
-function pct(now: number, before: number): { text: string; up: boolean } | null {
-  if (!before) return null;
-  const change = Math.round(((now - before) / before) * 100);
-  return { text: `${change > 0 ? "+" : ""}${change}%`, up: change >= 0 };
-}
-
-/** "/properties/19-william-street-newport" reads better as its last part. */
-function prettyPath(p: string): string {
-  if (p === "/") return "Home";
-  return p;
-}
-
 export default async function WebsitePage() {
   const staff = getStaff();
   if (!staff) redirect("/staff");
@@ -44,8 +35,6 @@ export default async function WebsitePage() {
     listApprovedContacts().catch(() => [] as number[]),
     listOptedOut().catch(() => [] as number[]),
   ]);
-
-  const change = stats?.previous ? pct(stats.totals.visitors, stats.previous.visitors) : null;
 
   return (
     <section className="portal-page">
@@ -73,104 +62,7 @@ export default async function WebsitePage() {
             <p>Vercel didn&rsquo;t answer. Try again shortly — nothing is lost, this is a read.</p>
           </div>
         ) : (
-          <>
-            <p className="portal-intro">
-              {stats.since} to {stats.until}.
-              {stats.missing.length > 0 && ` Couldn't load ${stats.missing.join(", ")}.`}
-            </p>
-
-            <div className="wa-figures">
-              <div>
-                <div className="wa-n">{stats.totals.visitors.toLocaleString("en-AU")}</div>
-                <div className="wa-l">
-                  Visitors
-                  {change && (
-                    <span className={change.up ? "wa-up" : "wa-down"}> {change.text}</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <div className="wa-n">{stats.totals.pageviews.toLocaleString("en-AU")}</div>
-                <div className="wa-l">Page views</div>
-              </div>
-              {/* The printed boards and brochures point at /listings, which
-                  redirects to /properties. Nobody types that URL, so every
-                  view of it is a phone camera. */}
-              {stats.qrScans && stats.qrScans.pageviews > 0 && (
-                <div>
-                  <div className="wa-n">{stats.qrScans.pageviews.toLocaleString("en-AU")}</div>
-                  <div className="wa-l">
-                    QR scans
-                    <span className="wa-sub"> · {stats.qrScans.visitors} people</span>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                {/* Ours, not Vercel's — the off-market list, counted exactly,
-                    and the only figure here you can act on, so it opens the
-                    list rather than just stating it. */}
-                <Link href="/staff/members" className="wa-link">
-                  <div className="wa-n">{approved.length}</div>
-                  <div className="wa-l">
-                    Off-market members
-                    {optedOut.length > 0 && <span className="wa-sub"> · {optedOut.length} opted out of alerts</span>}
-                  </div>
-                </Link>
-              </div>
-            </div>
-
-            <div className="wa-cols">
-              <StatTable
-                label="Most looked at"
-                rows={stats.topPages.map((p) => ({ ...p, name: prettyPath(p.name) }))}
-                initial="views"
-              />
-
-              {/* Referrers open on people, because "how many came from
-                  Instagram" is a question about people, not about opens. */}
-              <StatTable
-                label="Found us via"
-                rows={stats.referrers}
-                initial="people"
-                empty="Mostly direct, or nothing recorded yet."
-              />
-            </div>
-
-            {stats.funnel && (
-              <>
-                <div className="times-label" style={{ marginTop: 44 }}>Forms</div>
-                <div className="wa-figures">
-                  <div>
-                    <div className="wa-n">{stats.funnel.started}</div>
-                    <div className="wa-l">Started one</div>
-                  </div>
-                  <div>
-                    <div className="wa-n">{stats.funnel.succeeded}</div>
-                    <div className="wa-l">
-                      Sent it
-                      {stats.funnel.started > 0 && (
-                        <span className="wa-sub">
-                          {" "}· {Math.round((stats.funnel.succeeded / stats.funnel.started) * 100)}% finished
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    {/* The number that matters. A form failing is a lost lead
-                        we would otherwise never hear about. */}
-                    <div className={`wa-n${stats.funnel.failed > 0 ? " wa-bad" : ""}`}>{stats.funnel.failed}</div>
-                    <div className="wa-l">Failed</div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 40 }}>
-              Vercel Web Analytics doesn&rsquo;t measure time on site, so there isn&rsquo;t a figure
-              for it here.
-            </p>
-          </>
+          <WebsiteStats stats={stats} members={approved.length} optedOut={optedOut.length} />
         )}
       </div>
     </section>

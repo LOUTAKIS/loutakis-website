@@ -527,9 +527,11 @@ textarea.field { min-height: 90px; resize: vertical; }
 .mb-actions { display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; }
 .mb-actions .btn { font-size: 10px; letter-spacing: .16em; }
 .mb-error { color: #a11; font-size: 13px; }
-/* The label and its unit switch on one line, so the number in the column
-   always has something next to it saying what it counts. */
-.st-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+/* One switch for the whole page, on the line with the date range. */
+.wa-bar {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px 30px; flex-wrap: wrap; margin-bottom: 6px;
+}
 .st-toggle { display: flex; gap: 14px; }
 .st-toggle button {
   background: none; border: 0; padding: 2px 0; cursor: pointer;
