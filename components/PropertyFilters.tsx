@@ -58,7 +58,7 @@ export default function PropertyFilters({
           ))}
           {/* Not a filter — the private list lives behind a sign-in, so this
               one leaves the page rather than switching what's shown. */}
-          <Link href="/portal" className="tab tab-link">
+          <Link href="/portal/off-market" className="tab tab-link">
             Off-market
             {/* The count as a badge, so the tab itself carries the reason to
                 click it. Absent at zero rather than showing a "0" that reads

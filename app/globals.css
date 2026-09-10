@@ -582,6 +582,7 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
   font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
   color: var(--ink); margin-bottom: 14px;
 }
+.portal-alt-count { color: var(--muted); margin-bottom: 16px; }
 .portal-alt-cta {
   position: relative; display: inline-block; text-decoration: none;
   font-family: var(--serif); font-size: clamp(20px, 2.4vw, 25px); color: var(--ink);

@@ -383,7 +383,7 @@ export async function approveBuyer(contactId: string) {
           <p>Hi ${esc(contact.first_name || "there")},</p>
           <p>You're approved for the Loutakis off-market list. You can see what's available here:</p>
           <p style="margin:24px 0">
-            <a href="${siteUrl()}/portal" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">View properties</a>
+            <a href="${siteUrl()}/portal/off-market" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">View properties</a>
           </p>
           <p style="color:#666">These aren't publicly advertised, so please keep them to yourself — that's the basis on which the owners agreed to be listed.</p>
         </div>`,

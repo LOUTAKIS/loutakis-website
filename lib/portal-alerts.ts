@@ -129,7 +129,7 @@ function teaserHtml(firstName: string | undefined, count: number, contactId: num
       <p>Hi ${esc(firstName || "there")},</p>
       <p>We've added ${thing} to the off-market list.</p>
       <p style="margin:26px 0">
-        <a href="${url}/portal" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">See what's available</a>
+        <a href="${url}/portal/off-market" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">See what's available</a>
       </p>
       <p style="color:#666">
         You'll need to sign in — we keep the detail off email so nothing about a

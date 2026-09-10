@@ -9,7 +9,18 @@ import { useState } from "react";
  * front of them — the link in the same email is for people already on the
  * device they want to browse on.
  */
-export default function PortalSignInForm({ expired = false }: { expired?: boolean }) {
+export default function PortalSignInForm({
+  expired = false,
+  countSlot,
+}: {
+  expired?: boolean;
+  /**
+   * The off-market count, rendered on the server and handed in. This component
+   * runs in the browser and the count is a CRM read, so it cannot fetch it —
+   * but it can be given the finished element to place.
+   */
+  countSlot?: React.ReactNode;
+}) {
   const router = useRouter();
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState("");
@@ -138,6 +149,10 @@ export default function PortalSignInForm({ expired = false }: { expired?: boolea
       */}
     <div className="portal-alt">
       <div className="portal-alt-label">Not registered?</div>
+      {/* The count belongs here, not at the top of the page. Someone signing
+          in already knows what they have; this is the only part of the screen
+          written for a person who doesn't. */}
+      {countSlot}
       <a href="/portal/register" className="portal-alt-cta">
         Request access
       </a>
