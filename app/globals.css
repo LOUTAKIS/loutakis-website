@@ -37,6 +37,10 @@
   --serif: "Gotham", "Helvetica Neue", Arial, sans-serif;
   --sans: "Gotham", "Helvetica Neue", Arial, sans-serif;
   --display: "Brolink", "Gotham", "Helvetica Neue", Arial, sans-serif;
+  /* The narrower band inside .wrap, for blocks that shouldn't run the full
+     width of the screen. Shared so the pieces that use it stay aligned with
+     each other rather than drifting apart the next time one is touched. */
+  --band: 1480px;
 }
 
 /* Headings: geometric, wide-tracked to echo the LOUTAKIS wordmark */
@@ -202,7 +206,7 @@ section { padding: 96px 0; }
 /* SELL WITH US — one banner of three, the words centred under each picture.
    Every picture is the same shape in the same row, so across the top they read
    as a single band. */
-.sell-grid { max-width: 1480px; margin-inline: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(16px, 2vw, 34px); }
+.sell-grid { max-width: var(--band); margin-inline: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(16px, 2vw, 34px); }
 .sell-photo { width: 100%; height: auto; }
 /* The three service films. A 2:3 frame for all of them, which two landscape
    masters and one vertical one are cropped into — the band across the top
@@ -1243,6 +1247,8 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
    vendor reads down the row that is theirs, so the row label carries the
    weight and the figures line up on tabular numerals. */
 .mp { padding: 76px 0; background: var(--paper-2); }
+/* Aligned with the films above it — same band, same edges. */
+.mp-wrap { max-width: var(--band); margin-inline: auto; }
 .mp-head { max-width: 720px; }
 .mp-scroll { overflow-x: auto; margin-top: 34px; }
 .mp-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }

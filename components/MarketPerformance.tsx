@@ -25,7 +25,10 @@ export default async function MarketPerformance() {
 
   return (
     <section className="mp">
-      <div className="wrap">
+      {/* Same width as the three films above it. They sit in a 1480px band
+          rather than the full container, and a table that ran wider than the
+          pictures it follows read as a different page. */}
+      <div className="wrap mp-wrap">
         <div className="mp-head">
           {/* No eyebrow. The sentence below already says what these numbers
               are, and a label above it only said it twice. */}
