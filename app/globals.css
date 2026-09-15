@@ -1260,3 +1260,52 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .mp-source { margin-top: 20px; font-size: 12px; color: var(--muted); }
 .mp-source a { color: inherit; }
 
+
+/* ── The vendor questionnaire ─────────────────────────────────────────────
+   One page, sectioned. The sections are what stop seventeen questions
+   reading as a wall — a vendor can see the whole shape of it and decide to
+   answer the story tonight and the Owners Corporation on the weekend, which
+   a multi-step wizard takes away from them. */
+.qf { margin-top: 40px; }
+.qf-section { margin-top: 54px; padding-top: 34px; border-top: 1px solid var(--line); }
+.qf-section:first-of-type { border-top: 0; padding-top: 0; }
+.qf-section h2 {
+  font-family: var(--serif); font-weight: 400; font-size: clamp(22px, 2.6vw, 28px);
+  margin-bottom: 10px;
+}
+.qf-blurb { color: var(--muted); max-width: 54ch; margin-bottom: 8px; }
+.qf-q { display: block; margin-top: 30px; }
+/* The question itself is the label, so it is set as readable type rather
+   than the tracked-out caps the short field labels elsewhere use — these
+   are sentences, and sentences in uppercase are slow to read. */
+.qf-label { display: block; font-size: 15px; line-height: 1.5; color: var(--ink); margin-bottom: 8px; }
+.qf-req { color: var(--muted); font-size: 13px; }
+.qf-help { color: var(--muted); font-size: 13.5px; line-height: 1.55; max-width: 58ch; margin-bottom: 10px; }
+.qf-missing { border-color: #b45309; }
+.qf-error { color: #b45309; font-size: 14px; margin-top: 18px; }
+.qf-warn { color: #b45309; }
+.qf-file { font-size: 13px; color: var(--muted); }
+.qf-actions { display: flex; flex-wrap: wrap; gap: 28px; align-items: center; margin-top: 46px; }
+
+/* Staff: the list and one questionnaire */
+.qs-chase { margin-top: 6px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #b45309; }
+.qs-answers { margin-top: 10px; }
+.qs-dl { margin-top: 14px; }
+.qs-dl > div { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.qs-dl dt { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.qs-dl dd { font-size: 15px; line-height: 1.6; white-space: pre-wrap; }
+.qs-empty { color: var(--muted); }
+
+.qn-back { background: none; border: 0; padding: 0; cursor: pointer; font-family: inherit; }
+.qn-addr { font-family: var(--serif); font-weight: 400; font-size: 26px; margin: 18px 0 8px; }
+.qn-pick {
+  display: block; width: 100%; text-align: left; background: none; border: 0;
+  padding: 0; cursor: pointer; font: inherit; color: inherit;
+}
+
+/* Copy a link, with the link visible — the clipboard can fail silently. */
+.cl { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; margin-top: 18px; }
+.cl-url {
+  font-size: 11.5px; color: var(--muted); overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}

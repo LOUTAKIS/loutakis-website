@@ -3,6 +3,7 @@ import { getStaff } from "@/lib/staff-auth";
 import { listCampaigns } from "@/lib/campaigns";
 import { getSiteStats, analyticsConfigured } from "@/lib/web-analytics";
 import { listMembers } from "@/lib/portal-members";
+import { listQuestionnaires } from "@/lib/questionnaire";
 import StaffSignInForm from "@/components/StaffSignInForm";
 import StaffSignOut from "@/components/StaffSignOut";
 import RefreshListings from "@/components/RefreshListings";
@@ -77,6 +78,21 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
     console.error("[staff] member counts unavailable", err);
   }
 
+  /**
+   * Questionnaires lead with how many vendors haven't answered, because that
+   * is the number that turns into a phone call. "3 completed" is history.
+   */
+  let questions: { waiting: number; done: number } | null = null;
+  try {
+    const all = await listQuestionnaires();
+    questions = {
+      waiting: all.filter((q) => q.status !== "complete").length,
+      done: all.filter((q) => q.status === "complete").length,
+    };
+  } catch (err) {
+    console.error("[staff] questionnaire counts unavailable", err);
+  }
+
   return (
     <section className="portal-page">
       <div className="wrap">
@@ -110,6 +126,22 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
                 : waiting === 0
                   ? "Nothing in flight"
                   : `${waiting} in flight`}
+            </div>
+          </Link>
+
+          <Link href="/staff/questionnaires" className="sd-tile">
+            <div className="sd-name">Property information</div>
+            <p className="sd-desc">
+              The questions a vendor answers once the authority is signed, and who still hasn&rsquo;t.
+            </p>
+            <div className="sd-count">
+              {questions === null
+                ? "Open"
+                : questions.waiting > 0
+                  ? `${questions.waiting} still to answer`
+                  : questions.done > 0
+                    ? `${questions.done} completed`
+                    : "None sent yet"}
             </div>
           </Link>
 

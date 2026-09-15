@@ -89,6 +89,25 @@ export async function addApprovalNote(
   vendor: { name: string; email: string },
   text: string
 ): Promise<{ contactId: number | null }> {
+  return addContactNote(vendor, text);
+}
+
+/**
+ * Put a note on a person's contact card, creating the contact if they are new.
+ *
+ * THERE IS NO OTHER PLACE TO PUT A NOTE. The Website API's only note endpoint
+ * is `POST /contacts/{id}/notes` — listings have none, and the sales-listing
+ * PATCH accepts `url` and `internet_hits` and nothing else. So anything we want
+ * recorded in the CRM against a property is written here with the address in
+ * the text, which is what makes it findable.
+ *
+ * Marketing flags are sent false explicitly: a vendor answering questions about
+ * their own home has not asked to join a mailing list.
+ */
+export async function addContactNote(
+  vendor: { name: string; email: string },
+  text: string
+): Promise<{ contactId: number | null }> {
   const [first, ...rest] = vendor.name.trim().split(/\s+/);
   const created = await createContact({
     first_name: first || "Vendor",
@@ -100,7 +119,7 @@ export async function addApprovalNote(
   const body: any = created.body;
   const contactId = Number(body?.id ?? body?.contact?.id);
   if (!contactId) {
-    throw new Error(`approval note: could not resolve vendor contact (${created.status})`);
+    throw new Error(`contact note: could not resolve contact (${created.status})`);
   }
 
   const res = await fetch(`${API_BASE}/contacts/${contactId}/notes`, {
@@ -109,7 +128,7 @@ export async function addApprovalNote(
     body: JSON.stringify({ note: { text }, text }),
     cache: "no-store",
   });
-  if (!res.ok) throw new Error(`approval note -> ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`contact note -> ${res.status} ${await res.text()}`);
   return { contactId };
 }
 

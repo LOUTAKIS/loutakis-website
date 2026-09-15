@@ -21,7 +21,8 @@ export type Action =
   | "unsubscribe"
   | "staff-signin" // c = staff email
   | "staff-session" // c = staff email
-  | "vendor"; // c = campaign id — the link in the vendor's email
+  | "vendor" // c = campaign id — the link in the vendor's email
+  | "questionnaire"; // c = questionnaire id — the property information form
 
 type Payload = {
   a: Action;

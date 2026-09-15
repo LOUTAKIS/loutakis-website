@@ -69,6 +69,23 @@ export async function getAccessToken(): Promise<string> {
  * Send an email as ENQUIRY_FROM. The general-purpose primitive — sendEnquiry
  * below is one caller, the portal is another.
  */
+export type MailAttachment = {
+  name: string;
+  /** Anything Outlook can't guess from the name will download rather than preview. */
+  contentType: string;
+  content: Uint8Array | Buffer;
+};
+
+/**
+ * Graph's limit on a message built in one request is about 4 MB once the bytes
+ * are base64'd — past that it wants an upload session against a saved draft,
+ * which is a different and much longer dance. Anything approaching the limit is
+ * dropped with a log rather than failing the send, because the answers in the
+ * body of the email matter more than the attachment, and a vendor's 30 MB
+ * scan must never be the reason their questionnaire never arrives.
+ */
+const ATTACHMENT_BUDGET = 3_000_000;
+
 export async function sendMail(opts: {
   to: string[];
   /** Kept in the loop without being the person expected to act. */
@@ -76,8 +93,28 @@ export async function sendMail(opts: {
   subject: string;
   html: string;
   replyTo?: { address: string; name?: string };
+  attachments?: MailAttachment[];
 }): Promise<void> {
   if (!mailIsConfigured()) throw new Error("Email is not configured");
+
+  const attachments: Array<Record<string, unknown>> = [];
+  let budget = ATTACHMENT_BUDGET;
+  for (const a of opts.attachments ?? []) {
+    const bytes = Buffer.from(a.content);
+    // base64 is four bytes out for every three in.
+    const cost = Math.ceil(bytes.length / 3) * 4;
+    if (cost > budget) {
+      console.error(`[mail] attachment "${a.name}" (${bytes.length} bytes) skipped — over the message budget`);
+      continue;
+    }
+    budget -= cost;
+    attachments.push({
+      "@odata.type": "#microsoft.graph.fileAttachment",
+      name: a.name,
+      contentType: a.contentType,
+      contentBytes: bytes.toString("base64"),
+    });
+  }
 
   const token = await getAccessToken();
 
@@ -113,6 +150,7 @@ export async function sendMail(opts: {
                 ],
               }
             : {}),
+          ...(attachments.length ? { attachments } : {}),
         },
         saveToSentItems: false,
       }),
