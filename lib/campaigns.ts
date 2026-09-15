@@ -122,21 +122,38 @@ async function write(items: Array<{ operation: "upsert" | "delete"; key: string;
  */
 async function readItem<T>(itemKey: string): Promise<T | null> {
   if (API_TOKEN) {
-    const res = await fetch(
-      `https://api.vercel.com/v1/global-config/${STORE_ID}/item/${encodeURIComponent(itemKey)}?teamId=${encodeURIComponent(TEAM_ID)}`,
-      { headers: { Authorization: `Bearer ${API_TOKEN}` }, cache: "no-store" }
-    );
-    if (res.ok) {
-      const json: any = await res.json();
-      return (json?.value ?? null) as T | null;
+    try {
+      const res = await fetch(
+        `https://api.vercel.com/v1/global-config/${STORE_ID}/item/${encodeURIComponent(itemKey)}?teamId=${encodeURIComponent(TEAM_ID)}`,
+        { headers: { Authorization: `Bearer ${API_TOKEN}` }, cache: "no-store" }
+      );
+      if (res.ok) {
+        /**
+         * Read as text first. A key that has never been written comes back as
+         * an empty 200, and `res.json()` throws on an empty body — which took
+         * the questionnaires page down on the day it shipped. This file only
+         * escaped it because `vc_index` has existed since the first campaign.
+         */
+        const text = await res.text();
+        if (!text.trim()) return null;
+        const json: any = JSON.parse(text);
+        return (json?.value ?? null) as T | null;
+      }
+      // 404 is "no such item" — or, if the item path ever moves again, "no such
+      // endpoint". Either way the SDK below is the tiebreaker.
+      if (res.status !== 404) console.error(`[campaigns] REST read ${itemKey} -> ${res.status}; falling back to SDK`);
+    } catch (err) {
+      console.error(`[campaigns] REST read ${itemKey} failed`, err);
     }
-    // 404 is "no such item" — or, if the item path ever moves again, "no such
-    // endpoint". Either way the SDK below is the tiebreaker.
-    if (res.status !== 404) console.error(`[campaigns] REST read ${itemKey} -> ${res.status}; falling back to SDK`);
   }
   if (!client) return null;
-  const v = await client.get<T>(itemKey).catch(() => undefined);
-  return v ?? null;
+  try {
+    const v = await client.get<T>(itemKey);
+    return v ?? null;
+  } catch (err) {
+    console.error(`[campaigns] SDK read ${itemKey} failed`, err);
+    return null;
+  }
 }
 
 async function readIndex(): Promise<string[]> {

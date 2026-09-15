@@ -63,9 +63,21 @@ export default async function QuestionnairesPage() {
   const staff = getStaff();
   if (!staff) redirect("/staff");
 
-  const all = await listQuestionnaires();
-  const open = all.filter((q) => q.status !== "complete");
-  const done = all.filter((q) => q.status === "complete");
+  /**
+   * A store that cannot be read is not a reason to show a whole-page error.
+   * "Send one" still works from here, which is the thing a staff member came
+   * to do — and the diagnostic link says what actually went wrong instead of
+   * making them guess at a sorry page.
+   */
+  let all: Questionnaire[] | null = null;
+  try {
+    all = await listQuestionnaires();
+  } catch (err) {
+    console.error("[staff] questionnaires unavailable", err);
+  }
+
+  const open = (all ?? []).filter((q) => q.status !== "complete");
+  const done = (all ?? []).filter((q) => q.status === "complete");
 
   return (
     <section className="portal-page">
@@ -84,7 +96,15 @@ export default async function QuestionnairesPage() {
           on the listing agent&rsquo;s email and as a note on their contact card in Box &amp; Dice.
         </p>
 
-        {all.length === 0 ? (
+        {all === null ? (
+          <div className="portal-done" style={{ marginTop: 40 }}>
+            <h3>Couldn&rsquo;t read the list</h3>
+            <p>
+              Sending one still works. If this keeps happening,{" "}
+              <a href="/api/staff/diag/questionnaires">the diagnostic</a> says why.
+            </p>
+          </div>
+        ) : all.length === 0 ? (
           <div className="portal-done" style={{ marginTop: 40 }}>
             <h3>None sent yet</h3>
             <p>

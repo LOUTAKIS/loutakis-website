@@ -80,23 +80,53 @@ async function write(items: Array<{ operation: "upsert" | "delete"; key: string;
  * to ten seconds, which is exactly long enough for a vendor to press Save and
  * then reload to an empty form. Same reasoning as campaigns.ts.
  */
+/**
+ * A READ MUST NEVER THROW. A key that has never been written is the normal
+ * state of this store on the day a feature ships, and it was what took the
+ * questionnaires page down the first time: the REST endpoint answers a missing
+ * item with an empty body, `res.json()` threw on it, and the exception came
+ * all the way up through the page. Campaigns has the same shape and never hit
+ * it only because `vc_index` was written long ago.
+ *
+ * So everything here is guarded and the answer to "no such item" is null.
+ * `lastReadError` keeps the reason for the diagnostic route, because "null"
+ * on its own cannot tell an empty store from a bad token.
+ */
+export let lastReadError: string | null = null;
+
 async function readItem<T>(itemKey: string): Promise<T | null> {
+  lastReadError = null;
   if (API_TOKEN) {
-    const res = await fetch(
-      `https://api.vercel.com/v1/global-config/${STORE_ID}/item/${encodeURIComponent(itemKey)}?teamId=${encodeURIComponent(TEAM_ID)}`,
-      { headers: { Authorization: `Bearer ${API_TOKEN}` }, cache: "no-store" }
-    );
-    if (res.ok) {
-      const json: any = await res.json();
-      return (json?.value ?? null) as T | null;
-    }
-    if (res.status !== 404) {
-      console.error(`[questionnaire] REST read ${itemKey} -> ${res.status}; falling back to SDK`);
+    try {
+      const res = await fetch(
+        `https://api.vercel.com/v1/global-config/${STORE_ID}/item/${encodeURIComponent(itemKey)}?teamId=${encodeURIComponent(TEAM_ID)}`,
+        { headers: { Authorization: `Bearer ${API_TOKEN}` }, cache: "no-store" }
+      );
+      if (res.ok) {
+        const text = await res.text();
+        // An empty 200 is how a missing item comes back. Not an error.
+        if (!text.trim()) return null;
+        const json: any = JSON.parse(text);
+        return (json?.value ?? null) as T | null;
+      }
+      if (res.status !== 404) {
+        lastReadError = `REST ${res.status}`;
+        console.error(`[questionnaire] REST read ${itemKey} -> ${res.status}; falling back to SDK`);
+      }
+    } catch (err) {
+      lastReadError = `REST ${(err as Error)?.message ?? err}`;
+      console.error(`[questionnaire] REST read ${itemKey} failed`, err);
     }
   }
   if (!client) return null;
-  const v = await client.get<T>(itemKey).catch(() => undefined);
-  return v ?? null;
+  try {
+    const v = await client.get<T>(itemKey);
+    return v ?? null;
+  } catch (err) {
+    lastReadError = `SDK ${(err as Error)?.message ?? err}`;
+    console.error(`[questionnaire] SDK read ${itemKey} failed`, err);
+    return null;
+  }
 }
 
 async function readIndex(): Promise<string[]> {
