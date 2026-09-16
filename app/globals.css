@@ -37,30 +37,42 @@
   --serif: "Gotham", "Helvetica Neue", Arial, sans-serif;
   --sans: "Gotham", "Helvetica Neue", Arial, sans-serif;
   --display: "Brolink", "Gotham", "Helvetica Neue", Arial, sans-serif;
-  /* The narrower band inside .wrap, for blocks that shouldn't run the full
-     width of the screen. Shared so the pieces that use it stay aligned with
-     each other rather than drifting apart the next time one is touched. */
-  --band: 1480px;
+  /* ── ONE WIDTH FOR THE WHOLE SITE ───────────────────────────────────────
+     The header wordmark, the footer, the properties grid, every staff page and
+     every form share this single left and right edge. It is the only content
+     width on the site, and changing this one number moves all of them together.
 
-  /* ── Column widths ──────────────────────────────────────────────────────
-     These were a dozen inline numbers scattered across the pages — 520, 560,
-     640, 720, 760, 820 — which is how a set of columns that ought to agree
-     with each other quietly stops agreeing. Four tokens now, and widening the
-     site is one edit here rather than twelve.
+     It did not used to be. `.wrap` had no cap at all, so the header ran to the
+     edge of a 2240px monitor while a form sat in a 760px column somewhere near
+     the middle — and the dozen inline widths scattered across the pages (520,
+     560, 640, 720, 760, 820) meant no two columns quite agreed either. Nothing
+     lined up with anything, which is what reads as "too narrow" on a big
+     screen: not the column, the mismatch.
 
-     WIDE IS NOT THE SAME AS BETTER, AND THE DIFFERENCE IS THE CONTENT. A form
+     The full-bleed pieces — the hero, the video hero, the lightbox, the vendor
+     approval chapters — sit OUTSIDE .wrap and are unaffected. That is the line:
+     inside .wrap is the page, outside it is the picture. */
+  --page: 1600px;
+
+  /* Kept as its own name because the service films and market table on Sell
+     with us read as one band, and a future change might want them narrower
+     than the page again. Today they are the same thing. */
+  --band: var(--page);
+
+  /* WIDE IS NOT THE SAME AS BETTER, AND THE DIFFERENCE IS THE CONTENT. A form
      uses a big screen by putting two fields side by side; it does not improve
      by making one field a runway. Prose is the opposite again — past about 75
      characters the eye loses its place coming back for the next line — so
-     paragraphs stay capped in ch inside these columns rather than filling them
-     (see --measure). That is why there are four numbers and not one. */
-
-  /* Forms and portal pages: paired fields across the full width. */
-  --col-form: 1140px;
-  /* Staff detail — tables, answer lists, figures in a row. */
-  --col-wide: 1200px;
-  /* A single short thing with nothing beside it: a code entry, an error. */
-  --col-narrow: 820px;
+     paragraphs stay capped in ch inside the page rather than filling it. */
+  --col-form: var(--page);
+  --col-wide: var(--page);
+  --col-narrow: var(--page);
+  /* A cap for INPUTS, not for containers. The box a person types six digits or
+     a street name into does not get better at 1400px wide — it just puts a long
+     way between the label and the answer. The container still runs the full
+     width of the page so it lines up with everything else; only the field
+     inside it stops. */
+  --field-max: 780px;
   /* Reading measure. Not a container — a cap on paragraphs inside one. */
   --measure: 72ch;
 }
@@ -85,7 +97,7 @@ img { display: block; max-width: 100%; }
    left margin and end on the same right one. Edge to edge: no centred column,
    just a gutter that eases in on small screens. Reading measure is handled per
    block (see .lead, .listing-copy, .vcopy), never by narrowing this. */
-.wrap { width: 100%; margin: 0 auto; padding: 0 clamp(20px, 4vw, 64px); }
+.wrap { width: 100%; max-width: var(--page); margin: 0 auto; padding: 0 clamp(20px, 4vw, 64px); }
 /* Pages that narrow the container for readability (forms, policy text) stay
    centred in the screen — `margin: 0 auto` above does that. */
 .eyebrow { font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; }
@@ -1359,7 +1371,17 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
   .pf-check span { max-width: var(--measure); }
 }
 
-/* The questionnaire is one long column of questions rather than a grid, so it
-   takes the narrow column and lets its answers breathe instead. A 1140px-wide
-   textarea invites an essay and reads like a form nobody finished. */
-.qf-page { max-width: var(--col-narrow); margin-inline: auto; }
+/* The questionnaire follows the page like everything else, so its headings line
+   up with the header above them. Only the FIELDS stop: a long-text answer wants
+   room and gets it, while a single-line box for "spare keys?" caps out rather
+   than running 1400px to hold the word "yes". */
+.qf-page { max-width: var(--page); margin-inline: auto; }
+.qf-q textarea.field { max-width: 100%; }
+.qf-q input.field,
+.qf-page .ap-options { max-width: var(--field-max); }
+
+/* Short single-line inputs that sit alone in a full-width row stop at a sane
+   size. The paired .pf-row fields are already half-width and are left alone —
+   they are what the wide page is for. */
+.portal-code .code-field { max-width: 260px; }
+.vform .field { max-width: var(--field-max); }
