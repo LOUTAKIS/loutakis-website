@@ -14,6 +14,9 @@ const SITUATIONS = [
   "Just looking",
 ];
 
+/** Kept in step with the form. Anything else is a hand-made request, not a buyer. */
+const OWNS = ["Yes", "No"];
+
 const clean = (v: unknown, max = 200) => String(v ?? "").trim().slice(0, max);
 
 /** Australian mobile: 04xx xxx xxx, however the person spaced it. */
@@ -38,6 +41,7 @@ export async function POST(req: Request) {
   const email = clean(body?.email, 120).toLowerCase();
   const mobile = normaliseMobile(body?.mobile);
   const situation = clean(body?.situation, 60);
+  const owns = clean(body?.owns, 10);
 
   if (!firstName || !lastName) {
     return NextResponse.json({ ok: false, error: "Please give your first and last name." }, { status: 400 });
@@ -52,7 +56,13 @@ export async function POST(req: Request) {
     );
   }
   if (!SITUATIONS.includes(situation)) {
-    return NextResponse.json({ ok: false, error: "Please tell us where you're at." }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Please tell us which situation describes you." }, { status: 400 });
+  }
+  if (!OWNS.includes(owns)) {
+    return NextResponse.json(
+      { ok: false, error: "Please tell us whether you currently own a property." },
+      { status: 400 }
+    );
   }
   // Confidentiality is the basis on which vendors agree to be listed here, so
   // it's a hard requirement, not a tickbox we can shrug at.
@@ -70,6 +80,7 @@ export async function POST(req: Request) {
       email,
       mobile,
       situation,
+      owns,
       budget: clean(body?.budget, 40) || undefined,
       // Ids are re-validated against the suburb map — never trust the client
       // with something that ends up written into the CRM.
@@ -80,7 +91,7 @@ export async function POST(req: Request) {
       marketingConsent: body?.marketing === true,
     });
 
-    console.log("[portal] registered", { contactId, email, situation });
+    console.log("[portal] registered", { contactId, email, situation, owns });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[portal] registration failed", err);

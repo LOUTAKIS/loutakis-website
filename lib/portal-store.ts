@@ -89,6 +89,8 @@ export type PendingCriteria = {
   beds?: string;
   timeframe?: string;
   situation?: string;
+  /** "Yes" / "No". Whether they already own — see Registration in portal.ts. */
+  owns?: string;
 };
 
 const criteriaKey = (contactId: number | string) => `c_${Number(contactId)}`;

@@ -45,6 +45,14 @@ export type Registration = {
   email: string;
   mobile: string;
   situation: string;
+  /**
+   * "Yes" or "No" — do they already own a property.
+   *
+   * The most valuable answer on the form. A buyer on the off-market list who
+   * owns is usually a vendor within the year, and until now that only came out
+   * on a phone call somebody had to remember to make.
+   */
+  owns: string;
   budget?: string;
   /** Box & Dice suburb ids, already validated against lib/suburbs-vic.json. */
   suburbIds?: number[];
@@ -153,6 +161,7 @@ export async function createCriteria(
     beds?: string;
     timeframe?: string;
     situation?: string;
+    owns?: string;
   }
 ): Promise<void> {
   const bounds = c.budget ? BUDGET_BOUNDS[c.budget] : undefined;
@@ -169,6 +178,9 @@ export async function createCriteria(
   // and they're exactly what you want to see when the search result comes up.
   const notes = [
     c.situation ? `Situation: ${c.situation}` : null,
+    // On the criteria record too, not just the timeline: this is the line that
+    // turns a saved buyer search into "ring them about selling".
+    c.owns ? `Owns a property: ${c.owns}` : null,
     c.timeframe ? `Timeframe: ${c.timeframe}` : null,
     "Source: website off-market registration",
   ].filter(Boolean);
@@ -202,6 +214,7 @@ function summarise(r: Registration): string {
   const lines = [
     "Registered for the off-market list on the website.",
     `Situation: ${r.situation}`,
+    `Owns a property: ${r.owns}`,
     r.budget ? `Budget: ${r.budget}` : null,
     r.suburbIds?.length ? `Suburbs: ${namesForIds(r.suburbIds).join(", ")}` : null,
     r.beds ? `Minimum bedrooms: ${r.beds}` : null,
@@ -272,6 +285,7 @@ export async function registerBuyer(r: Registration) {
     beds: r.beds,
     timeframe: r.timeframe,
     situation: r.situation,
+    owns: r.owns,
   }).catch((err) => console.error("[portal] criteria stash failed", err));
 
   // Tell the office. A registration nobody hears about is a lead lost — this
@@ -296,6 +310,7 @@ export async function notifyOffice(contactId: number | string, r: Registration) 
     ["Mobile", r.mobile],
     ["Email", r.email],
     ["Situation", r.situation],
+    ["Owns a property", r.owns],
     ["Budget", r.budget || "—"],
     ["Suburbs", r.suburbIds?.length ? namesForIds(r.suburbIds).join(", ") : "—"],
     ["Min bedrooms", r.beds || "—"],

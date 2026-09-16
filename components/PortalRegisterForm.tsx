@@ -23,6 +23,14 @@ const BUDGETS = [
 
 const TIMEFRAMES = ["Ready now", "Within 3 months", "3–6 months", "6–12 months", "Just watching"];
 
+/**
+ * Asked because an owner on the buyer list is usually a seller in waiting, and
+ * that is the single most useful thing this form can find out. Required, and
+ * kept to two answers so it costs one tap — a longer question here would trade
+ * the answer for the abandonment.
+ */
+const OWNS = ["Yes", "No"];
+
 export default function PortalRegisterForm() {
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState("");
@@ -48,6 +56,7 @@ export default function PortalRegisterForm() {
           email: f.get("email"),
           mobile: f.get("mobile"),
           situation: f.get("situation"),
+          owns: f.get("owns"),
           budget: f.get("budget"),
           suburbIds: suburbs.map((s) => s.id),
           suburbNames: suburbs.map((s) => s.name),
@@ -118,17 +127,30 @@ export default function PortalRegisterForm() {
         </label>
       </div>
 
-      <label>
-        <span>Where are you at?</span>
-        <select className="field" name="situation" required defaultValue="">
-          <option value="" disabled>
-            Choose one
-          </option>
-          {SITUATIONS.map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </select>
-      </label>
+      <div className="pf-row">
+        <label>
+          <span>What situation best describes you?</span>
+          <select className="field" name="situation" required defaultValue="">
+            <option value="" disabled>
+              Choose one
+            </option>
+            {SITUATIONS.map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Do you currently own a property?</span>
+          <select className="field" name="owns" required defaultValue="">
+            <option value="" disabled>
+              Choose one
+            </option>
+            {OWNS.map((o) => (
+              <option key={o}>{o}</option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       <p className="pf-optional">The rest is optional — it just helps us call you about the right places.</p>
 
