@@ -8,7 +8,7 @@
 export default function Error({ reset }: { error: Error; reset: () => void }) {
   return (
     <section className="portal-page">
-      <div className="wrap" style={{ maxWidth: 640 }}>
+      <div className="wrap col-narrow">
         <div className="eyebrow">Sorry</div>
         <h2>We couldn&rsquo;t load this just now</h2>
         <p className="portal-intro">

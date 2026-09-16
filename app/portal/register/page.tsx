@@ -16,7 +16,7 @@ export const metadata = {
 export default function PortalRegisterPage() {
   return (
     <section className="portal-page">
-      <div className="wrap" style={{ maxWidth: 760 }}>
+      <div className="wrap col-form">
         <div className="eyebrow">Off-market</div>
         <h2>Properties before they hit the market</h2>
 

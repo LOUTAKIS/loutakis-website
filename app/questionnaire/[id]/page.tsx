@@ -62,7 +62,7 @@ export default async function QuestionnairePage({
           Preview — this is what the vendor sees. Nothing you type here is saved.
         </div>
       )}
-      <div className="wrap" style={{ maxWidth: 720 }}>
+      <div className="wrap qf-page">
         <div className="eyebrow">Property information</div>
         <h2>{q.address}</h2>
 

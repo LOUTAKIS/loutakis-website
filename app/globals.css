@@ -41,6 +41,28 @@
      width of the screen. Shared so the pieces that use it stay aligned with
      each other rather than drifting apart the next time one is touched. */
   --band: 1480px;
+
+  /* ── Column widths ──────────────────────────────────────────────────────
+     These were a dozen inline numbers scattered across the pages — 520, 560,
+     640, 720, 760, 820 — which is how a set of columns that ought to agree
+     with each other quietly stops agreeing. Four tokens now, and widening the
+     site is one edit here rather than twelve.
+
+     WIDE IS NOT THE SAME AS BETTER, AND THE DIFFERENCE IS THE CONTENT. A form
+     uses a big screen by putting two fields side by side; it does not improve
+     by making one field a runway. Prose is the opposite again — past about 75
+     characters the eye loses its place coming back for the next line — so
+     paragraphs stay capped in ch inside these columns rather than filling them
+     (see --measure). That is why there are four numbers and not one. */
+
+  /* Forms and portal pages: paired fields across the full width. */
+  --col-form: 1140px;
+  /* Staff detail — tables, answer lists, figures in a row. */
+  --col-wide: 1200px;
+  /* A single short thing with nothing beside it: a code entry, an error. */
+  --col-narrow: 820px;
+  /* Reading measure. Not a container — a cap on paragraphs inside one. */
+  --measure: 72ch;
 }
 
 /* Headings: geometric, wide-tracked to echo the LOUTAKIS wordmark */
@@ -226,7 +248,7 @@ section { padding: 96px 0; }
 .swu-head p { color: var(--muted); margin: 18px auto 30px; }
 
 /* The appraisal form */
-.swu-form { max-width: 760px; margin-inline: auto; }
+.swu-form { max-width: var(--col-form); margin-inline: auto; }
 .swu-form .eyebrow, .swu-form .lead { text-align: center; }
 .swu-form .lead { margin-inline: auto; }
 .swu-intro { color: var(--muted); text-align: center; margin: 16px auto 40px; max-width: 56ch; }
@@ -571,8 +593,8 @@ footer.site p, footer.site a { font-size: 13.5px; color: var(--muted); }
 /* ---- Legal pages (privacy policy, terms) ---- */
 .legal-page h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 4vw, 46px); margin-bottom: 34px; }
 .legal-page h3 { font-family: var(--serif); font-weight: 400; font-size: 21px; margin: 38px 0 12px; }
-.legal-page p { margin-bottom: 16px; max-width: 68ch; }
-.legal-page ul { margin: 0 0 20px 22px; max-width: 68ch; }
+.legal-page p { margin-bottom: 16px; max-width: var(--measure); }
+.legal-page ul { margin: 0 0 20px 22px; max-width: var(--measure); }
 .legal-page li { margin-bottom: 7px; }
 .legal-page a { text-decoration: underline; text-underline-offset: 2px; }
 
@@ -1309,3 +1331,35 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
   font-size: 11.5px; color: var(--muted); overflow-wrap: anywhere;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+/* ── Column widths, applied ───────────────────────────────────────────────
+   Used as `className="wrap col-form"` in place of the inline maxWidth styles
+   these replace. Every one of them centres, because .wrap already has
+   `margin: 0 auto`. */
+.col-form { max-width: var(--col-form); margin-inline: auto; }
+.col-wide { max-width: var(--col-wide); margin-inline: auto; }
+.col-narrow { max-width: var(--col-narrow); margin-inline: auto; }
+
+/* Prose inside a wide column stays at a readable measure. The column is for
+   the fields and the furniture; the sentences are not meant to fill it. */
+.col-form .portal-intro,
+.col-wide .portal-intro,
+.col-narrow .portal-intro,
+.qf-page .portal-intro,
+.col-form > p:not([class]) { max-width: var(--measure); }
+
+/* A form in a wide column pairs its rows up — this is what the extra width is
+   FOR. .pf-row was already two-up; at this width the single full-width rows
+   (the consent checks, the suburb picker) are the only things that should span,
+   and they still read correctly because they are sentences, not inputs. */
+@media (min-width: 900px) {
+  .portal-form .pf-row { gap: 0 28px; }
+  /* Consent text is a paragraph with a box in front of it — capped like prose
+     rather than run to the full width of a 1140px column. */
+  .pf-check span { max-width: var(--measure); }
+}
+
+/* The questionnaire is one long column of questions rather than a grid, so it
+   takes the narrow column and lets its answers breathe instead. A 1140px-wide
+   textarea invites an essay and reads like a form nobody finished. */
+.qf-page { max-width: var(--col-narrow); margin-inline: auto; }

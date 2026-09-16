@@ -7,7 +7,7 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <section className="legal-page">
-      <div className="wrap" style={{ maxWidth: 760 }}>
+      <div className="wrap col-form">
         <div className="eyebrow">Legal</div>
         <h2>Privacy Policy</h2>
 

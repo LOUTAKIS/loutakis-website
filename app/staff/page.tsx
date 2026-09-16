@@ -30,7 +30,7 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
   if (!staff) {
     return (
       <section className="portal-page">
-        <div className="wrap" style={{ maxWidth: 520 }}>
+        <div className="wrap col-form">
           <div className="eyebrow">Staff</div>
           <h2>Sign in</h2>
           <p className="portal-intro">

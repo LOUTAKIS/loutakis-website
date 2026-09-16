@@ -56,7 +56,7 @@ export default async function PortalHomePage() {
   if (viewer.status !== "approved") {
     return (
       <section className="portal-page">
-        <div className="wrap" style={{ maxWidth: 640 }}>
+        <div className="wrap col-form">
           <div className="eyebrow">Your account</div>
           <h2>{viewer.status === "pending" ? "Still being reviewed" : "Access not active"}</h2>
           <p className="portal-intro">

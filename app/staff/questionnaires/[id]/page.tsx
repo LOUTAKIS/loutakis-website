@@ -29,7 +29,7 @@ export default async function QuestionnaireDetail({ params }: { params: { id: st
 
   return (
     <section className="portal-page">
-      <div className="wrap" style={{ maxWidth: 820 }}>
+      <div className="wrap col-wide">
         <Link href="/staff/questionnaires" className="backlink">← Property information</Link>
         <div className="section-head">
           <div>

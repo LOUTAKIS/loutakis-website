@@ -91,7 +91,7 @@ export default async function OffMarketPage() {
   if (unavailable) {
     return (
       <section className="portal-page">
-        <div className="wrap" style={{ maxWidth: 640 }}>
+        <div className="wrap col-form">
           <div className="eyebrow">Off-market</div>
           <h2>Just a moment</h2>
           <p className="portal-intro">
