@@ -26,7 +26,7 @@ export default function PortalSignInPage({
 }) {
   return (
     <section className="portal-page">
-      <div className="wrap col-form">
+      <div className="wrap col-signin">
         <div className="eyebrow">Your account</div>
         <h2>Sign in</h2>
         <p className="portal-intro">

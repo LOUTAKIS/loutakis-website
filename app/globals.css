@@ -1390,3 +1390,42 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .portal-form > label > .field { max-width: var(--field-max); }
 .portal-form > label > .code-field { max-width: 260px; }
 .vform .field { max-width: var(--field-max); }
+
+/* ── Sign in and register, centred ────────────────────────────────────────
+   These two are the only pages on the site that are a single task with
+   nothing beside them, and on a 1600px page a lone email box pinned to the
+   left edge under a lone heading read as though the layout had failed. The
+   rest of the site is a page of content and belongs on the left margin with
+   the wordmark; these two are a door, and a door sits in the middle of a wall.
+
+   The COLUMN is what centres. Inputs keep their own alignment — centred text
+   inside a field is a novelty that stops being funny the moment you try to
+   correct a typo in an email address. */
+.col-signin { max-width: 640px; margin-inline: auto; text-align: center; }
+.col-signin .portal-intro { margin-inline: auto; }
+.col-signin .portal-form { align-items: stretch; }
+.col-signin .portal-form label > span { text-align: center; }
+/* The field fills the centred column rather than stopping at --field-max:
+   this column IS the sane width, so capping it again would leave a short box
+   floating inside a short column. */
+.col-signin .portal-form > label > .field { max-width: 100%; text-align: left; }
+.col-signin .portal-form > label > .code-field { max-width: 260px; margin-inline: auto; text-align: center; }
+
+/* Register keeps its two-up fields — they are the reason the page is wide —
+   but the words above them come to the middle, so the page opens centred and
+   settles into the form. Labels stay left over their own fields, because a
+   centred label above a left-aligned input points at nothing. */
+.col-register { max-width: 1040px; margin-inline: auto; }
+.col-register > .eyebrow,
+.col-register > h2,
+.col-register > .portal-intro,
+.col-register > .portal-alt-count { text-align: center; }
+.col-register > h2 { margin-inline: auto; }
+.col-register > .portal-intro { margin-inline: auto; }
+
+@media (max-width: 620px) {
+  /* On a phone the column is the screen, and centred body copy is harder to
+     read than left-aligned. Only the heading keeps the treatment. */
+  .col-signin, .col-signin .portal-form label > span { text-align: left; }
+  .col-signin .eyebrow, .col-signin h2 { text-align: center; }
+}
