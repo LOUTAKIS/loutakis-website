@@ -1402,6 +1402,10 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
    inside a field is a novelty that stops being funny the moment you try to
    correct a typo in an email address. */
 .col-signin { max-width: 640px; margin-inline: auto; text-align: center; }
+/* Buttons and links inside a centred column come to the middle with it. The
+   .btn is a block in a flex column, so its text centres; a standalone one
+   (the error page's Try again) needs the rule. */
+.col-signin > .btn { align-self: center; }
 .col-signin .portal-intro { margin-inline: auto; }
 .col-signin .portal-form { align-items: stretch; }
 .col-signin .portal-form label > span { text-align: center; }

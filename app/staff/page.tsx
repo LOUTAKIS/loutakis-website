@@ -30,7 +30,10 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
   if (!staff) {
     return (
       <section className="portal-page">
-        <div className="wrap col-form">
+        {/* Centred like the buyer's sign-in, and for the same reason: a door,
+            not a page of content. The dashboard behind it goes back to the
+            full width, because that IS a page of content. */}
+        <div className="wrap col-signin">
           <div className="eyebrow">Staff</div>
           <h2>Sign in</h2>
           <p className="portal-intro">

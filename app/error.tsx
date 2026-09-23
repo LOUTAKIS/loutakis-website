@@ -8,7 +8,10 @@
 export default function Error({ reset }: { error: Error; reset: () => void }) {
   return (
     <section className="portal-page">
-      <div className="wrap col-narrow">
+      {/* Centred, for the same reason the sign-ins are: four lines and a
+          button is not a page of content, and pinned to the left edge of a
+          1600px page it read like the layout had broken as well. */}
+      <div className="wrap col-signin">
         <div className="eyebrow">Sorry</div>
         <h2>We couldn&rsquo;t load this just now</h2>
         <p className="portal-intro">
