@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/staff-auth";
 import { getSiteStats, analyticsConfigured } from "@/lib/web-analytics";
 import { listApprovedContacts, listOptedOut } from "@/lib/portal-store";
+import { getFormStats } from "@/lib/form-events";
 import WebsiteStats from "@/components/WebsiteStats";
 
 export const metadata = {
@@ -30,10 +31,17 @@ export default async function WebsitePage() {
   const staff = getStaff();
   if (!staff) redirect("/staff");
 
-  const [stats, approved, optedOut] = await Promise.all([
+  /**
+   * Forms come from our own store, not from Vercel. Its custom events are a Pro
+   * feature and never recorded a thing on this plan — see lib/form-events.ts.
+   * They are fetched separately so a Vercel outage still leaves the one panel
+   * that tells you a form is broken.
+   */
+  const [stats, approved, optedOut, forms] = await Promise.all([
     getSiteStats(30).catch(() => null),
     listApprovedContacts().catch(() => [] as number[]),
     listOptedOut().catch(() => [] as number[]),
+    getFormStats(30).catch(() => null),
   ]);
 
   return (
@@ -62,7 +70,12 @@ export default async function WebsitePage() {
             <p>Vercel didn&rsquo;t answer. Try again shortly — nothing is lost, this is a read.</p>
           </div>
         ) : (
-          <WebsiteStats stats={stats} members={approved.length} optedOut={optedOut.length} />
+          <WebsiteStats
+            stats={stats}
+            members={approved.length}
+            optedOut={optedOut.length}
+            forms={forms}
+          />
         )}
       </div>
     </section>

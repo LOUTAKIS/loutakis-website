@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordFormEvent } from "@/lib/form-events";
 import { getQuestionnaire } from "@/lib/questionnaire";
 import { verifyToken } from "@/lib/portal-token";
 import { saveProgress, submitQuestionnaire } from "@/lib/questionnaire-deliver";
@@ -129,12 +130,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         );
       }
       await submitQuestionnaire(q, name, answers, files);
+      void recordFormEvent("questionnaire", "sent");
     } else {
       await saveProgress(q, answers);
     }
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[questionnaire] action failed", err);
+    if (action === "submit") void recordFormEvent("questionnaire", "failed");
     return NextResponse.json(
       {
         ok: false,

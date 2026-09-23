@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import SuburbPicker, { type PickedSuburb } from "./SuburbPicker";
 import type { ConsultantOption } from "@/lib/boxdice";
-import { formStarted, formSubmitted, formSucceeded, formFailed } from "@/lib/track";
+import { formStarted } from "@/lib/track";
 
 const METHODS = ["Auction", "Off market", "Private sale", "Expression of interest", "Need advice on this"];
 const TIMEFRAMES = ["0–3 months", "3–6 months", "6 months plus"];
@@ -77,7 +77,6 @@ export default function AppraisalForm({
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) return setError("Please add a valid email address.");
 
     setState("sending");
-    formSubmitted("appraisal");
     try {
       const res = await fetch("/api/appraisal", {
         method: "POST",
@@ -107,11 +106,9 @@ export default function AppraisalForm({
       // sees success either way — the office has been emailed — but a run of
       // successes with crm:false is the CRM quietly failing, and that shows up
       // here rather than only in an inbox nobody is auditing.
-      formSucceeded("appraisal", json?.crm === true);
       setState("done");
     } catch (err: any) {
       setState("idle");
-      formFailed("appraisal", err?.message ?? "unknown");
       setError(err?.message || "Couldn't send that just now. Please call 0409 438 025.");
     }
   }

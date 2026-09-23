@@ -1380,8 +1380,13 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .qf-q input.field,
 .qf-page .ap-options { max-width: var(--field-max); }
 
-/* Short single-line inputs that sit alone in a full-width row stop at a sane
-   size. The paired .pf-row fields are already half-width and are left alone —
-   they are what the wide page is for. */
-.portal-code .code-field { max-width: 260px; }
+/* A field that sits ALONE on its own row stops at a sane size.
+   The sign-in page is one email box: run across a 1600px page it read as a
+   runway with a label floating at the far left of it. Paired .pf-row fields
+   are deliberately untouched — two of them filling the width is exactly what
+   the wide page is for.
+   The selector is the direct-child label, which is what "alone on its row"
+   means structurally: paired fields live inside .pf-row, so they don't match. */
+.portal-form > label > .field { max-width: var(--field-max); }
+.portal-form > label > .code-field { max-width: 260px; }
 .vform .field { max-width: var(--field-max); }

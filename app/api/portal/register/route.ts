@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordFormEvent } from "@/lib/form-events";
 import { registerBuyer } from "@/lib/portal";
 import { validSuburbIds } from "@/lib/suburbs";
 
@@ -92,9 +93,11 @@ export async function POST(req: Request) {
     });
 
     console.log("[portal] registered", { contactId, email, situation, owns });
+    void recordFormEvent("register", "sent");
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[portal] registration failed", err);
+    void recordFormEvent("register", "failed");
     return NextResponse.json(
       {
         ok: false,

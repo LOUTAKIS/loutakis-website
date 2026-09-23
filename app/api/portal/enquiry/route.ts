@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordFormEvent } from "@/lib/form-events";
 import { getViewer } from "@/lib/portal-session";
 import { getContact, addNote } from "@/lib/portal";
 import { getRegisteredEmail } from "@/lib/portal-store";
@@ -99,6 +100,7 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("[portal enquiry] send failed", err);
+    void recordFormEvent("portal-enquiry", "failed");
     return NextResponse.json(
       { ok: false, error: "We couldn't send that just now. Please call 0409 438 025." },
       { status: 502 }
@@ -119,5 +121,6 @@ export async function POST(req: Request) {
   // timeline as the visits that led to it.
   await recordActivity(viewer.contactId, { k: "enquiry", p: listing.id, a: address });
 
+  void recordFormEvent("portal-enquiry", "sent");
   return NextResponse.json({ ok: true });
 }

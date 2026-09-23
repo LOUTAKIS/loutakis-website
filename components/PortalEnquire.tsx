@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { formSubmitted, formSucceeded, formFailed } from "@/lib/track";
 
 /**
  * "Enquire" on a row of the private list — one click, no form.
@@ -27,7 +26,6 @@ export default function PortalEnquire({ listingId }: { listingId: string }) {
     if (state === "sending" || state === "sent") return;
     setState("sending");
     setError("");
-    formSubmitted("enquiry");
 
     try {
       const res = await fetch("/api/portal/enquiry", {
@@ -38,13 +36,11 @@ export default function PortalEnquire({ listingId }: { listingId: string }) {
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json?.ok) throw new Error(json?.error || "That didn't send.");
       setState("sent");
-      formSucceeded("enquiry");
     } catch (err: any) {
       // Told the truth, not a tick. A buyer who thinks we have their enquiry
       // and waits is worse off than one who knows to ring.
       setState("error");
       setError(err?.message || "That didn't send. Please call 0409 438 025.");
-      formFailed("enquiry", "portal-send");
     }
   }
 

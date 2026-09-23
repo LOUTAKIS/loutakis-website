@@ -38,7 +38,6 @@ export function analyticsConfigured(): boolean {
 export type Totals = { visitors: number; pageviews: number };
 export type DayPoint = { date: string; visitors: number; pageviews: number };
 export type NamedCount = { name: string; visitors: number; pageviews: number };
-export type Funnel = { started: number; submitted: number; succeeded: number; failed: number };
 
 export type SiteStats = {
   since: string;
@@ -49,7 +48,16 @@ export type SiteStats = {
   daily: DayPoint[];
   topPages: NamedCount[];
   referrers: NamedCount[];
-  funnel: Funnel | null;
+  /**
+   * The forms are NOT in here any more.
+   *
+   * They were queried from Vercel's events dataset, which on Hobby returns
+   * nothing at all — custom events are a Pro feature, so four queries failed
+   * every time and the page reported "couldn't load form events" for a month
+   * about data that was never going to arrive. The counting moved to
+   * lib/form-events.ts, where our own routes record what actually happened.
+   * The staff page reads both and puts them side by side.
+   */
   /** Views of /listings — see the query. Null when that read failed. */
   qrScans: Totals | null;
   /** Which parts failed, so the page can say so rather than show a zero. */
@@ -149,18 +157,7 @@ export async function getSiteStats(days = 30): Promise<SiteStats | null> {
   const prevUntil = day(daysAgo(days + 1));
   const prevSince = day(daysAgo(days * 2 + 1));
 
-  /**
-   * The four form events, one query each, filtered by name.
-   *
-   * Grouping by `eventName` was the obvious way to do this in one call and it
-   * failed against the live API — the documented dimensions for the events
-   * dataset are eventData/<property> and flags/<name>, and eventName appears
-   * only as something to FILTER on. Four small queries that work beat one
-   * elegant one that doesn't.
-   */
-  const EVENTS = ["form_started", "form_submitted", "form_succeeded", "form_failed"] as const;
-
-  const [daily, prior, pages, refs, qr, ...eventResults] = await Promise.all([
+  const [daily, prior, pages, refs, qr] = await Promise.all([
     query("visits/aggregate", { since, until, by: "day" }),
     query("visits/aggregate", { since: prevSince, until: prevUntil, by: "day" }),
     query("visits/aggregate", { since, until, by: "requestPath", limit: 12 }),
@@ -175,16 +172,12 @@ export async function getSiteStats(days = 30): Promise<SiteStats | null> {
      * a phone camera pointed at a board.
      */
     query("visits/aggregate", { since, until, by: "day", filter: `requestPath eq '/listings'` }),
-    ...EVENTS.map((name) =>
-      query("events/aggregate", { since, until, by: "day", filter: `eventName eq '${name}'` })
-    ),
   ]);
 
   const missing: string[] = [];
   if (!daily) missing.push("visitors");
   if (!pages) missing.push("top pages");
   if (!refs) missing.push("referrers");
-  if (eventResults.every((r) => !r)) missing.push("form events");
   /**
    * A missing previous period is not worth reporting. On Hobby the reporting
    * window is shorter than sixty days, so the comparison simply isn't there
@@ -193,16 +186,6 @@ export async function getSiteStats(days = 30): Promise<SiteStats | null> {
    */
 
   const dailyRows: any[] = Array.isArray(daily?.data) ? daily.data : [];
-
-  /**
-   * `visitors` rather than `count` for started, submitted and succeeded: one
-   * person hammering the button is one enquiry, not four. `failed` uses count,
-   * because every failure is a separate thing that went wrong.
-   */
-  const tally = (i: number, field: "visitors" | "count") => {
-    const rows: any[] = Array.isArray(eventResults[i]?.data) ? eventResults[i].data : [];
-    return rows.reduce((t, r) => t + num(r?.[field]), 0);
-  };
 
   return {
     since,
@@ -222,14 +205,6 @@ export async function getSiteStats(days = 30): Promise<SiteStats | null> {
      * it as a dash made the most important number on the page unreadable.
      */
     referrers: refs ? named(refs, "referrerHostname", 6, "Direct") : [],
-    funnel: eventResults.some((r) => r)
-      ? {
-          started: tally(0, "visitors"),
-          submitted: tally(1, "visitors"),
-          succeeded: tally(2, "visitors"),
-          failed: tally(3, "count"),
-        }
-      : null,
     qrScans: qr ? sum(Array.isArray(qr.data) ? qr.data : []) : null,
     missing,
   };

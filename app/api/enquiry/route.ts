@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordFormEvent } from "@/lib/form-events";
 import { sendEnquiry, mailIsConfigured } from "@/lib/mail";
 import { getListings, getOffMarketListings } from "@/lib/boxdice";
 
@@ -123,6 +124,7 @@ export async function POST(req: Request) {
   if (!mailIsConfigured()) {
     // Loud on the server, honest to the visitor. Never pretend it was sent.
     console.error("[enquiry] REJECTED — mail is not configured", { name, email });
+    void recordFormEvent("enquiry", "failed");
     return NextResponse.json(
       {
         ok: false,
@@ -165,9 +167,13 @@ export async function POST(req: Request) {
       routedTo: to ?? "ENQUIRY_TO (default)",
     });
 
+    // Counted, not awaited: the visitor's response must not wait on a
+    // dashboard number, and recordFormEvent never throws.
+    void recordFormEvent("enquiry", "sent");
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[enquiry] SEND FAILED", err);
+    void recordFormEvent("enquiry", "failed");
     return NextResponse.json(
       {
         ok: false,

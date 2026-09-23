@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { SiteStats } from "@/lib/web-analytics";
+import type { FormStats } from "@/lib/form-events";
 import { fmtDate } from "@/lib/when";
 
 /**
@@ -75,10 +76,12 @@ export default function WebsiteStats({
   stats,
   members,
   optedOut,
+  forms,
 }: {
   stats: SiteStats;
   members: number;
   optedOut: number;
+  forms: FormStats | null;
 }) {
   const [unit, setUnit] = useState<Unit>("people");
   const people = unit === "people";
@@ -164,34 +167,78 @@ export default function WebsiteStats({
         />
       </div>
 
-      {stats.funnel && (
+      {/*
+        Forms, counted by us.
+        Never touched by the People/Views switch above: a form submission is a
+        person by definition, and "views of a submission" is not a thing.
+      */}
+      <div className="times-label" style={{ marginTop: 44 }}>Forms</div>
+      {!forms ? (
+        <p style={{ color: "var(--muted)", marginTop: 12 }}>
+          Couldn&rsquo;t read the form counts just now.
+        </p>
+      ) : !forms.any ? (
+        <p style={{ color: "var(--muted)", marginTop: 12 }}>
+          Nothing recorded yet. This starts from the day it was switched on — the first enquiry
+          after that will appear here.
+        </p>
+      ) : (
         <>
-          <div className="times-label" style={{ marginTop: 44 }}>Forms</div>
           <div className="wa-figures">
             <div>
-              <div className="wa-n">{stats.funnel.started}</div>
+              <div className="wa-n">{forms.totals.started}</div>
               <div className="wa-l">Started one</div>
             </div>
             <div>
-              <div className="wa-n">{stats.funnel.succeeded}</div>
+              <div className="wa-n">{forms.totals.sent}</div>
               <div className="wa-l">
                 Sent it
-                {stats.funnel.started > 0 && (
+                {forms.totals.started > 0 && (
                   <span className="wa-sub">
-                    {" "}· {Math.round((stats.funnel.succeeded / stats.funnel.started) * 100)}% finished
+                    {" "}· {Math.round((forms.totals.sent / forms.totals.started) * 100)}% finished
                   </span>
                 )}
               </div>
             </div>
             <div>
-              {/* The number that matters. A form failing is a lost lead we
-                  would otherwise never hear about. */}
-              <div className={`wa-n${stats.funnel.failed > 0 ? " wa-bad" : ""}`}>
-                {stats.funnel.failed}
+              {/* THE NUMBER THAT MATTERS. A form failing is a lead who typed
+                  their name, saw an error and rang another agent. Nothing else
+                  on this site would tell you it happened. */}
+              <div className={`wa-n${forms.totals.failed > 0 ? " wa-bad" : ""}`}>
+                {forms.totals.failed}
               </div>
               <div className="wa-l">Failed</div>
             </div>
           </div>
+
+          {/* Which form, not just that one failed — the thing Vercel's version
+              could never have told us. Only shown when there is a failure, so
+              a clean month stays quiet. */}
+          {forms.failing.length > 0 && (
+            <table className="wa-table" style={{ marginTop: 26 }}>
+              <tbody>
+                {forms.failing.map((r) => (
+                  <tr key={r.form}>
+                    <th scope="row">{r.label}</th>
+                    <td className="wa-bad">
+                      {r.failed} failed{r.sent > 0 ? ` · ${r.sent} sent` : ""}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <table className="wa-table" style={{ marginTop: 26 }}>
+            <tbody>
+              {forms.rows.map((r) => (
+                <tr key={r.form}>
+                  <th scope="row">{r.label}</th>
+                  <td>{r.sent}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </>
       )}
 

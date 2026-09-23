@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordFormEvent } from "@/lib/form-events";
 import { sendMail, officeRecipients, esc, mailIsConfigured } from "@/lib/mail";
 import { getConsultantOptions, defaultConsultant, consultantEmail } from "@/lib/boxdice";
 import { createContact, createAppraisalLead, type AppraisalAddress } from "@/lib/boxdice-write";
@@ -223,6 +224,7 @@ export async function POST(req: Request) {
    */
   if (!crm.ok && !mailed) {
     console.error("[appraisal] LEAD LOST — no CRM record and no email:", crm.detail);
+    void recordFormEvent("appraisal", "failed");
     return NextResponse.json(
       {
         ok: false,
@@ -234,5 +236,6 @@ export async function POST(req: Request) {
 
   // `crm` is reported so the browser can record whether Box & Dice took the
   // lead. The seller is never shown it — from their side, mail alone is enough.
+  void recordFormEvent("appraisal", "sent");
   return NextResponse.json({ ok: true, crm: crm.ok });
 }

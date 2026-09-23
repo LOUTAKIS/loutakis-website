@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { formStarted, formSubmitted, formSucceeded, formFailed } from "@/lib/track";
+import { formStarted } from "@/lib/track";
 
 /**
  * Enquiry form — posts to /api/enquiry, which emails via Microsoft 365.
@@ -41,7 +41,6 @@ export default function EnquiryForm({
 
     setState("sending");
     setError("");
-    formSubmitted("enquiry");
 
     try {
       const res = await fetch("/api/enquiry", {
@@ -63,11 +62,9 @@ export default function EnquiryForm({
       const json = await res.json().catch(() => ({}));
 
       if (res.ok && json?.ok) {
-        formSucceeded("enquiry", json?.crm === true);
         setState("sent");
         form.reset();
       } else {
-        formFailed("enquiry", json?.error ? "rejected" : `http_${res.status}`);
         setState("error");
         setError(
           json?.error ||
@@ -75,7 +72,6 @@ export default function EnquiryForm({
         );
       }
     } catch {
-      formFailed("enquiry", "network");
       setState("error");
       setError(
         "Sorry — we couldn't send that just now. Please check your connection, or call 0409 438 025."
