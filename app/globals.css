@@ -499,7 +499,16 @@ section { padding: 96px 0; }
 
 .field { width: 100%; padding: 12px 14px; border: 1px solid var(--line); background: var(--paper); margin-bottom: 10px; font-family: var(--sans); font-size: 14px; }
 textarea.field { min-height: 90px; resize: vertical; }
-.backlink { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+/* The way back out of a page.
+   inline-block so it can hold its own space: as a bare inline link it sat
+   flush against the eyebrow below it, and two lines of tracked-out small caps
+   a few pixels apart read as one confused label rather than a link above a
+   heading. The gap is what separates leaving the page from being on it. */
+.backlink {
+  display: inline-block; margin-bottom: 26px;
+  font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+}
+.backlink:hover { color: var(--ink); }
 
 /* ── Staff dashboard ──────────────────────────────────────────────────────
    Tiles, sized so a second and third one land beside the first without the

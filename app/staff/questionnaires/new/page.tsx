@@ -30,7 +30,7 @@ export default async function NewQuestionnairePage() {
     <section className="portal-page">
       <div className="wrap col-form">
         <Link href="/staff/questionnaires" className="backlink">← Property information</Link>
-        <div className="eyebrow" style={{ marginTop: 18 }}>Send one</div>
+        <div className="eyebrow">Send one</div>
         <h2>Which property?</h2>
         <p className="portal-intro">
           Current listings from Box &amp; Dice. Pick one, add whoever is on the title, and they get

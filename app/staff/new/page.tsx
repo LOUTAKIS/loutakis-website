@@ -24,7 +24,7 @@ export default async function NewApprovalPage({ searchParams }: { searchParams?:
     <section className="portal-page">
       <div className="wrap col-form">
         <Link href="/staff/approvals" className="backlink">← Vendor approvals</Link>
-        <div className="eyebrow" style={{ marginTop: 18 }}>New approval</div>
+        <div className="eyebrow">New approval</div>
         <h2>Which property?</h2>
         <p className="portal-intro">
           {showAll ? "Every listing with photos" : "Current listings"} from Box &amp; Dice. Photos,
