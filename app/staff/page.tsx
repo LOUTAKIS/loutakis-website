@@ -37,7 +37,7 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
           <div className="eyebrow">Staff</div>
           <h2>Sign in</h2>
           <p className="portal-intro">
-            Sign in with your Loutakis email to send and track vendor approvals.
+            Sign in with your Loutakis email. We&rsquo;ll send you a link — no password to remember.
           </p>
           <StaffSignInForm expired={searchParams?.expired === "1"} />
         </div>

@@ -50,7 +50,10 @@ export async function sendStaffSignIn(email: string): Promise<void> {
 
   await sendMail({
     to: [addr],
-    subject: "Sign in to Loutakis vendor approvals",
+    // Not "vendor approvals" any more — the dashboard behind this link now
+    // carries members, questionnaires and the website numbers too, and a
+    // subject line that names one tool is wrong the moment there are four.
+    subject: "Sign in to Loutakis staff dashboard",
     html: `
       <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
         <p>Hi ${esc(staffDisplayName(addr))},</p>
