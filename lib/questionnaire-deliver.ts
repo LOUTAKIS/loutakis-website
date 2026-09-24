@@ -102,7 +102,7 @@ export async function sendQuestionnaireLink(q: Questionnaire, sentBy: string): P
         <p style="margin:26px 0">
           <a href="${questionnaireLink(q.id)}" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">Answer the questions</a>
         </p>
-        <p style="color:#666">It takes about ten minutes, and you don't have to do it in one sitting — there's a button to save and come back. The first question is the one we build your brochure around, so it's worth the time.</p>
+        <p style="color:#666">It takes about ten minutes. Your answers are kept as you type, so you can close it and come back to this link on the same device. The first question is the one we build your brochure around, so it's worth the time.</p>
       </div>
     `,
     replyTo: { address: sentBy, name: "Loutakis Real Estate" },
@@ -117,20 +117,11 @@ export async function recordQuestionnaireOpen(q: Questionnaire): Promise<void> {
     openCount: (q.openCount ?? 0) + 1,
     openedAt: new Date().toISOString(),
   };
-  // Only "sent" becomes "opened" — never regress started or complete.
+  // Only "sent" becomes "opened" — never walk a complete one backwards.
   if (q.status === "sent") patch.status = "opened";
   await updateQuestionnaire(q.id, patch).catch((err) =>
     console.error("[questionnaire] open record failed", err)
   );
-}
-
-/** Saved part-way, to be finished later. Nothing is sent. */
-export async function saveProgress(q: Questionnaire, answers: Answers): Promise<void> {
-  await updateQuestionnaire(q.id, {
-    answers,
-    savedAt: new Date().toISOString(),
-    status: q.status === "complete" ? "complete" : "started",
-  });
 }
 
 /**

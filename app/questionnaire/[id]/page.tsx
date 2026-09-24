@@ -96,7 +96,6 @@ export default async function QuestionnairePage({
               address={q.address}
               vendorName={vendors[0]?.name ?? ""}
               saved={q.answers ?? {}}
-              savedAt={q.savedAt}
               sections={sections}
               preview={isPreview}
             />

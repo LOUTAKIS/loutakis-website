@@ -39,11 +39,9 @@ export default async function QuestionnaireDetail({ params }: { params: { id: st
             <div className="eyebrow">
               {done
                 ? `Completed ${q.submittedAt ? fmtDate(q.submittedAt) : ""}`
-                : q.status === "started"
-                  ? "Started, not sent"
-                  : q.openCount > 0
-                    ? "Opened, nothing filled in"
-                    : "Sent, not opened"}
+                : q.openCount > 0
+                  ? "Opened, not answered yet"
+                  : "Sent, not opened"}
             </div>
             <h2>{q.address}</h2>
           </div>
@@ -78,15 +76,15 @@ export default async function QuestionnaireDetail({ params }: { params: { id: st
           <div className="portal-done" style={{ marginTop: 34 }}>
             <h3>Still waiting</h3>
             <p>
-              {q.status === "started"
-                ? "They've started and saved it. A nudge usually finishes the job."
+              {q.openCount > 1
+                ? "They've opened it more than once without finishing — usually a sign it needs a phone call rather than another email."
                 : "Send them the link again, or read it out over the phone and fill it in with them."}
             </p>
             <CopyLink url={questionnaireLink(q.id)} label="Copy their link" />
           </div>
         )}
 
-        {(done || q.status === "started") && (
+        {done && (
           <div className="qs-answers">
             {sections.map((section) => {
               const live = section.fields.filter((f) => isShown(f, q.answers ?? {}));

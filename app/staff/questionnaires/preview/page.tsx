@@ -59,7 +59,6 @@ export default async function QuestionnairePreviewPage() {
           address="19 William Street, Newport"
           vendorName=""
           saved={{}}
-          savedAt={null}
           sections={sections}
           preview
         />

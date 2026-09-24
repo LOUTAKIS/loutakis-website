@@ -40,8 +40,6 @@ function StatusLine({ q }: { q: Questionnaire }) {
           Opened {ago(q.openedAt)} · nothing filled in yet
         </span>
       );
-    case "started":
-      return <span className="vc-status draft">Started, saved {ago(q.savedAt)}</span>;
     case "complete":
       return (
         <span className="vc-status approved">

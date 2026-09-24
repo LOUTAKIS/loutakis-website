@@ -19,14 +19,20 @@ import {
  * breaking it up, while a vendor can still see the end from the beginning and
  * skip to the parts they can answer tonight.
  *
- * DRAFTS LIVE IN THE BROWSER. Every keystroke is kept in localStorage, which is
- * instant, free and cannot fail; the server is written to only when they press
- * "Save and finish later" or "Send". The store behind this is Vercel Global
- * Config — rate-limited, and roughly ten seconds behind its own writes — so
- * autosaving to it on every keystroke would be both slow and a way to lose
- * answers. A vendor coming back on the same device gets their draft; one
- * switching to a different device gets whatever they last saved deliberately,
- * which is why that button exists and says what it says.
+ * ONE BUTTON. There was a "Save and finish later" beside Send, and it went:
+ * two buttons of near-equal weight at the end of a form is a decision where
+ * there should be an instruction, and the second one invited a vendor to put
+ * off the thing we want them to finish.
+ *
+ * DRAFTS STILL LIVE IN THE BROWSER, silently. Every keystroke is kept in
+ * localStorage, so closing the tab and coming back on the same device loses
+ * nothing — which is the case that actually happens. Nothing is written to the
+ * server until they send, so switching to a different device does start again;
+ * that is the cost of the simpler ending, and it is the rarer half.
+ *
+ * The store behind this is Vercel Global Config — rate-limited, and roughly ten
+ * seconds behind its own writes — so autosaving to it on every keystroke was
+ * never the alternative.
  */
 
 const MAX_TOTAL = 3_500_000; // Vercel caps a request body at ~4.5 MB.
@@ -42,7 +48,6 @@ export default function QuestionnaireForm({
   address,
   vendorName,
   saved,
-  savedAt,
   sections,
   preview = false,
 }: {
@@ -51,7 +56,6 @@ export default function QuestionnaireForm({
   address: string;
   vendorName: string;
   saved: Answers;
-  savedAt: string | null;
   /** The live question set, read on the server — see questionnaire-questions.ts. */
   sections: Section[];
   /** Staff looking at the form. Nothing is saved or sent. */
@@ -62,7 +66,7 @@ export default function QuestionnaireForm({
   const [answers, setAnswers] = useState<Answers>(saved);
   const [name, setName] = useState(vendorName);
   const [files, setFiles] = useState<Record<string, File[]>>({});
-  const [state, setState] = useState<"idle" | "saving" | "sending" | "saved" | "done" | "error">("idle");
+  const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [error, setError] = useState("");
   const [missing, setMissing] = useState<string[]>([]);
   const restored = useRef(false);
@@ -126,25 +130,6 @@ export default function QuestionnaireForm({
       return false;
     }
     return true;
-  }
-
-  async function save() {
-    if (preview) return setState("saved");
-    setState("saving");
-    setError("");
-    try {
-      const res = await fetch(`/api/questionnaire/${id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ t: token, action: "save", answers }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json?.ok) throw new Error(json?.error || "We couldn't save that just now.");
-      setState("saved");
-    } catch (e: any) {
-      setState("error");
-      setError(e?.message || "We couldn't save that just now.");
-    }
   }
 
   async function send() {
@@ -260,25 +245,14 @@ export default function QuestionnaireForm({
           type="button"
           className="btn"
           onClick={send}
-          disabled={state === "sending" || state === "saving"}
+          disabled={state === "sending"}
         >
           {state === "sending" ? "Sending…" : "Send it to us"}
         </button>
-        <button
-          type="button"
-          className="btn ghost"
-          onClick={save}
-          disabled={state === "sending" || state === "saving"}
-        >
-          {state === "saving" ? "Saving…" : state === "saved" ? "Saved" : "Save and finish later"}
-        </button>
       </div>
       <p className="form-note">
-        {state === "saved"
-          ? "Saved. Come back to this same link on any device and it will be here."
-          : savedAt
-            ? "You've saved this once already — it's safe to stop and come back."
-            : "Your answers are kept in this browser as you type. Save to pick it up somewhere else."}
+        Your answers are kept as you type, so you can close this and come back to the same link on
+        this device.
       </p>
     </div>
   );

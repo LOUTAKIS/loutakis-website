@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { recordFormEvent } from "@/lib/form-events";
 import { getQuestionnaire } from "@/lib/questionnaire";
 import { verifyToken } from "@/lib/portal-token";
-import { saveProgress, submitQuestionnaire } from "@/lib/questionnaire-deliver";
+import { submitQuestionnaire } from "@/lib/questionnaire-deliver";
 import { fieldsById, missingRequired, type Answers, type Section } from "@/lib/questionnaire-form";
 import { getLiveSections } from "@/lib/questionnaire-questions";
 import type { MailAttachment } from "@/lib/mail";
@@ -11,12 +11,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * The vendor saves, or sends. Authorised by their link token and nothing else.
+ * The vendor sends. Authorised by their link token and nothing else.
  *
- * Two shapes arrive here: JSON for a save (no files), and multipart for the
- * final send (answers as a JSON field, files beside them). One route rather
- * than two, because both do the same authorisation against the same record and
- * splitting them would mean writing that twice.
+ * Multipart, because the form can carry files: the answers ride along as one
+ * JSON field beside them. There is no half-way save any more — a questionnaire
+ * is either unanswered or finished, and a draft lives in the vendor's own
+ * browser until they press the button.
  */
 
 const MAX_TOTAL = 3_500_000;
@@ -67,7 +67,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const sections = await getLiveSections();
   const type = req.headers.get("content-type") ?? "";
   let token = "";
-  let action: "save" | "submit" = "save";
   let answers: Answers = {};
   let name = "";
   const files: MailAttachment[] = [];
@@ -77,7 +76,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     if (!form) return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
     token = String(form.get("t") ?? "");
     name = String(form.get("name") ?? "").trim().slice(0, 120);
-    action = "submit";
     try {
       answers = clean(JSON.parse(String(form.get("answers") ?? "{}")), sections);
     } catch {
@@ -111,7 +109,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     const body = await req.json().catch(() => null);
     if (!body) return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
     token = String(body?.t ?? "");
-    action = body?.action === "submit" ? "submit" : "save";
     answers = clean(body?.answers, sections);
     name = String(body?.name ?? "").trim().slice(0, 120);
   }
@@ -126,27 +123,21 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   // Already finished: say so rather than quietly sending the office a second copy.
   if (q.status === "complete") return NextResponse.json({ ok: true, already: true });
 
+  if (!name) {
+    return NextResponse.json({ ok: false, error: "Please enter your full name." }, { status: 400 });
+  }
+  const gaps = missingRequired(sections, answers);
+  if (gaps.length) {
+    return NextResponse.json({ ok: false, error: `${gaps[0].q} still needs an answer.` }, { status: 400 });
+  }
+
   try {
-    if (action === "submit") {
-      if (!name) {
-        return NextResponse.json({ ok: false, error: "Please enter your full name." }, { status: 400 });
-      }
-      const gaps = missingRequired(sections, answers);
-      if (gaps.length) {
-        return NextResponse.json(
-          { ok: false, error: `${gaps[0].q} still needs an answer.` },
-          { status: 400 }
-        );
-      }
-      await submitQuestionnaire(q, name, answers, files);
-      void recordFormEvent("questionnaire", "sent");
-    } else {
-      await saveProgress(q, answers);
-    }
+    await submitQuestionnaire(q, name, answers, files);
+    void recordFormEvent("questionnaire", "sent");
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[questionnaire] action failed", err);
-    if (action === "submit") void recordFormEvent("questionnaire", "failed");
+    console.error("[questionnaire] submit failed", err);
+    void recordFormEvent("questionnaire", "failed");
     return NextResponse.json(
       {
         ok: false,

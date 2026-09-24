@@ -28,7 +28,12 @@ const TEAM_ID = process.env.VERCEL_TEAM_ID ?? "team_P499DP8ocTP5k7vIJChVJiS1";
 const API_TOKEN = process.env.VERCEL_API_TOKEN;
 const client = process.env.GLOBAL_CONFIG ? createClient(process.env.GLOBAL_CONFIG) : null;
 
-export type QuestionnaireStatus = "sent" | "opened" | "started" | "complete";
+/**
+ * "started" went with the Save and finish later button. Without a half-way
+ * save there is nothing between opened and complete — a vendor's unfinished
+ * answers live in their own browser, where we cannot see them and should not.
+ */
+export type QuestionnaireStatus = "sent" | "opened" | "complete";
 
 export type Questionnaire = {
   id: string;
@@ -46,10 +51,8 @@ export type Questionnaire = {
   openedAt: string | null;
   openCount: number;
   status: QuestionnaireStatus;
-  /** Answers as last saved, complete or not. */
+  /** Answers, once they have been sent. Empty until then. */
   answers: Answers;
-  /** Last deliberate "save and finish later". Null until they use it. */
-  savedAt: string | null;
   submittedAt: string | null;
   submittedName: string | null;
   /**

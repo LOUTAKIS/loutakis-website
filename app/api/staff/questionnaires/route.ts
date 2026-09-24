@@ -78,7 +78,6 @@ export async function POST(req: Request) {
     openCount: 0,
     status: "sent",
     answers: {},
-    savedAt: null,
     submittedAt: null,
     submittedName: null,
   };
