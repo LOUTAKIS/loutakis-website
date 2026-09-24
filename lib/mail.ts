@@ -26,6 +26,34 @@ const TO = (process.env.ENQUIRY_TO ?? FROM ?? "")
   .map((s) => s.trim())
   .filter(Boolean);
 
+/**
+ * The office address that must never be left off an internal notification.
+ *
+ * In the code rather than in ENQUIRY_TO on purpose. ENQUIRY_TO is a setting —
+ * someone can edit it in Vercel at two in the morning to route something
+ * somewhere, and admin would fall off the list without anyone noticing until a
+ * vendor's answers had gone missing for a month. This is a standing rule about
+ * how the business runs, not a preference, so it is written down where it
+ * cannot be edited by accident.
+ *
+ * Always in CC, never the sole recipient: the named agent is still the person
+ * being asked to do something.
+ */
+export const ADMIN_EMAIL = "admin@loutakis.com.au";
+
+/** Everyone who should see an internal notification, admin included, deduped. */
+export function withAdmin(addresses: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const a of [...addresses, ADMIN_EMAIL]) {
+    const k = a.trim().toLowerCase();
+    if (!k || seen.has(k)) continue;
+    seen.add(k);
+    out.push(a.trim());
+  }
+  return out;
+}
+
 export function mailIsConfigured(): boolean {
   return Boolean(TENANT_ID && CLIENT_ID && CLIENT_SECRET && FROM && TO.length);
 }

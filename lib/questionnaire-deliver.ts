@@ -1,5 +1,5 @@
 import "server-only";
-import { sendMail, officeRecipients, esc, type MailAttachment } from "./mail";
+import { sendMail, officeRecipients, withAdmin, ADMIN_EMAIL, esc, type MailAttachment } from "./mail";
 import { createToken } from "./portal-token";
 import { addContactNote } from "./boxdice-write";
 import { updateQuestionnaire, type Questionnaire } from "./questionnaire";
@@ -186,10 +186,14 @@ export async function submitQuestionnaire(
     ...files,
   ];
 
-  // The agent on the listing, with the office copied so nothing sits unread in
-  // one person's inbox while they're on leave.
-  const to = q.agentEmail ? [q.agentEmail] : officeRecipients();
-  const cc = q.agentEmail ? officeRecipients() : [];
+  /**
+   * The agent on the listing, with the office copied so nothing sits unread in
+   * one person's inbox while they're on leave — and admin ALWAYS copied, even
+   * when the office list has been changed to something else. These answers feed
+   * the brochure and the vendor statement prep, and admin is who chases both.
+   */
+  const to = q.agentEmail ? [q.agentEmail] : withAdmin(officeRecipients());
+  const cc = q.agentEmail ? withAdmin(officeRecipients()) : [ADMIN_EMAIL];
   await sendMail({
     to,
     cc,
