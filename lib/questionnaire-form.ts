@@ -2,10 +2,23 @@
  * The vendor questionnaire — the questions themselves.
  *
  * Lifted from Maree's "Property Information Form" on monday.com, question for
- * question. This file is the single definition: the page renders from it, the
- * API validates against it, and the email and CRM note are written out of it in
- * this order. Add a question here and it appears in all four places at once —
- * there is no second list to keep in step.
+ * question — and then made editable, so the office can change a question
+ * without changing the code.
+ *
+ * THIS FILE HOLDS THE SHAPE AND THE SEED, NOT THE LIVE SET. The types below
+ * are what a question IS; DEFAULT_SECTIONS is where the live set started. What
+ * vendors actually answer is read from the store by
+ * lib/questionnaire-questions.ts, and edited at /staff/questionnaires/questions.
+ *
+ * One definition still drives everything: the page renders from it, the API
+ * validates against it, and the email, the CRM note and the PDF are written out
+ * of it in this order. There is no second list to keep in step.
+ *
+ * ISHOWN AND MISSINGREQUIRED ARE SHARED ON PURPOSE. The form uses them to
+ * decide what to show and what to nag about; the server uses the same two
+ * functions to decide what to accept and what to print. If they ever disagreed,
+ * a vendor could be shown a question the server then refuses, or be marked
+ * complete with a required answer missing.
  *
  * DELIBERATELY FREE OF IMPORTS. The form is a client component and needs these
  * definitions; anything server-only in here would drag the CRM client into the
@@ -32,6 +45,13 @@
 
 export type Field = {
   id: string;
+  /**
+   * Retired questions stop appearing on new questionnaires but are never
+   * deleted. An answer is stored against its question's id, so removing a
+   * question outright would orphan every answer anyone ever gave it — the
+   * record would quietly lose the fact that the question was asked at all.
+   */
+  retired?: boolean;
   /** The column this came from on the monday.com board. Provenance, not logic. */
   monday?: string;
   kind: "text" | "long" | "choice" | "multi" | "files";
@@ -49,7 +69,16 @@ export type Section = { title: string; blurb?: string; fields: Field[] };
 
 const YES_NO = ["Yes", "No"];
 
-export const SECTIONS: Section[] = [
+/**
+ * THE STARTING POINT, NOT THE LIVE SET.
+ *
+ * These questions seed the store the first time anyone opens the editor, and
+ * they are what the site falls back to if that store cannot be read. The live
+ * set — the one vendors actually answer — comes from
+ * lib/questionnaire-questions.ts. Editing this file changes what a brand new
+ * account would start with; it does not change what is on the site today.
+ */
+export const DEFAULT_SECTIONS: Section[] = [
   {
     title: "Your story",
     blurb:
@@ -214,14 +243,16 @@ export const SECTIONS: Section[] = [
   },
 ];
 
-/** Every field, in the order they are asked. */
-export const FIELDS: Field[] = SECTIONS.flatMap((s) => s.fields);
-
-export const FIELD_BY_ID: Record<string, Field> = Object.fromEntries(
-  FIELDS.map((f) => [f.id, f])
-);
-
 export type Answers = Record<string, string | string[]>;
+
+/** Every field in a set, in the order they are asked. */
+export function fieldsOf(sections: Section[]): Field[] {
+  return sections.flatMap((s) => s.fields);
+}
+
+export function fieldsById(sections: Section[]): Record<string, Field> {
+  return Object.fromEntries(fieldsOf(sections).map((f) => [f.id, f]));
+}
 
 /**
  * Whether a conditional field is currently in play.
@@ -256,6 +287,8 @@ export function fieldLabel(f: Field): string {
  * paragraphs about the garden and skips the heating has still given us the
  * thing we could not have found out ourselves.
  */
-export function missingRequired(answers: Answers): Field[] {
-  return FIELDS.filter((f) => f.required && isShown(f, answers) && !answerText(f, answers));
+export function missingRequired(sections: Section[], answers: Answers): Field[] {
+  return fieldsOf(sections).filter(
+    (f) => f.required && isShown(f, answers) && !answerText(f, answers)
+  );
 }

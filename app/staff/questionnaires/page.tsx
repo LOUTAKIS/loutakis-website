@@ -88,7 +88,11 @@ export default async function QuestionnairesPage() {
             <div className="eyebrow">{staff.name}</div>
             <h2>Property information</h2>
           </div>
-          <Link href="/staff/questionnaires/new" className="btn">Send one</Link>
+          <div style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
+            <Link href="/staff/questionnaires/preview" className="btn ghost">Preview</Link>
+            <Link href="/staff/questionnaires/questions" className="btn ghost">The questions</Link>
+            <Link href="/staff/questionnaires/new" className="btn">Send one</Link>
+          </div>
         </div>
 
         <p className="portal-intro">

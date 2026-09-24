@@ -2,8 +2,9 @@ import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { getStaff } from "@/lib/staff-auth";
 import { getQuestionnaire, questionnaireVendors } from "@/lib/questionnaire";
-import { questionnaireLink } from "@/lib/questionnaire-deliver";
-import { SECTIONS, isShown, answerText, fieldLabel } from "@/lib/questionnaire-form";
+import { questionnaireLink, askedOf } from "@/lib/questionnaire-deliver";
+import { getLiveSections } from "@/lib/questionnaire-questions";
+import { isShown, answerText, fieldLabel } from "@/lib/questionnaire-form";
 import { fmtDate } from "@/lib/when";
 import CopyLink from "@/components/CopyLink";
 
@@ -26,6 +27,8 @@ export default async function QuestionnaireDetail({ params }: { params: { id: st
 
   const vendors = questionnaireVendors(q);
   const done = q.status === "complete";
+  // What this questionnaire actually asked — its own snapshot once complete.
+  const sections = askedOf(q, await getLiveSections());
 
   return (
     <section className="portal-page">
@@ -85,7 +88,7 @@ export default async function QuestionnaireDetail({ params }: { params: { id: st
 
         {(done || q.status === "started") && (
           <div className="qs-answers">
-            {SECTIONS.map((section) => {
+            {sections.map((section) => {
               const live = section.fields.filter((f) => isShown(f, q.answers ?? {}));
               if (!live.length) return null;
               return (

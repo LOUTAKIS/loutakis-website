@@ -1,6 +1,8 @@
 import { getStaff } from "@/lib/staff-auth";
 import { getQuestionnaire, questionnaireVendors } from "@/lib/questionnaire";
 import { questionnairePdf, pdfFilename } from "@/lib/questionnaire-pdf";
+import { getLiveSections } from "@/lib/questionnaire-questions";
+import { askedOf } from "@/lib/questionnaire-deliver";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +23,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   const pdf = await questionnairePdf({
     address: q.address,
+    sections: askedOf(q, await getLiveSections()),
     answers: q.answers ?? {},
     submittedName: q.submittedName,
     submittedAt: q.submittedAt,

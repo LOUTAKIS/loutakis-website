@@ -1433,3 +1433,43 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
   .col-signin, .col-signin .portal-form label > span { text-align: left; }
   .col-signin .eyebrow, .col-signin h2 { text-align: center; }
 }
+
+/* ── The question editor ──────────────────────────────────────────────────
+   A list of collapsed questions, one open at a time. Collapsed because the
+   whole set is twenty questions and the job is usually to change one of them
+   — a page of twenty open forms is a page you have to read before you can
+   find the thing you came for. */
+.qe { margin-top: 34px; }
+.qe-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--line);
+}
+.qe-section { margin-top: 44px; }
+.qe-section-head { display: flex; align-items: center; gap: 18px; }
+.qe-title {
+  font-family: var(--serif); font-size: 20px; padding: 8px 10px; margin: 0;
+  border-color: transparent; background: transparent;
+}
+.qe-title:hover, .qe-title:focus { border-color: var(--line); background: var(--paper); }
+.qe-blurb { font-size: 13.5px; color: var(--muted); padding: 8px 10px; margin: 4px 0 0; border-color: transparent; background: transparent; }
+.qe-blurb:hover, .qe-blurb:focus { border-color: var(--line); background: var(--paper); }
+
+.qe-list { list-style: none; margin: 14px 0 18px; }
+.qe-item { border-top: 1px solid var(--line); }
+.qe-item.retired .qe-q { color: var(--muted); text-decoration: line-through; }
+.qe-row { display: flex; align-items: center; gap: 12px; }
+.qe-open {
+  flex: 1; display: block; text-align: left; background: none; border: 0;
+  padding: 16px 0; cursor: pointer; font: inherit; color: inherit;
+}
+.qe-q { display: block; font-size: 15px; line-height: 1.4; }
+.qe-meta { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+.qe-moves { display: flex; gap: 4px; }
+.qe-moves button {
+  background: none; border: 1px solid var(--line); cursor: pointer;
+  width: 30px; height: 30px; font-size: 13px; color: var(--muted);
+}
+.qe-moves button:hover:not(:disabled) { border-color: var(--ink); color: var(--ink); }
+.qe-moves button:disabled { opacity: .3; cursor: default; }
+.qe-edit { padding: 6px 0 30px; border-top: 1px dashed var(--line); }
+.qe-toggles { display: flex; gap: 30px; flex-wrap: wrap; margin-top: 22px; }

@@ -2,7 +2,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { createClient } from "@vercel/global-config";
 import type { Vendor } from "./vendors";
-import type { Answers } from "./questionnaire-form";
+import type { Answers, Section } from "./questionnaire-form";
 
 export { campaignVendors as questionnaireVendors, vendorEmails, vendorGreeting, type Vendor } from "./vendors";
 
@@ -52,6 +52,19 @@ export type Questionnaire = {
   savedAt: string | null;
   submittedAt: string | null;
   submittedName: string | null;
+  /**
+   * The questions as they stood when this was answered.
+   *
+   * Answers are stored against question ids, so without this a questionnaire
+   * completed in March would be re-rendered in June using June's questions —
+   * a reworded question would put words in the vendor's mouth, and a retired
+   * one would erase the fact that it was ever asked. Frozen at submit, not at
+   * send, so a typo fixed this morning still reaches a link sent last week.
+   *
+   * Absent on records written before this existed; those fall back to the
+   * live set, which is the best that can be said about them.
+   */
+  asked?: Section[];
 };
 
 const key = (id: string) => `pq_${id}`;

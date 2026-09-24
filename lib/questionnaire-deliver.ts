@@ -7,7 +7,8 @@ import { updateQuestionnaire, type Questionnaire } from "./questionnaire";
 // shape, so the reading of it is shared rather than written twice.
 import { campaignVendors as questionnaireVendors, vendorEmails, vendorGreeting } from "./vendors";
 import { questionnairePdf, pdfFilename } from "./questionnaire-pdf";
-import { SECTIONS, isShown, answerText, fieldLabel, type Answers } from "./questionnaire-form";
+import { isShown, answerText, fieldLabel, type Answers, type Section } from "./questionnaire-form";
+import { getLiveSections } from "./questionnaire-questions";
 import { fmtDate } from "./when";
 
 /**
@@ -33,8 +34,18 @@ export function questionnaireLink(id: string): string {
   return `${siteUrl()}/questionnaire/${id}?t=${createToken("questionnaire", id, 90)}`;
 }
 
+/**
+ * The questions a given questionnaire asked.
+ *
+ * The snapshot if it has one, the live set if it does not — a record written
+ * before snapshotting existed, or one still in flight.
+ */
+export function askedOf(q: Questionnaire, live: Section[]): Section[] {
+  return q.asked?.length ? q.asked : live;
+}
+
 /** The answers as plain text — the CRM note, and the body of the agent's email. */
-export function answersAsText(q: Questionnaire): string {
+export function answersAsText(q: Questionnaire, sections: Section[]): string {
   const out: string[] = [
     `PROPERTY INFORMATION — ${q.address} (listing ${q.listingId})`,
     q.submittedName ? `Completed by ${q.submittedName}` : "",
@@ -42,7 +53,7 @@ export function answersAsText(q: Questionnaire): string {
     "",
   ].filter((l) => l !== "");
 
-  for (const section of SECTIONS) {
+  for (const section of sections) {
     const live = section.fields.filter((f) => isShown(f, q.answers));
     if (!live.length) continue;
     out.push(section.title.toUpperCase(), "");
@@ -61,9 +72,9 @@ export function answersAsText(q: Questionnaire): string {
 }
 
 /** The answers as HTML, for the body of the agent's email. */
-function answersAsHtml(q: Questionnaire): string {
+function answersAsHtml(q: Questionnaire, sections: Section[]): string {
   const blocks: string[] = [];
-  for (const section of SECTIONS) {
+  for (const section of sections) {
     const live = section.fields.filter((f) => isShown(f, q.answers) && f.kind !== "files");
     if (!live.length) continue;
     blocks.push(
@@ -143,18 +154,29 @@ export async function submitQuestionnaire(
   files: MailAttachment[]
 ): Promise<void> {
   const at = new Date().toISOString();
+
+  /**
+   * FROZEN HERE, NOT AT SEND. The questions this vendor actually answered are
+   * recorded with their answers, so rewording or retiring one later cannot
+   * change what this record appears to have asked. Taking the snapshot at
+   * submit rather than at send means a question fixed this morning still
+   * reaches a link that went out last week.
+   */
+  const asked = await getLiveSections().catch(() => [] as Section[]);
   const finished: Questionnaire = {
     ...q,
     answers,
     submittedName: name,
     submittedAt: at,
     status: "complete",
+    ...(asked.length ? { asked } : {}),
   };
 
   let pdf: Uint8Array | null = null;
   try {
     pdf = await questionnairePdf({
       address: q.address,
+      sections: asked,
       answers,
       submittedName: name,
       submittedAt: at,
@@ -186,7 +208,7 @@ export async function submitQuestionnaire(
       <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
         <p><strong>${esc(name)}</strong> has completed the property information form for <strong>${esc(q.address)}</strong>.</p>
         <p style="color:#666">${pdf ? "The PDF is attached — drop it on the listing in Box &amp; Dice or into the property's SharePoint folder." : "The PDF could not be generated this time; every answer is below."}${files.length ? ` ${files.length} file${files.length === 1 ? "" : "s"} from the vendor ${files.length === 1 ? "is" : "are"} attached as well.` : ""}</p>
-        <div style="margin-top:8px;border-top:1px solid #e0e0e0">${answersAsHtml(finished)}</div>
+        <div style="margin-top:8px;border-top:1px solid #e0e0e0">${answersAsHtml(finished, asked)}</div>
         <p style="margin-top:30px"><a href="${siteUrl()}/staff/questionnaires/${q.id}">Open it on the dashboard</a></p>
       </div>
     `,
@@ -198,7 +220,7 @@ export async function submitQuestionnaire(
 
   await addContactNote(
     { name, email: vendorEmails(q)[0] ?? "" },
-    answersAsText(finished)
+    answersAsText(finished, asked)
   ).catch((err) => console.error("[questionnaire] CRM note failed", err));
 
   await updateQuestionnaire(q.id, {
@@ -206,5 +228,6 @@ export async function submitQuestionnaire(
     submittedName: name,
     submittedAt: at,
     status: "complete",
+    ...(asked.length ? { asked } : {}),
   });
 }

@@ -1,6 +1,6 @@
 import "server-only";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
-import { SECTIONS, isShown, answerText, fieldLabel, type Answers } from "./questionnaire-form";
+import { isShown, answerText, fieldLabel, type Answers, type Section } from "./questionnaire-form";
 import { fmtDate } from "./when";
 
 /**
@@ -162,6 +162,8 @@ function rule(ctx: Ctx, gap = 14) {
 
 export type PdfInput = {
   address: string;
+  /** The questions this questionnaire actually asked — see Questionnaire.asked. */
+  sections: Section[];
   answers: Answers;
   submittedName: string | null;
   submittedAt: string | null;
@@ -202,7 +204,7 @@ export async function questionnairePdf(input: PdfInput): Promise<Uint8Array> {
   );
   rule(ctx, 22);
 
-  for (const section of SECTIONS) {
+  for (const section of input.sections) {
     const live = section.fields.filter((f) => isShown(f, input.answers));
     if (!live.length) continue;
 

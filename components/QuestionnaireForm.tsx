@@ -3,12 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formStarted } from "@/lib/track";
 import {
-  SECTIONS,
-  FIELDS,
   isShown,
   missingRequired,
   type Answers,
   type Field,
+  type Section,
 } from "@/lib/questionnaire-form";
 
 /**
@@ -44,6 +43,8 @@ export default function QuestionnaireForm({
   vendorName,
   saved,
   savedAt,
+  sections,
+  preview = false,
 }: {
   id: string;
   token: string;
@@ -51,8 +52,12 @@ export default function QuestionnaireForm({
   vendorName: string;
   saved: Answers;
   savedAt: string | null;
+  /** The live question set, read on the server — see questionnaire-questions.ts. */
+  sections: Section[];
+  /** Staff looking at the form. Nothing is saved or sent. */
+  preview?: boolean;
 }) {
-  const draftKey = `pq-${id}`;
+  const draftKey = preview ? "pq-preview" : `pq-${id}`;
 
   const [answers, setAnswers] = useState<Answers>(saved);
   const [name, setName] = useState(vendorName);
@@ -111,7 +116,7 @@ export default function QuestionnaireForm({
 
   /** Everything still to do, so "you've missed something" can say what. */
   function check(): boolean {
-    const gaps = missingRequired(answers).map((f) => f.id);
+    const gaps = missingRequired(sections, answers).map((f) => f.id);
     if (!name.trim()) gaps.unshift("__name");
     setMissing(gaps);
     if (gaps.length) {
@@ -124,6 +129,7 @@ export default function QuestionnaireForm({
   }
 
   async function save() {
+    if (preview) return setState("saved");
     setState("saving");
     setError("");
     try {
@@ -143,6 +149,10 @@ export default function QuestionnaireForm({
 
   async function send() {
     if (!check()) return;
+    if (preview) {
+      setError("Preview only — nothing is sent from here.");
+      return;
+    }
     if (overBudget) {
       setError(
         `Those files come to ${bytes(totalBytes)}, which is more than we can take in one go. Take some off and email them to us instead.`
@@ -203,7 +213,7 @@ export default function QuestionnaireForm({
         />
       </label>
 
-      {SECTIONS.map((section) => {
+      {sections.map((section) => {
         const live = section.fields.filter((f) => isShown(f, answers));
         if (!live.length) return null;
         return (

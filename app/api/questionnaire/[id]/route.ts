@@ -3,7 +3,8 @@ import { recordFormEvent } from "@/lib/form-events";
 import { getQuestionnaire } from "@/lib/questionnaire";
 import { verifyToken } from "@/lib/portal-token";
 import { saveProgress, submitQuestionnaire } from "@/lib/questionnaire-deliver";
-import { FIELD_BY_ID, missingRequired, type Answers } from "@/lib/questionnaire-form";
+import { fieldsById, missingRequired, type Answers, type Section } from "@/lib/questionnaire-form";
+import { getLiveSections } from "@/lib/questionnaire-questions";
 import type { MailAttachment } from "@/lib/mail";
 
 export const runtime = "nodejs";
@@ -30,11 +31,12 @@ const MAX_FILES = 10;
  * and an email, and unbounded strings from a request body have no business in
  * either.
  */
-function clean(raw: unknown): Answers {
+function clean(raw: unknown, sections: Section[]): Answers {
+  const byId = fieldsById(sections);
   const out: Answers = {};
   if (!raw || typeof raw !== "object") return out;
   for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
-    const f = FIELD_BY_ID[k];
+    const f = byId[k];
     if (!f) continue;
     if (f.kind === "multi") {
       if (!Array.isArray(v)) continue;
@@ -56,6 +58,13 @@ function clean(raw: unknown): Answers {
 const BAD_LINK = "This link isn't valid any more. Call 0409 438 025 and we'll send a fresh one.";
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
+  /**
+   * The live set, not the one the browser was rendered with. A question
+   * retired between a vendor opening the page and pressing send should not be
+   * accepted, and one added since should not be silently dropped — the server
+   * decides what the form is, every time.
+   */
+  const sections = await getLiveSections();
   const type = req.headers.get("content-type") ?? "";
   let token = "";
   let action: "save" | "submit" = "save";
@@ -70,7 +79,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     name = String(form.get("name") ?? "").trim().slice(0, 120);
     action = "submit";
     try {
-      answers = clean(JSON.parse(String(form.get("answers") ?? "{}")));
+      answers = clean(JSON.parse(String(form.get("answers") ?? "{}")), sections);
     } catch {
       return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
     }
@@ -103,7 +112,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     if (!body) return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
     token = String(body?.t ?? "");
     action = body?.action === "submit" ? "submit" : "save";
-    answers = clean(body?.answers);
+    answers = clean(body?.answers, sections);
     name = String(body?.name ?? "").trim().slice(0, 120);
   }
 
@@ -122,7 +131,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       if (!name) {
         return NextResponse.json({ ok: false, error: "Please enter your full name." }, { status: 400 });
       }
-      const gaps = missingRequired(answers);
+      const gaps = missingRequired(sections, answers);
       if (gaps.length) {
         return NextResponse.json(
           { ok: false, error: `${gaps[0].q} still needs an answer.` },

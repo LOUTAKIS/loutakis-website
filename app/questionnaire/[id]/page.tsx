@@ -1,5 +1,6 @@
 import { getQuestionnaire, questionnaireVendors } from "@/lib/questionnaire";
-import { recordQuestionnaireOpen } from "@/lib/questionnaire-deliver";
+import { recordQuestionnaireOpen, askedOf } from "@/lib/questionnaire-deliver";
+import { getLiveSections } from "@/lib/questionnaire-questions";
 import { verifyToken } from "@/lib/portal-token";
 import { getStaff } from "@/lib/staff-auth";
 import QuestionnaireForm from "@/components/QuestionnaireForm";
@@ -52,6 +53,14 @@ export default async function QuestionnairePage({
 
   if (vendorOk) await recordQuestionnaireOpen(q);
 
+  /**
+   * The live set while it is still being answered, the snapshot once it has
+   * been. A vendor half-way through gets today's questions, including any
+   * wording fixed since their link was sent; a finished one is never re-asked.
+   */
+  const live = await getLiveSections();
+  const sections = q.status === "complete" ? askedOf(q, live) : live;
+
   const vendors = questionnaireVendors(q);
   const done = q.status === "complete";
 
@@ -88,6 +97,8 @@ export default async function QuestionnairePage({
               vendorName={vendors[0]?.name ?? ""}
               saved={q.answers ?? {}}
               savedAt={q.savedAt}
+              sections={sections}
+              preview={isPreview}
             />
           </>
         )}
