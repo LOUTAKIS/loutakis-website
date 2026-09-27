@@ -21,7 +21,10 @@ export type Action =
   | "unsubscribe"
   | "staff-signin" // c = staff email
   | "staff-session" // c = staff email
-  | "vendor" // c = campaign id — the link in the vendor's email
+  | "vendor" /* c = "<campaign id>:<vendor index>" — one link per vendor, so an
+                approval is attributable to the person we emailed rather than
+                to a name someone typed. Links issued before per-vendor tokens
+                carry the campaign id alone; see vendorFromToken(). */
   | "questionnaire"; // c = questionnaire id — the property information form
 
 type Payload = {

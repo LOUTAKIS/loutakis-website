@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { campaignVendors, type Vendor } from "@/lib/vendors";
+import type { ApprovalMode } from "@/lib/campaigns";
 import type { Campaign, Selection } from "@/lib/campaigns";
 import type { MarketingSource } from "@/lib/boxdice";
 
@@ -32,6 +33,17 @@ export default function CampaignReview({
     const v = campaignVendors(campaign);
     return v.length ? v : [{ name: "", email: "" }];
   });
+  /**
+   * Everyone, or any one of them.
+   *
+   * Only asked when there is more than one name, because with one owner the
+   * question has no meaning. Defaults to "all": two people on a title normally
+   * means two people who both have to agree before money is spent, and the
+   * safer default is the one you have to deliberately turn off.
+   */
+  const [approvalMode, setApprovalMode] = useState<ApprovalMode>(
+    campaign.approvalMode ?? "all"
+  );
   const [copyHeading, setCopyHeading] = useState(campaign.copyHeading);
   const [copyText, setCopyText] = useState(campaign.copyText);
   const [busy, setBusy] = useState<"" | "save" | "send">("");
@@ -55,7 +67,7 @@ export default function CampaignReview({
       const res = await fetch(`/api/staff/campaigns/${c.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ selection: sel, vendors, copyHeading, copyText }),
+        body: JSON.stringify({ selection: sel, vendors, copyHeading, copyText, approvalMode }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
@@ -189,6 +201,40 @@ export default function CampaignReview({
           >
             + Add another vendor
           </button>
+        )}
+
+        {/* The question only exists when there is more than one name on the
+            title. Each of them gets their own link either way — this decides
+            how many signatures it takes before anything goes to production. */}
+        {vendors.filter((v) => v.email.trim()).length > 1 && (
+          <div className="vc-mode">
+            <span className="pf-label">Before it goes to print</span>
+            <div className="ap-options">
+              <label className={`ap-chip${approvalMode === "all" ? " on" : ""}`}>
+                <input
+                  type="radio"
+                  name="approvalMode"
+                  checked={approvalMode === "all"}
+                  onChange={() => setApprovalMode("all")}
+                />
+                Everyone has to approve
+              </label>
+              <label className={`ap-chip${approvalMode === "any" ? " on" : ""}`}>
+                <input
+                  type="radio"
+                  name="approvalMode"
+                  checked={approvalMode === "any"}
+                  onChange={() => setApprovalMode("any")}
+                />
+                Any one of them is enough
+              </label>
+            </div>
+            <p className="form-note">
+              {approvalMode === "all"
+                ? "Each owner gets their own link and their own email. Nothing is produced until the last of them signs, and if anyone asks for a change, the approvals already given are cleared."
+                : "Each owner still gets their own link, but the first signature approves it for all of them. Only choose this when they've told you one of them speaks for the others."}
+            </p>
+          </div>
         )}
         {c.sentAt && (
           <p className="form-note">

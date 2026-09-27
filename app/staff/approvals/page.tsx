@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getStaff } from "@/lib/staff-auth";
-import { listCampaigns, type Campaign, type CampaignStatus, campaignVendors } from "@/lib/campaigns";
+import {
+  listCampaigns,
+  campaignVendors,
+  outstandingVendors,
+  type Campaign,
+  type CampaignStatus,
+} from "@/lib/campaigns";
 import { fmtDate } from "@/lib/when";
 import DeleteCampaign from "@/components/DeleteCampaign";
 
@@ -15,6 +21,7 @@ const STATUS_LABEL: Record<CampaignStatus, string> = {
   draft: "Draft",
   sent: "Sent",
   opened: "Opened",
+  partial: "Part approved",
   approved: "Approved",
   changes: "Changes requested",
 };
@@ -42,6 +49,19 @@ function StatusLine({ c }: { c: Campaign }) {
       return <span className="vc-status sent">Sent {ago(c.sentAt)} · not opened yet</span>;
     case "opened":
       return <span className="vc-status opened">Opened {ago(c.openedAt)}{c.openCount > 1 ? ` · ${c.openCount} times` : ""}</span>;
+    case "partial": {
+      /* The state that looks like progress and isn't. Nothing is produced
+         until the last name is on it, so the line leads with who is missing
+         rather than with who has signed. */
+      const left = outstandingVendors(c);
+      const done = (c.approvals ?? []).length;
+      return (
+        <span className="vc-status changes">
+          {done} of {campaignVendors(c).length} approved · waiting on{" "}
+          {left.map((v) => v.name || v.email).join(" and ")}
+        </span>
+      );
+    }
     case "approved":
       return <span className="vc-status approved">Approved {ago(c.approvedAt)} by {c.approvedName}</span>;
     case "changes":

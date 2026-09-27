@@ -1482,3 +1482,8 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .qe-moves button:disabled { opacity: .3; cursor: default; }
 .qe-edit { padding: 6px 0 30px; border-top: 1px dashed var(--line); }
 .qe-toggles { display: flex; gap: 30px; flex-wrap: wrap; margin-top: 22px; }
+
+/* How many owners have to sign. Only rendered when there are two or more. */
+.vc-mode { margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--line); }
+.vc-mode .ap-options { margin-top: 10px; }
+.vc-mode .form-note { max-width: 62ch; margin-top: 12px; }

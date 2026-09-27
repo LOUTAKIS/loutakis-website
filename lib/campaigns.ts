@@ -1,10 +1,11 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import { createClient } from "@vercel/global-config";
-import type { Vendor } from "./vendors";
+import { campaignVendors, type Vendor } from "./vendors";
 
 // Re-exported so server code has one place to import campaign things from.
-export { campaignVendors, vendorEmails, vendorGreeting, type Vendor } from "./vendors";
+export { vendorEmails, vendorGreeting, type Vendor } from "./vendors";
+export { campaignVendors };
 
 /**
  * Vendor marketing approval campaigns.
@@ -21,7 +22,33 @@ const TEAM_ID = process.env.VERCEL_TEAM_ID ?? "team_P499DP8ocTP5k7vIJChVJiS1";
 const API_TOKEN = process.env.VERCEL_API_TOKEN;
 const client = process.env.GLOBAL_CONFIG ? createClient(process.env.GLOBAL_CONFIG) : null;
 
-export type CampaignStatus = "draft" | "sent" | "opened" | "approved" | "changes";
+/**
+ * "partial" is one owner of two having signed off. It is not approved — nothing
+ * goes to print — but it is not untouched either, and the difference is what
+ * tells you whether to ring the other one.
+ */
+export type CampaignStatus = "draft" | "sent" | "opened" | "partial" | "approved" | "changes";
+
+/**
+ * Whether everyone on the title has to sign off, or any one of them is enough.
+ *
+ * Asked rather than assumed. Two names on a title usually means two people who
+ * both have to agree before money is spent, and that is the default — but an
+ * estate with four executors, or a couple who have told you one of them speaks
+ * for both, is a real situation and a form that cannot express it gets worked
+ * around by leaving people off the campaign entirely.
+ */
+export type ApprovalMode = "all" | "any";
+
+/** One vendor putting their name to it. */
+export type Approval = {
+  /** The address we sent the link to — who they are, not who they typed. */
+  email: string;
+  /** The name they signed with, which is what the authorisation records. */
+  name: string;
+  at: string;
+  ip: string;
+};
 
 export type Blurbs = {
   board: string;
@@ -70,6 +97,16 @@ export type Campaign = {
   openedAt: string | null;
   openCount: number;
   status: CampaignStatus;
+  /**
+   * Defaults to "all" when there is more than one vendor. Campaigns saved
+   * before this existed have none, and are read as "any" — which is what they
+   * did at the time, and rewriting history to something stricter would make a
+   * campaign that was properly approved look as though it never was.
+   */
+  approvalMode?: ApprovalMode;
+  /** Every sign-off so far. Cleared whenever changes are requested. */
+  approvals?: Approval[];
+  /** The moment it became fully approved — the last signature, not the first. */
   approvedAt: string | null;
   approvedName: string | null;
   amendments: Amendment[];
@@ -78,6 +115,20 @@ export type Campaign = {
   copyText: string;
   copyHeading: string;
 };
+
+/** Everyone who still has to sign, given the mode. Empty means it's approved. */
+export function outstandingVendors(c: Campaign): Vendor[] {
+  const people = campaignVendors(c);
+  const signed = new Set((c.approvals ?? []).map((a) => a.email.toLowerCase()));
+  if (mode(c) === "any") return signed.size ? [] : people;
+  return people.filter((v) => !signed.has(v.email.trim().toLowerCase()));
+}
+
+/** "all" or "any" — see ApprovalMode for why an old campaign reads as "any". */
+export function mode(c: Campaign): ApprovalMode {
+  if (c.approvalMode) return c.approvalMode;
+  return campaignVendors(c).length > 1 ? "any" : "all";
+}
 
 export const DEFAULT_BLURBS: Blurbs = {
   board:

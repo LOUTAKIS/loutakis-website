@@ -1,8 +1,8 @@
-import { getCampaign, campaignVendors } from "@/lib/campaigns";
+import { getCampaign, campaignVendors, outstandingVendors, mode } from "@/lib/campaigns";
 import { getMarketingSource } from "@/lib/boxdice";
 import { verifyToken } from "@/lib/portal-token";
 import { getStaff } from "@/lib/staff-auth";
-import { recordOpen, AUTHORISATION_WORDING } from "@/lib/vendor";
+import { recordOpen, vendorFromToken, AUTHORISATION_WORDING } from "@/lib/vendor";
 import { fmtDate } from "@/lib/when";
 import VendorApprovalForm from "@/components/VendorApprovalForm";
 import VendorVideo from "@/components/VendorVideo";
@@ -47,13 +47,26 @@ export default async function ApprovePage({
 }) {
   const token = searchParams?.t ?? "";
   const payload = verifyToken(token);
-  const vendorOk = payload?.a === "vendor" && payload.c === params.id;
-  const isPreview = !vendorOk && searchParams?.preview === "1" && Boolean(getStaff());
-  if (!vendorOk && !isPreview) return <Expired />;
+  const isVendorToken = payload?.a === "vendor";
+  const isPreview = !isVendorToken && searchParams?.preview === "1" && Boolean(getStaff());
+  if (!isVendorToken && !isPreview) return <Expired />;
 
   const c = await getCampaign(params.id);
   if (!c) return <Expired />;
   if (c.status === "draft" && !isPreview) return <Expired />;
+
+  /** Which of them this link was sent to. Null in preview, or on a dud link. */
+  const who = isVendorToken ? vendorFromToken(c, payload!.c) : null;
+  const vendorOk = Boolean(who);
+  if (isVendorToken && !who) return <Expired />;
+
+  const everyone = campaignVendors(c);
+  const waitingOn = outstandingVendors(c);
+  /** Has the person holding THIS link already signed? */
+  const alreadySigned = Boolean(
+    who && (c.approvals ?? []).some((a) => a.email.toLowerCase() === who.vendor.email.toLowerCase())
+  );
+  const needsAll = mode(c) === "all" && everyone.length > 1;
 
   const source = await getMarketingSource(c.listingId);
   if (vendorOk) await recordOpen(c);
@@ -131,7 +144,7 @@ export default async function ApprovePage({
   return (
     <div className="va2">
       <VendorFrame address={c.address} markers={markers} approved={approved} />
-      {isPreview && <div className="va-preview">Preview — this is what {campaignVendors(c)[0]?.name || "the vendor"} will see. Opens aren&rsquo;t counted.</div>}
+      {isPreview && <div className="va-preview">Preview — this is what {everyone[0]?.name || "the vendor"} will see. Opens aren&rsquo;t counted.</div>}
 
       {/* Opening */}
       <section className="vh" style={hero ? { backgroundImage: `url(${hero})` } : undefined}>
@@ -154,10 +167,15 @@ export default async function ApprovePage({
 
       <section className="vch vch-approve" id="approve">
         <div className="vch-head">
-          <h2>{approved ? "Approved" : "Your approval"}</h2>
-          {!approved && (
+          <h2>{approved ? "Approved" : alreadySigned ? "Thank you" : "Your approval"}</h2>
+          {!approved && !alreadySigned && (
             <p className="vch-blurb">
               If it all looks right, put your name to it and we&rsquo;ll get moving. If something needs changing, say so here and it comes straight to Michael.
+              {needsAll &&
+                ` Both owners need to approve before anything goes to print, so ${everyone
+                  .filter((v) => v.email !== who?.vendor.email)
+                  .map((v) => v.name.split(" ")[0])
+                  .join(" and ")} will be asked separately.`}
             </p>
           )}
         </div>
@@ -170,8 +188,21 @@ export default async function ApprovePage({
                 On {fmtDate(c.approvedAt!)}. Production is under way.
               </p>
             </div>
+          ) : alreadySigned ? (
+            /* They have signed and someone else has not. Their own approval is
+               done — showing them the form again would invite a second one. */
+            <div className="vdone">
+              <div className="vdone-mark">✓</div>
+              <h3>You&rsquo;ve approved this.</h3>
+              <p>
+                We&rsquo;re waiting on{" "}
+                {waitingOn.map((v) => v.name || v.email).join(" and ")} before anything goes to
+                print. We&rsquo;ll let you know as soon as it&rsquo;s done.
+              </p>
+              <p className="vp-note">Changed your mind? Call Michael on 0409 438 025.</p>
+            </div>
           ) : (
-            <VendorApprovalForm campaignId={c.id} token={vendorOk ? token : ""} wording={AUTHORISATION_WORDING} preview={isPreview} address={c.address} vendorName={campaignVendors(c).length === 1 ? campaignVendors(c)[0].name : ""} items={chapters.map((ch) => ch.title)} />
+            <VendorApprovalForm campaignId={c.id} token={vendorOk ? token : ""} wording={AUTHORISATION_WORDING} preview={isPreview} address={c.address} vendorName={who?.vendor.name ?? (everyone.length === 1 ? everyone[0].name : "")} items={chapters.map((ch) => ch.title)} />
           )}
         </div>
       </section>

@@ -58,6 +58,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     // what's shown must be what's stored.
     copyText: body?.copyText !== undefined ? clean(body.copyText, 8000) : current.copyText,
     copyHeading: body?.copyHeading !== undefined ? clean(body.copyHeading, 200) : current.copyHeading,
+    // Anything other than the two known values is ignored rather than stored:
+    // this decides whether one signature can commit the other owner's money.
+    approvalMode:
+      body?.approvalMode === "any" || body?.approvalMode === "all"
+        ? body.approvalMode
+        : current.approvalMode,
   });
 
   return NextResponse.json({ ok: true, campaign: next });
