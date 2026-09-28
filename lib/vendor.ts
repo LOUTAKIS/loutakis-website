@@ -253,9 +253,14 @@ async function finaliseApproval(
 }
 
 /**
- * One down, one to go. Tells the office so nobody assumes it is finished, and
- * nudges whoever is left — a campaign stalled on a second signature is the most
- * forgettable state there is, because it looks like progress.
+ * One down, one to go. Tells THE OFFICE and nobody else.
+ *
+ * NO AUTOMATIC NUDGE TO THE OTHER OWNER. It is tempting — a campaign stalled on
+ * a second signature looks like progress and is easy to forget — but an email
+ * saying "your co-owner has approved, now you" arrives as pressure from us at
+ * a moment that is theirs to work out between themselves. Whether that chase
+ * happens, and whether it is a call rather than an email, is the agent's
+ * judgement. The office is told so it can be made.
  */
 async function notifyPartial(
   c: Campaign,
@@ -273,31 +278,12 @@ async function notifyPartial(
       <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
         <p><strong>${esc(name)}</strong> approved the marketing for <strong>${esc(c.address)}</strong>.</p>
         <p style="color:#b45309"><strong>Not yet approved</strong> — still waiting on ${esc(waitingOn.map((v) => v.name || v.email).join(" and "))}. Nothing goes to production until they sign.</p>
+        <p style="color:#666">They have not been chased automatically. Their link still works — re-send it from the campaign page, or ring them.</p>
         <p><a href="${siteUrl()}/staff/${c.id}">Open the campaign</a></p>
       </div>
     `,
     replyTo: signer.email ? { address: signer.email, name: signer.name } : undefined,
   });
-
-  // And a nudge to whoever is left, so it doesn't rest on the office remembering.
-  for (const v of waitingOn) {
-    const i = campaignVendors(c).findIndex((x) => x.email === v.email);
-    if (i < 0) continue;
-    await sendMail({
-      to: [v.email],
-      subject: `${name.split(" ")[0]} has approved the marketing for ${c.address}`,
-      html: `
-        <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
-          <p>Hi ${esc(v.name.split(" ")[0] || "there")},</p>
-          <p><strong>${esc(name)}</strong> has looked over the marketing for <strong>${esc(c.address)}</strong> and approved it. We need you as well before anything goes to print.</p>
-          <p style="margin:26px 0">
-            <a href="${vendorLink(c.id, i)}" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:14px 28px;font-size:13px;letter-spacing:.12em;text-transform:uppercase">Review and approve</a>
-          </p>
-          <p style="color:#666">If something needs changing, say so on the page — it comes straight to Michael, and nothing is produced in the meantime.</p>
-        </div>
-      `,
-    }).catch((err) => console.error("[vendor] nudge failed", err));
-  }
 }
 
 /**
