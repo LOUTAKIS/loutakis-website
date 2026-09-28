@@ -14,6 +14,20 @@ type File = { id: string; name: string; size: number; modified: string };
  * sends. Saves happen on Save; Send saves first.
  */
 /**
+ * The folder path as a person would write it.
+ *
+ * SharePoint escapes the characters it won't allow, so a folder created on a
+ * Mac as "16/123-129" comes back as "16&#x3a;123-129". We keep the raw name
+ * for the lookup and show the readable one, because "&#x3a;" on the screen
+ * looks like the page is broken when it is the folder name that is.
+ */
+function prettyPath(path: string): string {
+  return String(path ?? "").replace(/&#(x[0-9a-f]+|\d+);/gi, (_, code) =>
+    String.fromCharCode(code[0].toLowerCase() === "x" ? parseInt(code.slice(1), 16) : Number(code))
+  );
+}
+
+/**
  * A folder name SharePoint will actually accept.
  *
  * The old hint told staff to create "Anderson 16/123-129", which cannot exist:
@@ -273,7 +287,7 @@ export default function CampaignReview({
       <div className="vc-block">
         <h3>Board and brochure <span className="vc-src">SharePoint</span></h3>
         {c.folderPath ? (
-          <p className="form-note">Folder: <code>{c.folderPath}</code></p>
+          <p className="form-note">Folder: <code>{prettyPath(c.folderPath)}</code></p>
         ) : (
           <p className="form-note vc-warn">
             No SharePoint folder matched “{c.street} {c.number}”. Create{" "}
