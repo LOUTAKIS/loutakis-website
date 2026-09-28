@@ -61,9 +61,9 @@ export default async function WebsitePage() {
     stats && forms
       ? await propertyInsights(stats.propertyPaths, forms.byListing).catch((err) => {
           console.error("[website] property insights failed", err);
-          return [];
+          return { current: [], past: [] };
         })
-      : [];
+      : { current: [], past: [] };
 
   return (
     <section className="portal-page">

@@ -180,17 +180,16 @@ export async function getSiteStats(days = 30): Promise<SiteStats | null> {
      */
     query("visits/aggregate", { since, until, by: "day", filter: `requestPath eq '/listings'` }),
     /**
-     * Every listing page, not just the few that make the top-pages list. A
-     * property with six views still belongs in a table of properties, and its
-     * absence is itself worth seeing.
+     * Every path, filtered to the listing pages in our own code.
+     *
+     * NOT FILTERED IN THE QUERY. `requestPath contains '/properties/'` looked
+     * reasonable and silently returned nothing — OData's `contains` is a
+     * function, not an infix operator, so the whole query failed and every
+     * property showed zero views while the top-pages list showed 122 for the
+     * same page. A `by` that is known to work plus a filter in JavaScript
+     * cannot fail that way, and this is not enough rows to be worth the risk.
      */
-    query("visits/aggregate", {
-      since,
-      until,
-      by: "requestPath",
-      limit: 100,
-      filter: `requestPath contains '/properties/'`,
-    }),
+    query("visits/aggregate", { since, until, by: "requestPath", limit: 200 }),
     query("visits/aggregate", { since, until, by: "deviceType", limit: 6 }),
     query("visits/aggregate", { since, until, by: "country", limit: 8 }),
   ]);

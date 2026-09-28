@@ -1527,3 +1527,14 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .pi-table tbody th a { text-decoration: underline; text-underline-offset: 3px; }
 .pi-past th, .pi-past td { color: var(--muted); }
 .wa-scroll { overflow-x: auto; }
+
+/* The sold archive, folded away. Open it if you want it; it isn't the page. */
+.pi-past-wrap { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 18px; }
+.pi-past-wrap > summary {
+  cursor: pointer; font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted); list-style: none;
+}
+.pi-past-wrap > summary::-webkit-details-marker { display: none; }
+.pi-past-wrap > summary::before { content: "+ "; }
+.pi-past-wrap[open] > summary::before { content: "– "; }
+.pi-past-wrap > summary:hover { color: var(--ink); }

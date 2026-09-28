@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { SiteStats } from "@/lib/web-analytics";
 import type { FormStats } from "@/lib/form-events";
-import type { PropertyInsight } from "@/lib/property-insights";
+import type { PropertyInsight, PropertySplit } from "@/lib/property-insights";
 import type { MemberPulse } from "@/lib/member-pulse";
 import { fmtDate } from "@/lib/when";
 
@@ -76,6 +76,23 @@ function Bars({
   );
 }
 
+function PropertyRow({ r, people }: { r: PropertyInsight; people: boolean }) {
+  return (
+    <tr className={r.status === "current" ? undefined : "pi-past"}>
+      <th scope="row">
+        <Link href={`/properties/${r.slug}`}>{r.address}</Link>
+        {r.status !== "current" && (
+          <span className="wa-sub"> · {r.status.replace(/_/g, " ")}</span>
+        )}
+      </th>
+      <td className={r.visitors === 0 ? "qs-empty" : undefined}>
+        {(people ? r.visitors : r.pageviews).toLocaleString("en-AU")}
+      </td>
+      <td className={r.enquiries === 0 ? "qs-empty" : undefined}>{r.enquiries}</td>
+    </tr>
+  );
+}
+
 function Table({
   label,
   rows,
@@ -124,7 +141,7 @@ export default function WebsiteStats({
   members: number;
   optedOut: number;
   forms: FormStats | null;
-  properties: PropertyInsight[];
+  properties: PropertySplit;
   pulse: MemberPulse | null;
 }) {
   const [unit, setUnit] = useState<Unit>("people");
@@ -196,12 +213,13 @@ export default function WebsiteStats({
         </div>
       </div>
 
-      {/* ── Every property, busiest first ───────────────────────────────
-          Including the ones nobody opened. A listing with no views is the most
-          useful row here, and it is the one a top-pages list can never show. */}
-      {properties.length > 0 && (
+      {/* ── What is on the market now ───────────────────────────────────
+          Live listings only, zeros included: a property nobody has opened is
+          the most useful row here. The sold archive is below, folded away —
+          forty rows of a closed campaign is a table nobody reads. */}
+      {properties.current.length > 0 && (
         <>
-          <div className="times-label" style={{ marginTop: 44 }}>Properties</div>
+          <div className="times-label" style={{ marginTop: 44 }}>On the market</div>
           <div className="wa-scroll">
             <table className="wa-table pi-table">
               <thead>
@@ -212,19 +230,8 @@ export default function WebsiteStats({
                 </tr>
               </thead>
               <tbody>
-                {properties.map((r) => (
-                  <tr key={r.id} className={r.status === "current" ? undefined : "pi-past"}>
-                    <th scope="row">
-                      <Link href={`/properties/${r.slug}`}>{r.address}</Link>
-                      {r.status !== "current" && (
-                        <span className="wa-sub"> · {r.status.replace(/_/g, " ")}</span>
-                      )}
-                    </th>
-                    <td className={r.visitors === 0 ? "qs-empty" : undefined}>
-                      {(people ? r.visitors : r.pageviews).toLocaleString("en-AU")}
-                    </td>
-                    <td className={r.enquiries === 0 ? "qs-empty" : undefined}>{r.enquiries}</td>
-                  </tr>
+                {properties.current.map((r) => (
+                  <PropertyRow key={r.id} r={r} people={people} />
                 ))}
               </tbody>
             </table>
@@ -236,23 +243,25 @@ export default function WebsiteStats({
         </>
       )}
 
-      {/* ── The shape of the month ──────────────────────────────────────
-          Already fetched for the headline figure and previously thrown away. */}
-      {stats.daily.length > 2 && (
-        <Bars
-          label={people ? "Visitors a day" : "Page views a day"}
-          values={stats.daily.map((d) => (people ? d.visitors : d.pageviews))}
-          labelFor={(i) =>
-            i === 0 || i === stats.daily.length - 1
-              ? fmtDate(stats.daily[i].date).slice(0, 5)
-              : ""
-          }
-          titleFor={(i) =>
-            `${fmtDate(stats.daily[i].date)} — ${
-              people ? stats.daily[i].visitors : stats.daily[i].pageviews
-            }`
-          }
-        />
+      {properties.past.length > 0 && (
+        <details className="pi-past-wrap">
+          <summary>
+            Sold and leased &middot; {properties.past.length} still getting looked at
+          </summary>
+          <div className="wa-scroll">
+            <table className="wa-table pi-table">
+              <tbody>
+                {properties.past.map((r) => (
+                  <PropertyRow key={r.id} r={r} people={people} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="form-note">
+            Only the ones somebody opened in this window. A sold property with no views tells you
+            nothing you didn&rsquo;t know.
+          </p>
+        </details>
       )}
 
       <div className="wa-cols">

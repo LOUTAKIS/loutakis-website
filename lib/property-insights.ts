@@ -17,6 +17,11 @@ import type { NamedCount } from "./web-analytics";
  * shown together. Plenty of views with no enquiries is a price conversation;
  * no views at all is a marketing one. Either alone would point at the wrong
  * problem.
+ *
+ * CURRENT AND SOLD ARE SEPARATED. Showing everything made a table forty rows
+ * long, of which two were live — and a list that long is one nobody reads to
+ * the bottom of. What is selling now is the page; what sold is an archive, and
+ * an archive belongs behind something you have to open.
  */
 
 export type PropertyInsight = {
@@ -36,16 +41,23 @@ function slugOf(path: string): string {
   return m ? decodeURIComponent(m[1]).toLowerCase() : "";
 }
 
+export type PropertySplit = {
+  /** On the market now, busiest first. This is the table. */
+  current: PropertyInsight[];
+  /** Sold or leased, and only those anyone actually looked at in the window. */
+  past: PropertyInsight[];
+};
+
 export async function propertyInsights(
   propertyPaths: NamedCount[],
   enquiriesByListing: Record<string, number>
-): Promise<PropertyInsight[]> {
+): Promise<PropertySplit> {
   let listings: Awaited<ReturnType<typeof getListings>> = [];
   try {
     listings = await getListings();
   } catch (err) {
     console.error("[property insights] listings unavailable", err);
-    return [];
+    return { current: [], past: [] };
   }
 
   const views = new Map<string, { visitors: number; pageviews: number }>();
@@ -77,12 +89,23 @@ export async function propertyInsights(
     };
   });
 
-  /**
-   * Current listings first and busiest at the top; a sold one with traffic is
-   * still interesting, but it is not what anyone opened this page to see.
-   */
-  const rank = (r: PropertyInsight) => (r.status === "current" || r.status === "under_offer" ? 0 : 1);
-  return rows.sort(
-    (a, b) => rank(a) - rank(b) || b.visitors - a.visitors || a.address.localeCompare(b.address, "en-AU")
-  );
+  const busiest = (a: PropertyInsight, b: PropertyInsight) =>
+    b.visitors - a.visitors ||
+    b.enquiries - a.enquiries ||
+    a.address.localeCompare(b.address, "en-AU");
+
+  const live = (r: PropertyInsight) => r.status === "current" || r.status === "under_offer";
+
+  return {
+    // Every live listing, including the ones with no views — a property nobody
+    // has opened is the most useful row on the page, and it only exists if the
+    // zeros are kept.
+    current: rows.filter(live).sort(busiest),
+    /**
+     * Sold ones only if somebody actually looked in this window. Keeping the
+     * zeros here would be forty rows of nothing: a sold property with no views
+     * says only that it sold, which you already knew.
+     */
+    past: rows.filter((r) => !live(r) && (r.visitors > 0 || r.enquiries > 0)).sort(busiest),
+  };
 }
