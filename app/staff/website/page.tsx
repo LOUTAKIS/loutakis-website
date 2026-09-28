@@ -4,6 +4,8 @@ import { getStaff } from "@/lib/staff-auth";
 import { getSiteStats, analyticsConfigured } from "@/lib/web-analytics";
 import { listApprovedContacts, listOptedOut } from "@/lib/portal-store";
 import { getFormStats } from "@/lib/form-events";
+import { propertyInsights } from "@/lib/property-insights";
+import { memberPulse } from "@/lib/member-pulse";
 import WebsiteStats from "@/components/WebsiteStats";
 
 export const metadata = {
@@ -37,12 +39,31 @@ export default async function WebsitePage() {
    * They are fetched separately so a Vercel outage still leaves the one panel
    * that tells you a form is broken.
    */
-  const [stats, approved, optedOut, forms] = await Promise.all([
+  const [stats, approved, optedOut, forms, pulse] = await Promise.all([
     getSiteStats(30).catch(() => null),
     listApprovedContacts().catch(() => [] as number[]),
     listOptedOut().catch(() => [] as number[]),
     getFormStats(30).catch(() => null),
+    /**
+     * The only panel that names people rather than counting them, and the only
+     * one that reads the CRM — so it is allowed to fail on its own without
+     * taking the numbers down with it.
+     */
+    memberPulse().catch(() => null),
   ]);
+
+  /**
+   * Views come from Vercel and enquiries from our own store, so this can only
+   * be built once both are back. Empty when either is missing, which the page
+   * says rather than showing a table of zeros.
+   */
+  const properties =
+    stats && forms
+      ? await propertyInsights(stats.propertyPaths, forms.byListing).catch((err) => {
+          console.error("[website] property insights failed", err);
+          return [];
+        })
+      : [];
 
   return (
     <section className="portal-page">
@@ -75,6 +96,8 @@ export default async function WebsitePage() {
             members={approved.length}
             optedOut={optedOut.length}
             forms={forms}
+            properties={properties}
+            pulse={pulse}
           />
         )}
       </div>

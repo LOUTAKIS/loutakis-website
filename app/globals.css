@@ -1501,3 +1501,29 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .vc-mode { margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--line); }
 .vc-mode .ap-options { margin-top: 10px; }
 .vc-mode .form-note { max-width: 62ch; margin-top: 12px; }
+
+/* ── Little bar charts ────────────────────────────────────────────────────
+   No axis and no library: these answer "what shape is this", and a precise
+   reading is the table's job. The exact figure is in each bar's tooltip. */
+.bars-wrap { margin-top: 26px; }
+.bars {
+  display: grid; grid-template-columns: repeat(var(--n), 1fr);
+  gap: 2px; align-items: end; height: 96px; margin-top: 14px;
+}
+.bar { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+.bar i { display: block; background: var(--ink); width: 100%; }
+/* A zero draws a hairline, because an empty column and a missing one look the
+   same and only one of them is true. */
+.bar i[style*="height: 1%"] { background: var(--line); }
+.bar span {
+  font-size: 10px; letter-spacing: .06em; color: var(--muted);
+  text-align: center; margin-top: 6px; white-space: nowrap;
+}
+
+/* The properties and forms tables: numbers right, name left, past listings
+   stepped back so the current ones read first. */
+.pi-table th[scope="col"] { text-align: right; }
+.pi-table th[scope="col"]:first-child { text-align: left; }
+.pi-table tbody th a { text-decoration: underline; text-underline-offset: 3px; }
+.pi-past th, .pi-past td { color: var(--muted); }
+.wa-scroll { overflow-x: auto; }

@@ -38,6 +38,7 @@ export function analyticsConfigured(): boolean {
 export type Totals = { visitors: number; pageviews: number };
 export type DayPoint = { date: string; visitors: number; pageviews: number };
 export type NamedCount = { name: string; visitors: number; pageviews: number };
+export type DayPointed = { date: string; visitors: number; pageviews: number };
 
 export type SiteStats = {
   since: string;
@@ -48,6 +49,12 @@ export type SiteStats = {
   daily: DayPoint[];
   topPages: NamedCount[];
   referrers: NamedCount[];
+  /** Views of each /properties/<slug>, for matching to real addresses. */
+  propertyPaths: NamedCount[];
+  /** Phone, tablet, desktop. */
+  devices: NamedCount[];
+  /** Where they are. Country only — Vercel does not expose city or region. */
+  countries: NamedCount[];
   /**
    * The forms are NOT in here any more.
    *
@@ -157,7 +164,7 @@ export async function getSiteStats(days = 30): Promise<SiteStats | null> {
   const prevUntil = day(daysAgo(days + 1));
   const prevSince = day(daysAgo(days * 2 + 1));
 
-  const [daily, prior, pages, refs, qr] = await Promise.all([
+  const [daily, prior, pages, refs, qr, props, devices, countries] = await Promise.all([
     query("visits/aggregate", { since, until, by: "day" }),
     query("visits/aggregate", { since: prevSince, until: prevUntil, by: "day" }),
     query("visits/aggregate", { since, until, by: "requestPath", limit: 12 }),
@@ -172,6 +179,20 @@ export async function getSiteStats(days = 30): Promise<SiteStats | null> {
      * a phone camera pointed at a board.
      */
     query("visits/aggregate", { since, until, by: "day", filter: `requestPath eq '/listings'` }),
+    /**
+     * Every listing page, not just the few that make the top-pages list. A
+     * property with six views still belongs in a table of properties, and its
+     * absence is itself worth seeing.
+     */
+    query("visits/aggregate", {
+      since,
+      until,
+      by: "requestPath",
+      limit: 100,
+      filter: `requestPath contains '/properties/'`,
+    }),
+    query("visits/aggregate", { since, until, by: "deviceType", limit: 6 }),
+    query("visits/aggregate", { since, until, by: "country", limit: 8 }),
   ]);
 
   const missing: string[] = [];
@@ -205,6 +226,13 @@ export async function getSiteStats(days = 30): Promise<SiteStats | null> {
      * it as a dash made the most important number on the page unreadable.
      */
     referrers: refs ? named(refs, "referrerHostname", 6, "Direct") : [],
+    propertyPaths: props ? named(props, "requestPath", 100) : [],
+    /**
+     * Named rather than left as codes. Vercel returns "mobile"/"desktop", and
+     * the point of the line is to be read at a glance.
+     */
+    devices: devices ? named(devices, "deviceType", 6, "Unknown") : [],
+    countries: countries ? named(countries, "country", 8, "Unknown") : [],
     qrScans: qr ? sum(Array.isArray(qr.data) ? qr.data : []) : null,
     missing,
   };

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import type { SiteStats } from "@/lib/web-analytics";
 import type { FormStats } from "@/lib/form-events";
+import type { PropertyInsight } from "@/lib/property-insights";
+import type { MemberPulse } from "@/lib/member-pulse";
 import { fmtDate } from "@/lib/when";
 
 /**
@@ -34,6 +36,44 @@ function pct(now: number, before: number): { text: string; up: boolean } | null 
 /** "/properties/19-william-street-newport" reads better with a name for home. */
 function prettyPath(p: string): string {
   return p === "/" ? "Home" : p;
+}
+
+/**
+ * A row of bars. No axis, no gridlines, no library.
+ *
+ * The question these answer is "what shape is this" — a launch, a quiet
+ * fortnight, a cluster at nine at night. A precise reading is the table's job;
+ * drawing axes here would add furniture to a picture whose whole point is to be
+ * taken in at a glance. The exact number is in the title attribute for anyone
+ * who wants it.
+ */
+function Bars({
+  label,
+  values,
+  labelFor,
+  titleFor,
+}: {
+  label: string;
+  values: number[];
+  labelFor: (i: number) => string;
+  titleFor?: (i: number) => string;
+}) {
+  const max = Math.max(1, ...values);
+  return (
+    <div className="bars-wrap">
+      <div className="times-label">{label}</div>
+      <div className="bars" style={{ ["--n" as any]: values.length }}>
+        {values.map((v, i) => (
+          <div key={i} className="bar" title={titleFor?.(i) ?? `${labelFor(i) || i}: ${v}`}>
+            {/* A zero still draws a hairline: an empty column and a missing
+                column look the same, and only one of them is true. */}
+            <i style={{ height: `${v ? Math.max(4, (v / max) * 100) : 1}%` }} />
+            <span>{labelFor(i)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function Table({
@@ -77,11 +117,15 @@ export default function WebsiteStats({
   members,
   optedOut,
   forms,
+  properties,
+  pulse,
 }: {
   stats: SiteStats;
   members: number;
   optedOut: number;
   forms: FormStats | null;
+  properties: PropertyInsight[];
+  pulse: MemberPulse | null;
 }) {
   const [unit, setUnit] = useState<Unit>("people");
   const people = unit === "people";
@@ -151,6 +195,65 @@ export default function WebsiteStats({
           </Link>
         </div>
       </div>
+
+      {/* ── Every property, busiest first ───────────────────────────────
+          Including the ones nobody opened. A listing with no views is the most
+          useful row here, and it is the one a top-pages list can never show. */}
+      {properties.length > 0 && (
+        <>
+          <div className="times-label" style={{ marginTop: 44 }}>Properties</div>
+          <div className="wa-scroll">
+            <table className="wa-table pi-table">
+              <thead>
+                <tr>
+                  <th scope="col">Property</th>
+                  <th scope="col">{people ? "People" : "Views"}</th>
+                  <th scope="col">Enquiries</th>
+                </tr>
+              </thead>
+              <tbody>
+                {properties.map((r) => (
+                  <tr key={r.id} className={r.status === "current" ? undefined : "pi-past"}>
+                    <th scope="row">
+                      <Link href={`/properties/${r.slug}`}>{r.address}</Link>
+                      {r.status !== "current" && (
+                        <span className="wa-sub"> · {r.status.replace(/_/g, " ")}</span>
+                      )}
+                    </th>
+                    <td className={r.visitors === 0 ? "qs-empty" : undefined}>
+                      {(people ? r.visitors : r.pageviews).toLocaleString("en-AU")}
+                    </td>
+                    <td className={r.enquiries === 0 ? "qs-empty" : undefined}>{r.enquiries}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="form-note">
+            Views and enquiries answer different questions. Plenty of views and no enquiries is
+            usually the price; no views at all is the marketing.
+          </p>
+        </>
+      )}
+
+      {/* ── The shape of the month ──────────────────────────────────────
+          Already fetched for the headline figure and previously thrown away. */}
+      {stats.daily.length > 2 && (
+        <Bars
+          label={people ? "Visitors a day" : "Page views a day"}
+          values={stats.daily.map((d) => (people ? d.visitors : d.pageviews))}
+          labelFor={(i) =>
+            i === 0 || i === stats.daily.length - 1
+              ? fmtDate(stats.daily[i].date).slice(0, 5)
+              : ""
+          }
+          titleFor={(i) =>
+            `${fmtDate(stats.daily[i].date)} — ${
+              people ? stats.daily[i].visitors : stats.daily[i].pageviews
+            }`
+          }
+        />
+      )}
 
       <div className="wa-cols">
         <Table
@@ -229,23 +332,173 @@ export default function WebsiteStats({
             </table>
           )}
 
-          <table className="wa-table" style={{ marginTop: 26 }}>
-            <tbody>
-              {forms.rows.map((r) => (
-                <tr key={r.form}>
-                  <th scope="row">{r.label}</th>
-                  <td>{r.sent}</td>
+          <div className="wa-scroll">
+            <table className="wa-table pi-table" style={{ marginTop: 26 }}>
+              <thead>
+                <tr>
+                  <th scope="col">Form</th>
+                  <th scope="col">Started</th>
+                  <th scope="col">Sent</th>
+                  <th scope="col">Finished</th>
+                  <th scope="col">Typical time</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {forms.rows.map((r) => (
+                  <tr key={r.form}>
+                    <th scope="row">{r.label}</th>
+                    <td>{r.started}</td>
+                    <td>{r.sent}</td>
+                    <td className={r.started && r.sent / r.started < 0.5 ? "wa-bad" : undefined}>
+                      {r.started ? `${Math.round((r.sent / r.started) * 100)}%` : "—"}
+                    </td>
+                    <td>{r.medianSeconds ? mmss(r.medianSeconds) : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Where they stop. The only figure here that says what to change. */}
+          {forms.rows.some((r) => r.abandon.length > 0) && (
+            <>
+              <div className="times-label" style={{ marginTop: 34 }}>Where people give up</div>
+              <div className="wa-cols">
+                {forms.rows
+                  .filter((r) => r.abandon.length > 0)
+                  .map((r) => (
+                    <div key={r.form}>
+                      <div className="times-label">{r.label}</div>
+                      <table className="wa-table">
+                        <tbody>
+                          {r.abandon.map((a) => (
+                            <tr key={a.field}>
+                              <th scope="row">{a.field}</th>
+                              <td>{a.count}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+              </div>
+              <p className="form-note">
+                The last question they were on before leaving. Never what they typed in it.
+              </p>
+            </>
+          )}
+
+          {/* When they do it. */}
+          {forms.hours && forms.dows && (
+            <>
+              <div className="times-label" style={{ marginTop: 34 }}>When they fill them in</div>
+              <Bars
+                label="By hour"
+                values={forms.hours}
+                labelFor={(i) => (i % 6 === 0 ? `${i}:00` : "")}
+              />
+              <Bars
+                label="By day"
+                values={forms.dows}
+                labelFor={(i) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][i]}
+              />
+              <p className="form-note">
+                Melbourne time, every form since this started recording — a habit needs more than
+                thirty days to show a shape.
+              </p>
+            </>
+          )}
         </>
       )}
 
-      <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 40 }}>
-        Vercel Web Analytics doesn&rsquo;t measure time on site, so there isn&rsquo;t a figure for it
-        here.
+      {/* ── Who they are ─────────────────────────────────────────────── */}
+      {(stats.devices.length > 0 || stats.countries.length > 0) && (
+        <>
+          <div className="times-label" style={{ marginTop: 44 }}>Who&rsquo;s looking</div>
+          <div className="wa-cols">
+            <Table label="On what" rows={stats.devices} unit={unit} empty="Nothing recorded yet." />
+            <Table label="From where" rows={stats.countries} unit={unit} empty="Nothing recorded yet." />
+          </div>
+        </>
+      )}
+
+      {/* ── Members ──────────────────────────────────────────────────────
+          Last, because it is the only section that asks something of you
+          rather than telling you something. */}
+      {pulse && pulse.total > 0 && (
+        <>
+          <div className="times-label" style={{ marginTop: 44 }}>Off-market members</div>
+          {pulse.empty ? (
+            <p style={{ color: "var(--muted)", marginTop: 12 }}>
+              Nobody has signed in since this started recording. It only ever sees members who are
+              signed in — public browsing isn&rsquo;t attributed to anyone.
+            </p>
+          ) : (
+            <div className="wa-cols">
+              <div>
+                <div className="times-label">Active this week</div>
+                {pulse.active.length === 0 ? (
+                  <p style={{ color: "var(--muted)", marginTop: 12 }}>Nobody in the last seven days.</p>
+                ) : (
+                  <ul className="mb-plain">
+                    {pulse.active.map((m) => (
+                      <li key={m.contactId}>
+                        <Link href={`/staff/members/${m.contactId}`}>{m.name}</Link>
+                        <span className="mb-muted">
+                          {" · "}
+                          {m.viewed} propert{m.viewed === 1 ? "y" : "ies"} opened
+                          {m.enquiries > 0 && `, ${m.enquiries} enquir${m.enquiries === 1 ? "y" : "ies"}`}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div>
+                {/* The list that is worth acting on. */}
+                <div className="times-label">Gone quiet</div>
+                {pulse.quiet.length === 0 ? (
+                  <p style={{ color: "var(--muted)", marginTop: 12 }}>Nobody has gone cold.</p>
+                ) : (
+                  <ul className="mb-plain">
+                    {pulse.quiet.map((m) => (
+                      <li key={m.contactId}>
+                        <Link href={`/staff/members/${m.contactId}`}>{m.name}</Link>
+                        <span className="mb-muted">
+                          {" · "}
+                          {m.lastSeen ? `last in ${when(m.lastSeen)}` : "never signed in"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 44 }}>
+        Vercel Web Analytics doesn&rsquo;t measure time on site or which page somebody left from, so
+        there are no figures for those here.
       </p>
     </>
   );
+}
+
+/** "3 days ago", "6 weeks ago" — enough to know whether to ring. */
+function when(t: number): string {
+  const d = Math.round((Date.now() - t) / 86_400_000);
+  if (d < 1) return "today";
+  if (d === 1) return "yesterday";
+  if (d < 14) return `${d} days ago`;
+  if (d < 60) return `${Math.round(d / 7)} weeks ago`;
+  return `${Math.round(d / 30)} months ago`;
+}
+
+/** "4m 20s" — a median, so seconds matter at the short end. */
+function mmss(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return m ? `${m}m ${s}s` : `${s}s`;
 }
