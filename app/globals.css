@@ -1032,8 +1032,22 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .vb-page span { position: absolute; left: 10px; bottom: 10px; font-size: 10px; letter-spacing: .16em; color: var(--muted); background: rgba(255,255,255,.85); padding: 3px 7px; }
 
 /* Copy, editorial */
-.vcopy { max-width: 64ch; }
-.vcopy h3 { font-family: var(--serif); font-weight: 400; font-size: clamp(26px, 3vw, 38px); line-height: 1.15; margin: 0 0 30px; text-wrap: balance; }
+/* The advertising copy, set like a page of the brochure.
+   CENTRED IN ITS COLUMN, NOT CENTRE-ALIGNED. The block sat against the left
+   edge of a very wide body with nothing to its right, which read as a column
+   that had failed rather than a page. The paragraphs themselves stay
+   left-aligned: this is five paragraphs of prose, and centred body copy gives
+   the eye no fixed edge to return to on each new line.
+   The heading centres over it, because one line can. */
+.vcopy { max-width: 64ch; margin-inline: auto; }
+.vcopy h3 {
+  font-family: var(--serif); font-weight: 400;
+  /* Smaller than it was (26–38px). It is the property's advertising headline,
+     not the page's — "The words" beside it is the heading of this chapter, and
+     two competing headings is one too many. */
+  font-size: clamp(20px, 1.9vw, 26px);
+  line-height: 1.25; margin: 0 0 30px; text-wrap: balance; text-align: center;
+}
 .vcopy p { font-size: clamp(17px, 1.35vw, 19px); line-height: 1.75; margin: 0 0 22px; }
 
 /* Photos */
