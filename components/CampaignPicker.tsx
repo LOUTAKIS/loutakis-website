@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import StartCampaign from "./StartCampaign";
+import { fmtDate } from "@/lib/when";
 
 export type PickerItem = {
   id: number;
@@ -12,8 +13,13 @@ export type PickerItem = {
   floorplans: number;
   hasCopy: boolean;
   hasVideo: boolean;
-  /** The live campaign for this listing, if one is already in flight. */
-  campaign: { id: string; status: string } | null;
+  /** The most recent campaign for this listing, approved ones included. */
+  campaign: {
+    id: string;
+    status: string;
+    approvedAt?: string | null;
+    approvedName?: string | null;
+  } | null;
 };
 
 type Sort = "ready" | "address" | "suburb";
@@ -46,8 +52,14 @@ export default function CampaignPicker({ items }: { items: PickerItem[] }) {
     return [...withState].sort((a, b) => {
       if (sort === "address") return byAddress(a, b);
       if (sort === "suburb") return a.suburb.localeCompare(b.suburb, "en-AU") || byAddress(a, b);
-      // "ready": in flight first, then ready to start, then blocked.
-      const rank = (x: typeof a) => (x.campaign ? 0 : x.missing.length === 0 ? 1 : 2);
+      /**
+       * "ready": in flight first, then ready to start, then blocked, then the
+       * ones already approved — those need nothing from you, and putting them
+       * at the top of a list headed "ready to start" is how 20 West Street
+       * came to look like work outstanding.
+       */
+      const rank = (x: typeof a) =>
+        x.campaign?.status === "approved" ? 3 : x.campaign ? 0 : x.missing.length === 0 ? 1 : 2;
       return rank(a) - rank(b) || byAddress(a, b);
     });
   }, [items, q, sort]);
@@ -84,7 +96,9 @@ export default function CampaignPicker({ items }: { items: PickerItem[] }) {
         <ul className="vc-pick">
           {rows.map((s) => {
             const ready = s.missing.length === 0;
-            const live = s.campaign && s.campaign.status !== "approved" ? s.campaign : null;
+            const c = s.campaign;
+            const approved = c?.status === "approved" ? c : null;
+            const live = c && c.status !== "approved" ? c : null;
             return (
               <li key={s.id}>
                 <div>
@@ -105,11 +119,33 @@ export default function CampaignPicker({ items }: { items: PickerItem[] }) {
                       Already in flight ({live.status === "draft" ? "not sent" : live.status}).
                     </div>
                   )}
+                  {/* The most important thing this row can say about a
+                      property, and it used to say nothing at all. */}
+                  {approved && (
+                    <div className="vc-status approved">
+                      Approved{approved.approvedName ? ` by ${approved.approvedName}` : ""}
+                      {approved.approvedAt ? ` · ${fmtDate(approved.approvedAt)}` : ""}
+                    </div>
+                  )}
                 </div>
-                {live ? (
-                  <Link href={`/staff/${live.id}`} className="btn">
-                    Open
-                  </Link>
+                {live || approved ? (
+                  <div className="vc-pick-actions">
+                    <Link href={`/staff/${(live ?? approved)!.id}`} className="btn">
+                      Open
+                    </Link>
+                    {/* A relaunch after a price change is real, but it is a
+                        second campaign on a signed-off property and should
+                        never be the button your thumb lands on. */}
+                    {approved && (
+                      <StartCampaign
+                        listingId={s.id}
+                        disabled={!ready}
+                        quiet
+                        label="Start again"
+                        confirm={`${s.address} has already been approved. Starting again creates a second campaign, and the vendors will have to approve the new one from scratch. Go ahead?`}
+                      />
+                    )}
+                  </div>
                 ) : (
                   <StartCampaign listingId={s.id} disabled={!ready} />
                 )}

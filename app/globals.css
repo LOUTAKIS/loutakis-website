@@ -1538,3 +1538,6 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 .pi-past-wrap > summary::before { content: "+ "; }
 .pi-past-wrap[open] > summary::before { content: "– "; }
 .pi-past-wrap > summary:hover { color: var(--ink); }
+
+/* Open, and — only on an approved property — the quieter way to start again. */
+.vc-pick-actions { display: flex; align-items: center; gap: 20px; justify-content: flex-end; }

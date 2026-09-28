@@ -3,13 +3,36 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-/** Creates a draft campaign for a listing and opens the review screen. */
-export default function StartCampaign({ listingId, disabled }: { listingId: number; disabled?: boolean }) {
+/**
+ * Creates a draft campaign for a listing and opens the review screen.
+ *
+ * `label` and `quiet` exist for the one case where this is NOT the obvious
+ * thing to do: a property whose marketing has already been approved. Starting
+ * another campaign there is legitimate — a relaunch with new photographs after
+ * a price change — but it must read as a deliberate second act rather than as
+ * the primary button, which is how 20 West Street came to look untouched three
+ * days after its vendor signed it off.
+ */
+export default function StartCampaign({
+  listingId,
+  disabled,
+  label = "Start",
+  quiet,
+  confirm,
+}: {
+  listingId: number;
+  disabled?: boolean;
+  label?: string;
+  quiet?: boolean;
+  confirm?: string;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
   async function start() {
+    // A second campaign on an approved property is worth one question.
+    if (confirm && !window.confirm(confirm)) return;
     setBusy(true);
     setErr("");
     try {
@@ -29,8 +52,12 @@ export default function StartCampaign({ listingId, disabled }: { listingId: numb
 
   return (
     <div style={{ textAlign: "right" }}>
-      <button className="btn" onClick={start} disabled={busy || disabled}>
-        {busy ? "Gathering…" : "Start"}
+      <button
+        className={quiet ? "btn ghost" : "btn"}
+        onClick={start}
+        disabled={busy || disabled}
+      >
+        {busy ? "Gathering…" : label}
       </button>
       {err && <div className="form-note" style={{ color: "#b00020", marginTop: 8 }}>{err}</div>}
     </div>

@@ -17,8 +17,19 @@ export default async function NewApprovalPage({ searchParams }: { searchParams?:
 
   const showAll = searchParams?.all === "1";
   const [sources, campaigns] = await Promise.all([getMarketingSources(showAll), listCampaigns()]);
-  // The live (unapproved) campaign per listing, if any.
-  const existing = new Map(campaigns.filter((c) => c.status !== "approved").map((c) => [c.listingId, c]));
+  /**
+   * The most recent campaign per listing, APPROVED ONES INCLUDED.
+   *
+   * They used to be filtered out, which meant a property whose marketing had
+   * been signed off three days earlier appeared here as untouched, offering a
+   * Start button that would have created a second campaign for it. An approved
+   * campaign is the most important thing this list can tell you about a
+   * property, not the least.
+   */
+  const existing = new Map<number, (typeof campaigns)[number]>();
+  for (const c of [...campaigns].sort((a, b) => +new Date(a.createdAt) - +new Date(b.createdAt))) {
+    existing.set(c.listingId, c);
+  }
 
   return (
     <section className="portal-page">
@@ -57,7 +68,14 @@ export default async function NewApprovalPage({ searchParams }: { searchParams?:
                 floorplans: s.floorplans.length,
                 hasCopy: s.copyText.length > 0,
                 hasVideo: Boolean(s.videoUrl),
-                campaign: c ? { id: c.id, status: c.status } : null,
+                campaign: c
+                  ? {
+                      id: c.id,
+                      status: c.status,
+                      approvedAt: c.approvedAt,
+                      approvedName: c.approvedName,
+                    }
+                  : null,
               };
             })}
           />
