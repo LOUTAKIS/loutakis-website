@@ -1563,3 +1563,9 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
   font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
 }
 .demo-pick .field { max-width: 420px; }
+
+/* The fold probe (?probe=1). A diagnostic, never seen by a vendor. */
+.foldprobe { margin-top: 24px; border: 1px solid var(--line); background: var(--paper-2); padding: 14px; }
+.foldprobe-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.foldprobe-bar .btn { padding: 7px 13px; font-size: 11px; }
+.foldprobe pre { margin: 14px 0 0; font: 400 11.5px/1.5 ui-monospace, Menlo, monospace; white-space: pre-wrap; overflow-x: auto; text-transform: none; letter-spacing: 0; color: var(--ink); }
