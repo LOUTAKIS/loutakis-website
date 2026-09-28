@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import SuburbPicker, { type PickedSuburb } from "./SuburbPicker";
-import { formStarted } from "@/lib/track";
+import { useFormWatch } from "./useFormWatch";
 
 const SITUATIONS = [
   "Buying my first home",
@@ -34,17 +34,9 @@ const OWNS = ["Yes", "No"];
 
 export default function PortalRegisterForm() {
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  /**
-   * Counted once, on the first touch. The gap between this and a completed
-   * registration is what says whether the form is asking too much before
-   * anyone has seen anything.
-   */
-  const started = useRef(false);
-  function noteStart() {
-    if (started.current) return;
-    started.current = true;
-    formStarted("register");
-  }
+  // Watches this form for a first keystroke, where people give up, and how
+  // long a completed one took. See lib/track.ts.
+  const { ref, finished } = useFormWatch("register");
   const [error, setError] = useState("");
   // Held in React rather than the form, because each pick carries a CRM
   // suburb id that a plain text input couldn't preserve.
@@ -83,6 +75,8 @@ export default function PortalRegisterForm() {
 
       if (res.ok && json?.ok) {
         setState("sent");
+        // Stops the abandon watch and records how long it took.
+        finished();
       } else {
         setState("error");
         setError(json?.error || "Something went wrong. Please call 0409 438 025.");
@@ -108,7 +102,7 @@ export default function PortalRegisterForm() {
   }
 
   return (
-    <form className="portal-form" onSubmit={onSubmit} onFocus={noteStart} noValidate>
+    <form ref={ref} className="portal-form" onSubmit={onSubmit} noValidate>
       <div className="pf-row">
         <label>
           <span>First name</span>

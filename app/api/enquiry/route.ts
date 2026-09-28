@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { recordFormEvent } from "@/lib/form-events";
+import { recordFormEvent, recordListingEnquiry } from "@/lib/form-events";
 import { sendEnquiry, mailIsConfigured } from "@/lib/mail";
 import { getListings, getOffMarketListings } from "@/lib/boxdice";
 
@@ -168,8 +168,11 @@ export async function POST(req: Request) {
     });
 
     // Counted, not awaited: the visitor's response must not wait on a
-    // dashboard number, and recordFormEvent never throws.
+    // dashboard number, and neither of these ever throws.
     void recordFormEvent("enquiry", "sent");
+    // Which property it was about, so the Website page can show enquiries
+    // beside views. The listing id only — nothing about the person.
+    if (listingId) void recordListingEnquiry(listingId);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[enquiry] SEND FAILED", err);

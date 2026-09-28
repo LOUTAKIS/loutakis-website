@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import SuburbPicker, { type PickedSuburb } from "./SuburbPicker";
 import type { ConsultantOption } from "@/lib/boxdice";
-import { formStarted } from "@/lib/track";
+import { useFormWatch } from "./useFormWatch";
 
 const METHODS = ["Auction", "Off market", "Private sale", "Expression of interest", "Need advice on this"];
 const TIMEFRAMES = ["0–3 months", "3–6 months", "6 months plus"];
@@ -34,6 +34,9 @@ export default function AppraisalForm({
   defaultConsultantId: number | null;
 }) {
   const [state, setState] = useState<"idle" | "sending" | "done">("idle");
+  // Watches this form for a first keystroke, where people give up, and how
+  // long a completed one took. See lib/track.ts.
+  const { ref, finished } = useFormWatch("appraisal");
   const [error, setError] = useState("");
 
   const [firstName, setFirstName] = useState("");
@@ -59,12 +62,6 @@ export default function AppraisalForm({
 
   // Once per visit. Without the guard this fires on every field the seller
   // tabs through, and "started" stops meaning anything.
-  const started = useRef(false);
-  function noteStart() {
-    if (started.current) return;
-    started.current = true;
-    formStarted("appraisal");
-  }
 
   const toggleHeard = (h: string) =>
     setHeard((list) => (list.includes(h) ? list.filter((x) => x !== h) : [...list, h]));
@@ -107,6 +104,8 @@ export default function AppraisalForm({
       // successes with crm:false is the CRM quietly failing, and that shows up
       // here rather than only in an inbox nobody is auditing.
       setState("done");
+      // Stops the abandon watch and records how long it took.
+      finished();
     } catch (err: any) {
       setState("idle");
       setError(err?.message || "Couldn't send that just now. Please call 0409 438 025.");
@@ -131,7 +130,7 @@ export default function AppraisalForm({
     // onFocus, not onChange: someone who tabs into the form and leaves without
     // typing has still started it, and that abandonment is exactly what we need
     // to see. React's onFocus rides focusin, so it catches every field here.
-    <form className="ap-form" onSubmit={submit} onFocus={noteStart} noValidate>
+    <form ref={ref} className="ap-form" onSubmit={submit} noValidate>
       <div className="pf-row">
         <label>
           <span>First name</span>

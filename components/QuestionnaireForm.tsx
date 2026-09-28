@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { formStarted } from "@/lib/track";
+import { useFormWatch } from "./useFormWatch";
 import {
   isShown,
   missingRequired,
@@ -70,13 +70,8 @@ export default function QuestionnaireForm({
   const [error, setError] = useState("");
   const [missing, setMissing] = useState<string[]>([]);
   const restored = useRef(false);
-  /** Once per visit. Tells us how many vendors open it and never finish. */
-  const started = useRef(false);
-  function noteStart() {
-    if (started.current) return;
-    started.current = true;
-    formStarted("questionnaire");
-  }
+  // First keystroke, where they give up, and how long a finished one took.
+  const { ref: watchRef, finished } = useFormWatch<HTMLDivElement>("questionnaire");
 
   /**
    * A local draft wins over the server copy, because it is by definition the
@@ -164,6 +159,7 @@ export default function QuestionnaireForm({
       } catch {
         /* nothing to clean up */
       }
+      finished();
       setState("done");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e: any) {
@@ -186,7 +182,7 @@ export default function QuestionnaireForm({
   }
 
   return (
-    <div className="qf" onFocusCapture={noteStart}>
+    <div className="qf" ref={watchRef}>
       <label className="qf-q" htmlFor="q-name">
         <span className="qf-label">Your full name</span>
         <input

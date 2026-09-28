@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { formStarted } from "@/lib/track";
+import { useFormWatch } from "./useFormWatch";
 
 /**
  * Enquiry form — posts to /api/enquiry, which emails via Microsoft 365.
@@ -21,16 +21,13 @@ export default function EnquiryForm({
   agentNames?: string[];
 }) {
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  // Watches this form for a first keystroke, where people give up, and how
+  // long a completed one took. See lib/track.ts.
+  const { ref, finished } = useFormWatch("enquiry");
   const [error, setError] = useState<string>("");
   const [agentIndex, setAgentIndex] = useState(0);
 
   // Once per visit — see the same guard on the appraisal form.
-  const started = useRef(false);
-  function noteStart() {
-    if (started.current) return;
-    started.current = true;
-    formStarted("enquiry");
-  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -63,6 +60,8 @@ export default function EnquiryForm({
 
       if (res.ok && json?.ok) {
         setState("sent");
+        // Stops the abandon watch and records how long it took.
+        finished();
         form.reset();
       } else {
         setState("error");
@@ -88,7 +87,7 @@ export default function EnquiryForm({
   }
 
   return (
-    <form onSubmit={onSubmit} onFocus={noteStart} noValidate>
+    <form ref={ref} onSubmit={onSubmit} noValidate>
       {agentNames.length > 1 && (
         <label className="agent-pick">
           <span>Who would you like to contact?</span>

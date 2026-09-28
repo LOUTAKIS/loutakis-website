@@ -1,26 +1,24 @@
 import { NextResponse } from "next/server";
-import { recordFormEvent, isFormName } from "@/lib/form-events";
+import { recordFormEvent, recordAbandon, recordDuration, isFormName } from "@/lib/form-events";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * "Somebody started filling this in."
+ * The three things a browser can tell us that a server cannot see for itself:
+ * somebody started, somebody gave up on a particular question, and a completed
+ * form took this long.
  *
- * The one part of the funnel a server cannot see for itself: a person who types
- * their name, thinks better of it and closes the tab never reaches any of our
- * routes. Without it the panel can say how many enquiries arrived but not how
- * many were abandoned, and the gap between those two is the only number that
- * says whether a form is too long or something on it is broken.
- *
- * STARTED ONLY. `sent` and `failed` are recorded by the routes that actually
- * do the work, where they are facts rather than claims — a browser saying "that
- * worked" is not evidence that it did. Anything else posted here is rejected.
+ * `sent` and `failed` are NOT accepted here. Those are recorded by the routes
+ * that actually do the work, where they are facts rather than claims — a
+ * browser saying "that worked" is not evidence that it did, and the failure
+ * that matters most is the one where the browser can report nothing at all.
  *
  * Deliberately unauthenticated, because the people it counts are strangers who
- * have not identified themselves. The blast radius of abuse is one inflated
- * number on an internal dashboard: no personal data is stored, nothing is
- * emailed, and the form name is checked against a closed list.
+ * have not identified themselves. The blast radius of abuse is a wrong number
+ * on an internal dashboard: nothing personal is stored, nothing is emailed, the
+ * form name is checked against a closed list and the field name is stripped to
+ * letters and digits.
  */
 export async function POST(req: Request) {
   let body: any;
@@ -31,8 +29,21 @@ export async function POST(req: Request) {
   }
 
   if (!isFormName(body?.form)) return NextResponse.json({ ok: false }, { status: 400 });
-  if (body?.outcome !== "started") return NextResponse.json({ ok: false }, { status: 400 });
 
-  await recordFormEvent(body.form, "started");
-  return NextResponse.json({ ok: true });
+  switch (body?.outcome) {
+    case "started":
+      await recordFormEvent(body.form, "started");
+      return NextResponse.json({ ok: true });
+
+    case "abandoned":
+      await recordAbandon(body.form, String(body?.field ?? ""));
+      return NextResponse.json({ ok: true });
+
+    case "finished":
+      await recordDuration(body.form, Number(body?.seconds));
+      return NextResponse.json({ ok: true });
+
+    default:
+      return NextResponse.json({ ok: false }, { status: 400 });
+  }
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { recordFormEvent } from "@/lib/form-events";
+import { recordFormEvent, recordListingEnquiry } from "@/lib/form-events";
 import { getViewer } from "@/lib/portal-session";
 import { getContact, addNote } from "@/lib/portal";
 import { getRegisteredEmail } from "@/lib/portal-store";
@@ -122,5 +122,6 @@ export async function POST(req: Request) {
   await recordActivity(viewer.contactId, { k: "enquiry", p: listing.id, a: address });
 
   void recordFormEvent("portal-enquiry", "sent");
+  void recordListingEnquiry(listing.id);
   return NextResponse.json({ ok: true });
 }
