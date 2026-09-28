@@ -1,5 +1,5 @@
 import "server-only";
-import { fileMeta, listMediaSection, type DriveFile } from "./sharepoint";
+import { fileMeta, listMediaSection, findPropertyFolder, type DriveFile } from "./sharepoint";
 import { updateCampaign, type Campaign } from "./campaigns";
 
 /**
@@ -64,7 +64,7 @@ export async function resolveCampaignFile(c: Campaign, kind: FileKind): Promise<
     };
   }
 
-  if (!c.folderPath) {
+  if (!c.folderId && !c.folderPath) {
     return {
       ok: false,
       reason: `The ${kind} file is gone from SharePoint and this campaign has no folder recorded, so it can't be found again. Re-pick it on the review screen.`,
@@ -74,7 +74,7 @@ export async function resolveCampaignFile(c: Campaign, kind: FileKind): Promise<
 
   let files: DriveFile[] = [];
   try {
-    files = await listMediaSection(c.folderPath, SECTION[kind]);
+    files = await listMediaSection({ id: c.folderId, path: c.folderPath }, SECTION[kind]);
   } catch (err) {
     console.error(`[vendor files] ${kind} folder read failed`, err);
     return { ok: false, reason: `Couldn't read the ${kind} folder in SharePoint.`, recoverable: false };
@@ -132,4 +132,31 @@ export async function checkCampaignFiles(
   }
 
   return { ok: problems.length === 0, problems, healed };
+}
+
+/**
+ * Find this campaign's SharePoint folder, looking again if we have none.
+ *
+ * The review screen used to say "create the folder and re-open this page", and
+ * re-opening did nothing: the folder was resolved once when the campaign was
+ * created and never again, so a folder made five minutes later was invisible
+ * for good. Now every visit to the review screen looks, and a folder found
+ * late is written back onto the campaign.
+ */
+export async function ensureCampaignFolder(
+  c: Campaign
+): Promise<{ id: string | null; path: string | null }> {
+  if (c.folderId || c.folderPath) return { id: c.folderId ?? null, path: c.folderPath ?? null };
+  if (!c.street && !c.number) return { id: null, path: null };
+
+  try {
+    const { match } = await findPropertyFolder(c.street, c.number);
+    if (!match) return { id: null, path: null };
+    await updateCampaign(c.id, { folderId: match.id, folderPath: match.path });
+    console.log(`[campaign ${c.id}] folder found on re-open: ${match.path}`);
+    return { id: match.id, path: match.path };
+  } catch (err) {
+    console.error(`[campaign ${c.id}] folder re-resolve failed`, err);
+    return { id: null, path: null };
+  }
 }

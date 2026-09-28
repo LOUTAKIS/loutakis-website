@@ -11,6 +11,13 @@ import { getAccessToken } from "./mail";
  * Folder convention (observed, not configured):
  *   Documents / Maree / Properties / Current / <Street> <Number> / MEDIA /
  *       BOARD/  BROCHURE/  COPY/  FLOORPLAN/  IMAGES/  VIDEO/
+ *
+ * The <Number> part is written by hand and separated however the day went:
+ * "Lae 4@14", "High 12.286", "Saltley 3@19", "Anderson 16&#x3a;123-129" — that
+ * last one is a folder created on a Mac as "16/123-129", which macOS stores as
+ * a colon and SharePoint then escapes, because a slash cannot be in a name.
+ * Matching therefore compares LETTERS AND DIGITS SEPARATELY and ignores every
+ * separator, so a unit number survives whatever it was typed with.
  * Sold campaigns move from Current/ to Sold/. Only BOARD and BROCHURE are read
  * — photos, floorplan, copy and video come from Box & Dice, which is loaded
  * before approval and doesn't carry the drafts the SharePoint folders do.
@@ -68,26 +75,53 @@ async function children(pathInDrive: string): Promise<Item[]> {
   return json.value ?? [];
 }
 
+/** Children of a path relative to an item id — no folder name in the URL. */
+async function childrenOfItem(itemId: string, sub: string): Promise<Item[]> {
+  const enc = sub.split("/").map(encodeURIComponent).join("/");
+  const json = await graph<{ value: Item[] }>(
+    `/drives/${DRIVE_ID}/items/${encodeURIComponent(itemId)}:/${enc}:/children?$top=200`
+  );
+  return json.value ?? [];
+}
+
+/**
+ * SharePoint hands back names with the characters it won't allow escaped as
+ * HTML entities — a folder Finder shows as "Anderson 16/123-129" arrives as
+ * "Anderson 16&#x3a;123-129". Left encoded, "x3a" lands in the middle of the
+ * street number and no amount of normalising will match it.
+ */
+export function decodeName(raw: string): string {
+  return String(raw ?? "").replace(/&#(x[0-9a-f]+|\d+);/gi, (_, code) =>
+    String.fromCharCode(code[0].toLowerCase() === "x" ? parseInt(code.slice(1), 16) : Number(code))
+  );
+}
+
 /** "76B Paxton" / "Paxton 76B" / "paxton76b" all become "paxton76b". */
-const norm = (s: string) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+const norm = (s: string) => decodeName(s).toLowerCase().replace(/[^a-z0-9]/g, "");
+/** Just the letters: "Anderson 16/123-129" -> "anderson". */
+const letters = (s: string) => decodeName(s).toLowerCase().replace(/[^a-z]/g, "");
+/** Just the digits, in order: "16/123-129", "16@123-129", "16:123-129" -> "16123129". */
+const digits = (s: string) => decodeName(s).replace(/[^0-9]/g, "");
 
 /**
  * Find the folder for a listing by street name and number.
  *
- * Folders are named "<Street> <Number>" by hand, so the match is forgiving:
- * exact first, then a folder that contains both the street and the number.
- * Current is searched before Sold. The caller shows the match to a staff
- * member before anything reaches a vendor — this is a suggestion, not a
- * guarantee.
+ * Folders are named "<Street> <Number>" by hand. The street has to be in the
+ * name and the numbers have to be the same numbers, compared as digits alone
+ * so the separator doesn't matter. Only if nothing matches that way do we fall
+ * back to a partial-number guess. Current is searched before Sold, and the
+ * caller shows the match to a staff member before anything reaches a vendor —
+ * this is a suggestion, not a guarantee.
  */
 export async function findPropertyFolder(
   streetName: string,
   number: string
 ): Promise<{ match: PropertyFolder | null; candidates: PropertyFolder[] }> {
-  const street = norm(streetName);
-  const num = norm(number);
-  const wanted = `${street}${num}`;
+  const street = letters(streetName);
+  const num = digits(number);
+  const wanted = `${norm(streetName)}${norm(number)}`;
   const candidates: PropertyFolder[] = [];
+  const loose: PropertyFolder[] = [];
 
   for (const stage of STAGES) {
     let items: Item[] = [];
@@ -99,37 +133,66 @@ export async function findPropertyFolder(
     }
     for (const it of items) {
       if (!it.folder) continue;
-      const n = norm(it.name);
-      const exact = n === wanted || n === `${num}${street}`;
-      const loose = street && num && n.includes(street) && n.includes(num);
-      if (exact || loose) {
-        candidates.push({
-          id: it.id,
-          name: it.name,
-          stage,
-          path: `${PROPERTIES_ROOT}/${stage}/${it.name}`,
-          webUrl: it.webUrl ?? "",
-        });
-      }
+      /**
+       * The street has to be there and the numbers have to be the same
+       * numbers. Comparing the digits as their own string is what makes the
+       * separator irrelevant — "16/123-129", "16@123-129" and the escaped
+       * colon all reduce to 16123129 — while still refusing to confuse
+       * Anderson 107 with Anderson 16/123-129.
+       */
+      const n = letters(it.name);
+      const d = digits(it.name);
+      if (!street || !n.includes(street)) continue;
+
+      const found: PropertyFolder = {
+        id: it.id,
+        name: decodeName(it.name),
+        stage,
+        path: `${PROPERTIES_ROOT}/${stage}/${it.name}`,
+        webUrl: it.webUrl ?? "",
+      };
+      if (!num || d === num) candidates.push(found);
+      /**
+       * Only if nothing matched cleanly: a folder whose digits are part of the
+       * listing's, or the other way round, so "William 19 (2026)" and a folder
+       * named for the street number alone are still OFFERED. Kept apart from
+       * the real matches because this one guesses, and a staff member confirms
+       * the folder before anything reaches a vendor.
+       */
+      else if (d && (d.includes(num) || num.includes(d))) loose.push(found);
     }
   }
 
-  // Prefer an exact name, then Current over Sold.
-  const exact = candidates.find((c) => {
-    const n = norm(c.name);
-    return n === wanted || n === `${num}${street}`;
-  });
-  return { match: exact ?? candidates[0] ?? null, candidates };
+  // Prefer an exact name, then Current over Sold, then a guess.
+  const exact = candidates.find((c) => norm(c.name) === wanted);
+  const all = candidates.length ? candidates : loose;
+  return { match: exact ?? all[0] ?? null, candidates: all };
 }
+
+/**
+ * Where a property's folder is.
+ *
+ * THE ID IS THE REAL ANSWER and the path is a fallback for campaigns stored
+ * before we kept one. A path has to be re-encoded on every request, and these
+ * folder names contain the exact characters — colons, slashes, ampersands —
+ * that a path cannot survive. An item id contains none of them, and it also
+ * survives the folder being renamed or moved from Current to Sold.
+ */
+export type FolderRef = { id?: string | null; path?: string | null };
 
 /** Files directly inside MEDIA/<section> for a property folder. */
 export async function listMediaSection(
-  folderPath: string,
+  folder: FolderRef | string,
   section: "BOARD" | "BROCHURE"
 ): Promise<DriveFile[]> {
+  const ref: FolderRef = typeof folder === "string" ? { path: folder } : folder;
   let items: Item[] = [];
   try {
-    items = await children(`${folderPath}/MEDIA/${section}`);
+    items = ref.id
+      ? await childrenOfItem(ref.id, `MEDIA/${section}`)
+      : ref.path
+        ? await children(`${ref.path}/MEDIA/${section}`)
+        : [];
   } catch (err) {
     // A missing section folder is normal (no board on some campaigns).
     if (!String(err).includes("404")) console.error(`[sharepoint] ${section} list failed`, err);

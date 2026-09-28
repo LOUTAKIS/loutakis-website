@@ -22,8 +22,8 @@ export async function GET(req: Request) {
 
   try {
     const { match, candidates } = await findPropertyFolder(street, number);
-    const board = match ? await listMediaSection(match.path, "BOARD") : [];
-    const brochure = match ? await listMediaSection(match.path, "BROCHURE") : [];
+    const board = match ? await listMediaSection(match, "BOARD") : [];
+    const brochure = match ? await listMediaSection(match, "BROCHURE") : [];
     return NextResponse.json({
       ok: true,
       lookedFor: { street, number },

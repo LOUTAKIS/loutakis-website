@@ -4,6 +4,7 @@ import { getStaff } from "@/lib/staff-auth";
 import { getCampaign } from "@/lib/campaigns";
 import { getMarketingSource } from "@/lib/boxdice";
 import { listMediaSection } from "@/lib/sharepoint";
+import { ensureCampaignFolder } from "@/lib/vendor-files";
 import CampaignReview from "@/components/CampaignReview";
 
 export const metadata = {
@@ -19,11 +20,19 @@ export default async function CampaignPage({ params }: { params: { id: string } 
   const campaign = await getCampaign(params.id);
   if (!campaign) notFound();
 
+  // Looks again if the folder wasn't there when the campaign was created —
+  // which is the normal order of things, since Maree often makes the folder
+  // after the listing goes on.
+  const folder = await ensureCampaignFolder(campaign);
+  const known = Boolean(folder.id || folder.path);
+
   const [source, board, brochure] = await Promise.all([
     getMarketingSource(campaign.listingId),
-    campaign.folderPath ? listMediaSection(campaign.folderPath, "BOARD") : Promise.resolve([]),
-    campaign.folderPath ? listMediaSection(campaign.folderPath, "BROCHURE") : Promise.resolve([]),
+    known ? listMediaSection(folder, "BOARD") : Promise.resolve([]),
+    known ? listMediaSection(folder, "BROCHURE") : Promise.resolve([]),
   ]);
+  campaign.folderId = folder.id;
+  campaign.folderPath = folder.path;
 
   return (
     <section className="portal-page">

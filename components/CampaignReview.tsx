@@ -13,6 +13,19 @@ type File = { id: string; name: string; size: number; modified: string };
  * ticked by default; the staff member unticks, tidies, adds the vendor, and
  * sends. Saves happen on Save; Send saves first.
  */
+/**
+ * A folder name SharePoint will actually accept.
+ *
+ * The old hint told staff to create "Anderson 16/123-129", which cannot exist:
+ * a slash is a path separator. Typed into Finder anyway, macOS stores it as a
+ * colon and SharePoint escapes that to &#x3a;, which is how a folder ends up
+ * sitting in the right place under a name nothing can match. Ask for the dash
+ * in the first place.
+ */
+function safeNumber(number: string): string {
+  return String(number ?? "").replace(/[\/\\:*?"<>|]/g, "-");
+}
+
 export default function CampaignReview({
   campaign,
   source,
@@ -263,7 +276,12 @@ export default function CampaignReview({
           <p className="form-note">Folder: <code>{c.folderPath}</code></p>
         ) : (
           <p className="form-note vc-warn">
-            No SharePoint folder matched “{c.street} {c.number}”. Create <code>Properties/Current/{c.street} {c.number}/MEDIA/BOARD</code> and re-open this page.
+            No SharePoint folder matched “{c.street} {c.number}”. Create{" "}
+            <code>
+              Maree/Properties/Current/{c.street} {safeNumber(c.number)}/MEDIA/BOARD
+            </code>{" "}
+            and re-open this page — a folder name can&rsquo;t contain{" "}
+            <code>/ \ : * ? &quot; &lt; &gt; |</code>, so a unit number goes in with a dash.
           </p>
         )}
         <div className="pf-row">

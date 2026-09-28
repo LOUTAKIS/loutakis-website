@@ -82,7 +82,14 @@ export type Campaign = {
   address: string; // "76B Paxton Street, South Kingsville"
   street: string; // for the SharePoint folder match
   number: string;
-  folderPath: string | null; // confirmed SharePoint property folder
+  folderPath: string | null; // confirmed SharePoint property folder, for display
+  /**
+   * The folder's item id — how it is actually reached. Names in this library
+   * contain colons and escaped slashes that a path can't carry, and an id
+   * survives a rename or a move from Current to Sold. Absent on campaigns
+   * created before we kept it; those fall back to the path.
+   */
+  folderId?: string | null;
   /** Everyone the approval goes to. A property often has two owners, and an
       estate or an investment can have more. */
   vendors: Vendor[];

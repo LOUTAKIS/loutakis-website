@@ -34,6 +34,7 @@ export async function POST(req: Request) {
   // SharePoint: best-effort. A missing folder is shown on the review screen,
   // not treated as an error — the board may not exist yet.
   let folderPath: string | null = null;
+  let folderId: string | null = null;
   let boardId: string | null = null;
   let boardName: string | null = null;
   let brochureId: string | null = null;
@@ -42,9 +43,10 @@ export async function POST(req: Request) {
     const { match } = await findPropertyFolder(source.streetName, source.number);
     if (match) {
       folderPath = match.path;
+      folderId = match.id;
       const [board, brochure] = await Promise.all([
-        listMediaSection(match.path, "BOARD"),
-        listMediaSection(match.path, "BROCHURE"),
+        listMediaSection(match, "BOARD"),
+        listMediaSection(match, "BROCHURE"),
       ]);
       // If the folder holds several files, take the most recently modified;
       // the review screen shows which and lets the staff member change it.
@@ -65,6 +67,7 @@ export async function POST(req: Request) {
     street: source.streetName,
     number: source.number,
     folderPath,
+    folderId,
     // One empty row to type into; staff add more as the title demands.
     vendors: [{ name: "", email: "" }],
     createdBy: staff.email,
