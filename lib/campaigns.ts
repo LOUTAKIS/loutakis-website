@@ -90,6 +90,17 @@ export type Campaign = {
       read. Never written any more — go through `campaignVendors()`. */
   vendorName?: string;
   vendorEmail?: string;
+  /**
+   * The listing agent — the first consultant on the listing in Box & Dice.
+   *
+   * Recorded at creation rather than looked up when the email goes out: a
+   * vendor's approval request should come from the person selling their house,
+   * and resolving that at send time would make the send depend on the CRM
+   * being reachable at that moment. Absent on campaigns created before this,
+   * which fall back to a lookup and then to the office address.
+   */
+  agentName?: string;
+  agentEmail?: string;
   createdBy: string; // staff email
   createdAt: string;
   sentAt: string | null;

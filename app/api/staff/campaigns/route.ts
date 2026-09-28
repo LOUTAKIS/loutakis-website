@@ -72,6 +72,9 @@ export async function POST(req: Request) {
     sentAt: null,
     sentBy: null,
     openedAt: null,
+    // agents[0] is the primary consultant — "agent 1" on the listing.
+    agentName: source.agents[0]?.name ?? "",
+    agentEmail: source.agents[0]?.email ?? "",
     openCount: 0,
     status: "draft",
     approvedAt: null,

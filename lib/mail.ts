@@ -122,6 +122,20 @@ export async function sendMail(opts: {
   html: string;
   replyTo?: { address: string; name?: string };
   attachments?: MailAttachment[];
+  /**
+   * Send AS this mailbox instead of ENQUIRY_FROM.
+   *
+   * For anything a vendor reads: a request to approve a marketing campaign
+   * should arrive from the agent who is selling their house, not from a
+   * generic office address. The app registration holds tenant-wide Mail.Send,
+   * so any mailbox in the tenant can be used — and because it is still a
+   * loutakis.com.au mailbox sent through Graph, SPF, DKIM and DMARC all pass
+   * exactly as they do today.
+   *
+   * Falls back to ENQUIRY_FROM if that mailbox refuses, because an email from
+   * the wrong sender is recoverable and an email that never went is not.
+   */
+  from?: string;
 }): Promise<void> {
   if (!mailIsConfigured()) throw new Error("Email is not configured");
 
@@ -146,12 +160,10 @@ export async function sendMail(opts: {
 
   const token = await getAccessToken();
 
-  const res = await fetch(
-    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(FROM!)}/sendMail`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
+  const wanted = opts.from?.trim().toLowerCase();
+  const senders = wanted && wanted !== FROM!.toLowerCase() ? [wanted, FROM!] : [FROM!];
+
+  const body = JSON.stringify({
         message: {
           subject: opts.subject,
           body: { contentType: "HTML", content: opts.html },
@@ -181,12 +193,34 @@ export async function sendMail(opts: {
           ...(attachments.length ? { attachments } : {}),
         },
         saveToSentItems: false,
-      }),
-      cache: "no-store",
-    }
-  );
+  });
 
-  if (!res.ok) throw new Error(`Graph sendMail failed: ${res.status} ${await res.text()}`);
+  let last = "";
+  for (const [i, sender] of senders.entries()) {
+    const res = await fetch(
+      `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender)}/sendMail`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body,
+        cache: "no-store",
+      }
+    );
+    if (res.ok) {
+      if (i > 0) {
+        console.error(
+          `[mail] "${senders[0]}" could not send — went from ${sender} instead. ${last}`
+        );
+      }
+      return;
+    }
+    last = `${res.status} ${(await res.text()).slice(0, 300)}`;
+    // Only a mailbox problem is worth retrying from the default address; a
+    // malformed message will fail identically whoever sends it.
+    if (res.status !== 403 && res.status !== 404) break;
+  }
+
+  throw new Error(`Graph sendMail failed: ${last}`);
 }
 
 /** Recipients for internal notifications (ENQUIRY_TO). */

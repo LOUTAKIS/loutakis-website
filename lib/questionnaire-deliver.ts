@@ -92,8 +92,15 @@ function answersAsHtml(q: Questionnaire, sections: Section[]): string {
 }
 
 export async function sendQuestionnaireLink(q: Questionnaire, sentBy: string): Promise<void> {
+  // From the listing agent, for the same reason the approval request is: this
+  // is a conversation between a seller and the person selling their house.
+  const agent = q.agentEmail
+    ? { address: q.agentEmail, name: q.agentName || "Loutakis Real Estate" }
+    : null;
+
   await sendMail({
     to: vendorEmails(q),
+    from: agent?.address,
     subject: `A few questions about ${q.address}`,
     html: `
       <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
@@ -105,7 +112,7 @@ export async function sendQuestionnaireLink(q: Questionnaire, sentBy: string): P
         <p style="color:#666">It takes about ten minutes. Your answers are kept as you type, so you can close it and come back to this link on the same device. The first question is the one we build your brochure around, so it's worth the time.</p>
       </div>
     `,
-    replyTo: { address: sentBy, name: "Loutakis Real Estate" },
+    replyTo: agent ?? { address: sentBy, name: "Loutakis Real Estate" },
   });
 
   await updateQuestionnaire(q.id, { status: "sent", sentAt: new Date().toISOString(), sentBy });

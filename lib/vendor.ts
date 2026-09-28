@@ -13,6 +13,7 @@ import {
   type Vendor,
 } from "./campaigns";
 import { addApprovalNote } from "./boxdice-write";
+import { getMarketingSource } from "./boxdice";
 
 /**
  * The vendor's side of marketing approval: the link they receive, what
@@ -29,6 +30,29 @@ export const AUTHORISATION_WORDING =
   "and have reviewed all materials provided. I authorise Loutakis Real Estate to proceed with " +
   "marketing production and bookings, understanding that costs may be incurred immediately and " +
   "approval cannot be withdrawn once production has commenced.";
+
+/**
+ * Who a vendor should hear from: the listing agent.
+ *
+ * A request to approve marketing, and the receipt for it, are between a seller
+ * and the person selling their house. A generic office address makes it look
+ * like a mailout and gets replied to by nobody.
+ *
+ * The campaign records this when it is created. Older ones don't, so the CRM is
+ * asked — and if that fails, the caller sends from the office address rather
+ * than not at all.
+ */
+async function agentFrom(c: Campaign): Promise<{ address: string; name: string } | null> {
+  if (c.agentEmail) return { address: c.agentEmail, name: c.agentName || "Loutakis Real Estate" };
+  try {
+    const source = await getMarketingSource(c.listingId);
+    const a = source?.agents[0];
+    if (a?.email) return { address: a.email, name: a.name || "Loutakis Real Estate" };
+  } catch (err) {
+    console.error("[vendor] couldn't resolve the listing agent", err);
+  }
+  return null;
+}
 
 function siteUrl(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://loutakis-website.vercel.app").replace(/\/$/, "");
@@ -95,6 +119,7 @@ const fmt = (iso: string) =>
 export async function sendVendorLink(c: Campaign, sentBy: string): Promise<void> {
   const people = campaignVendors(c);
   const both = people.length > 1 && mode(c) === "all";
+  const agent = await agentFrom(c);
 
   for (const [i, v] of people.entries()) {
     const others = people.filter((_, n) => n !== i).map((x) => x.name.split(" ")[0] || "the other owner");
@@ -116,7 +141,10 @@ export async function sendVendorLink(c: Campaign, sentBy: string): Promise<void>
         <p style="color:#666">Take a minute with it — the way we tell your story online makes all the difference. If anything needs changing, there's a box for that on the page.</p>
       </div>
     `,
-      replyTo: { address: sentBy, name: "Loutakis Real Estate" },
+      // From the agent, replying to the agent. The staff member who pressed
+      // send is not necessarily who the vendor should be talking to.
+      from: agent?.address,
+      replyTo: agent ?? { address: sentBy, name: "Loutakis Real Estate" },
     });
   }
 }
@@ -215,8 +243,11 @@ async function finaliseApproval(
   await addApprovalNote({ name, email: vendorEmails(c)[0] ?? "" }, note);
 
   // Receipt to everyone who signed — they each keep what they agreed to.
+  const agent = await agentFrom(c);
   await sendMail({
     to: vendorEmails(c),
+    from: agent?.address,
+    replyTo: agent ?? undefined,
     subject: `Marketing approved — ${c.address}`,
     html: `
       <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
