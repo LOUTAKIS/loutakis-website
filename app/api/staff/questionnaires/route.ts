@@ -53,7 +53,19 @@ export async function POST(req: Request) {
   if (existing && existing.status !== "complete") {
     // Re-sending is a normal thing to do — chasing is most of the job — so
     // this is not an error, it just doesn't make a second record.
-    await sendQuestionnaireLink({ ...existing, vendors }, staff.email);
+    try {
+      await sendQuestionnaireLink({ ...existing, vendors }, staff.email);
+    } catch (err) {
+      console.error("[questionnaire] re-send failed", err);
+      return NextResponse.json(
+        {
+          ok: false,
+          id: existing.id,
+          error: err instanceof Error && err.message ? err.message : "The email didn't send.",
+        },
+        { status: 502 }
+      );
+    }
     return NextResponse.json({ ok: true, id: existing.id, resent: true });
   }
 
@@ -83,7 +95,28 @@ export async function POST(req: Request) {
   };
 
   await saveQuestionnaire(q);
-  await sendQuestionnaireLink(q, staff.email);
+
+  try {
+    await sendQuestionnaireLink(q, staff.email);
+  } catch (err) {
+    console.error("[questionnaire] send failed", err);
+    /**
+     * The record is saved but nothing was emailed. Say so precisely: the
+     * questionnaire exists and can be re-sent once the cause is fixed, and
+     * the most likely cause is a listing with no consultant on it.
+     */
+    return NextResponse.json(
+      {
+        ok: false,
+        id: q.id,
+        error:
+          err instanceof Error && err.message
+            ? `${err.message} The questionnaire is saved — send it again once that's sorted.`
+            : "The email didn't send. The questionnaire is saved; try sending it again.",
+      },
+      { status: 502 }
+    );
+  }
 
   return NextResponse.json({ ok: true, id: q.id, link: questionnaireLink(q.id) });
 }

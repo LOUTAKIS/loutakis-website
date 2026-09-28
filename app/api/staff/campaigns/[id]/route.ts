@@ -112,7 +112,22 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     await sendVendorLink(c, staff.email);
   } catch (err) {
     console.error("[campaign] send failed", err);
-    return NextResponse.json({ ok: false, error: "The email didn't send. Try again in a moment." }, { status: 502 });
+    /**
+     * The reason is shown, not swallowed. "Try again in a moment" is wrong
+     * advice for the most likely cause — a listing with no consultant, or an
+     * agent whose address isn't a mailbox — and trying again achieves nothing
+     * until someone fixes Box & Dice.
+     */
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          err instanceof Error && err.message
+            ? err.message
+            : "The email didn't send. Try again in a moment.",
+      },
+      { status: 502 }
+    );
   }
 
   // Warm the brochure panels on the CDN so the vendor's first open is instant. Never fatal.

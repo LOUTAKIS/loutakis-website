@@ -132,8 +132,11 @@ export async function sendMail(opts: {
    * loutakis.com.au mailbox sent through Graph, SPF, DKIM and DMARC all pass
    * exactly as they do today.
    *
-   * Falls back to ENQUIRY_FROM if that mailbox refuses, because an email from
-   * the wrong sender is recoverable and an email that never went is not.
+   * THERE IS NO FALLBACK. If this mailbox cannot send, nothing is sent and a
+   * MailSendError is thrown naming it. Quietly substituting the office address
+   * would mean a vendor receiving an approval request from someone they have
+   * never dealt with, and nobody finding out — the wrong sender is not a
+   * smaller problem than no email, it is a quieter one.
    */
   from?: string;
 }): Promise<void> {
@@ -160,8 +163,7 @@ export async function sendMail(opts: {
 
   const token = await getAccessToken();
 
-  const wanted = opts.from?.trim().toLowerCase();
-  const senders = wanted && wanted !== FROM!.toLowerCase() ? [wanted, FROM!] : [FROM!];
+  const sender = opts.from?.trim() || FROM!;
 
   const body = JSON.stringify({
         message: {
@@ -195,32 +197,74 @@ export async function sendMail(opts: {
         saveToSentItems: false,
   });
 
-  let last = "";
-  for (const [i, sender] of senders.entries()) {
-    const res = await fetch(
-      `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender)}/sendMail`,
-      {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body,
-        cache: "no-store",
-      }
-    );
-    if (res.ok) {
-      if (i > 0) {
-        console.error(
-          `[mail] "${senders[0]}" could not send — went from ${sender} instead. ${last}`
-        );
-      }
-      return;
+  const res = await fetch(
+    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender)}/sendMail`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body,
+      cache: "no-store",
     }
-    last = `${res.status} ${(await res.text()).slice(0, 300)}`;
-    // Only a mailbox problem is worth retrying from the default address; a
-    // malformed message will fail identically whoever sends it.
-    if (res.status !== 403 && res.status !== 404) break;
-  }
+  );
+  if (res.ok) return;
 
-  throw new Error(`Graph sendMail failed: ${last}`);
+  const detail = `${res.status} ${(await res.text()).slice(0, 300)}`;
+  throw new MailSendError(`Graph sendMail failed: ${detail}`, sender, res.status);
+}
+
+/**
+ * A send that failed, with the mailbox it was attempted from.
+ *
+ * Carried rather than flattened into a string so a caller can tell "that
+ * agent's mailbox won't send" from "the message was malformed", and raise the
+ * alarm about the former without pretending it can fix it.
+ */
+export class MailSendError extends Error {
+  constructor(
+    message: string,
+    readonly sender: string,
+    readonly status?: number
+  ) {
+    super(message);
+    this.name = "MailSendError";
+  }
+}
+
+/**
+ * Tell the office that something a vendor should have received did not go.
+ *
+ * Sent from ENQUIRY_FROM deliberately — this is the one email that must not
+ * depend on the mailbox that just failed. It is best effort: if even this
+ * cannot be sent the log is all that is left, and that is the end of what
+ * software can do about it.
+ */
+export async function alertMailFailure(input: {
+  what: string;
+  address: string;
+  attemptedFrom: string;
+  detail: string;
+  link?: string;
+}): Promise<void> {
+  console.error(
+    `[mail] ALERT — ${input.what} for ${input.address} not sent from ${input.attemptedFrom}: ${input.detail}`
+  );
+  try {
+    await sendMail({
+      to: withAdmin(TO),
+      subject: `NOT SENT — ${input.what} for ${input.address}`,
+      html: `
+        <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
+          <p style="color:#b45309"><strong>An email to the vendor was not sent.</strong></p>
+          <p><strong>${esc(input.what)}</strong> for <strong>${esc(input.address)}</strong> could not be sent from <strong>${esc(input.attemptedFrom)}</strong>, and nothing was sent in its place — these have to come from the listing agent.</p>
+          <p style="color:#666">Usually this means that address isn't a mailbox in the Loutakis tenant, or the consultant's email in Box &amp; Dice is wrong. Fix it there and send again.</p>
+          <pre style="background:#f4f4f4;padding:12px 14px;font-size:12px;white-space:pre-wrap;color:#444">${esc(input.detail)}</pre>
+          ${input.link ? `<p><a href="${input.link}">Open it</a></p>` : ""}
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error("[mail] the failure alert itself could not be sent", err);
+  }
 }
 
 /** Recipients for internal notifications (ENQUIRY_TO). */

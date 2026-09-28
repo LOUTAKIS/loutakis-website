@@ -1,5 +1,13 @@
 import "server-only";
-import { sendMail, officeRecipients, withAdmin, ADMIN_EMAIL, esc, type MailAttachment } from "./mail";
+import {
+  sendMail,
+  officeRecipients,
+  withAdmin,
+  alertMailFailure,
+  ADMIN_EMAIL,
+  esc,
+  type MailAttachment,
+} from "./mail";
 import { createToken } from "./portal-token";
 import { addContactNote } from "./boxdice-write";
 import { updateQuestionnaire, type Questionnaire } from "./questionnaire";
@@ -92,15 +100,23 @@ function answersAsHtml(q: Questionnaire, sections: Section[]): string {
 }
 
 export async function sendQuestionnaireLink(q: Questionnaire, sentBy: string): Promise<void> {
-  // From the listing agent, for the same reason the approval request is: this
-  // is a conversation between a seller and the person selling their house.
-  const agent = q.agentEmail
-    ? { address: q.agentEmail, name: q.agentName || "Loutakis Real Estate" }
-    : null;
+  /**
+   * From the listing agent, for the same reason the approval request is: this
+   * is a conversation between a seller and the person selling their house.
+   * No agent means no send — the office address would reach the vendor as a
+   * stranger asking them personal questions about their home.
+   */
+  if (!q.agentEmail) {
+    throw new Error(
+      `No listing agent on ${q.address} in Box & Dice. These questions have to come from the agent, so nothing was sent — set the consultant on the listing and try again.`
+    );
+  }
+  const agent = { address: q.agentEmail, name: q.agentName || "Loutakis Real Estate" };
 
-  await sendMail({
+  try {
+    await sendMail({
     to: vendorEmails(q),
-    from: agent?.address,
+    from: agent.address,
     subject: `A few questions about ${q.address}`,
     html: `
       <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
@@ -112,8 +128,18 @@ export async function sendQuestionnaireLink(q: Questionnaire, sentBy: string): P
         <p style="color:#666">It takes about ten minutes. Your answers are kept as you type, so you can close it and come back to this link on the same device. The first question is the one we build your brochure around, so it's worth the time.</p>
       </div>
     `,
-    replyTo: agent ?? { address: sentBy, name: "Loutakis Real Estate" },
-  });
+    replyTo: agent,
+    });
+  } catch (err) {
+    await alertMailFailure({
+      what: "Property information questions",
+      address: q.address,
+      attemptedFrom: agent.address,
+      detail: err instanceof Error ? err.message : String(err),
+      link: `${siteUrl()}/staff/questionnaires/${q.id}`,
+    });
+    throw err;
+  }
 
   await updateQuestionnaire(q.id, { status: "sent", sentAt: new Date().toISOString(), sentBy });
 }

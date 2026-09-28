@@ -1,5 +1,5 @@
 import "server-only";
-import { sendMail, officeRecipients, withAdmin, esc } from "./mail";
+import { sendMail, officeRecipients, withAdmin, alertMailFailure, esc } from "./mail";
 import { createToken } from "./portal-token";
 import {
   updateCampaign,
@@ -39,10 +39,12 @@ export const AUTHORISATION_WORDING =
  * like a mailout and gets replied to by nobody.
  *
  * The campaign records this when it is created. Older ones don't, so the CRM is
- * asked — and if that fails, the caller sends from the office address rather
- * than not at all.
+ * asked — and if there is still no agent, THROWS rather than falling back to
+ * the office address. A vendor receiving an approval request from someone they
+ * have never dealt with is not a smaller problem than not receiving one; it is
+ * a quieter one, and it would be discovered by the vendor rather than by us.
  */
-async function agentFrom(c: Campaign): Promise<{ address: string; name: string } | null> {
+async function agentFrom(c: Campaign): Promise<{ address: string; name: string }> {
   if (c.agentEmail) return { address: c.agentEmail, name: c.agentName || "Loutakis Real Estate" };
   try {
     const source = await getMarketingSource(c.listingId);
@@ -51,7 +53,9 @@ async function agentFrom(c: Campaign): Promise<{ address: string; name: string }
   } catch (err) {
     console.error("[vendor] couldn't resolve the listing agent", err);
   }
-  return null;
+  throw new Error(
+    `No listing agent with an email address on ${c.address} in Box & Dice. These emails have to come from the agent, so nothing was sent — set the consultant on the listing and try again.`
+  );
 }
 
 function siteUrl(): string {
@@ -123,7 +127,8 @@ export async function sendVendorLink(c: Campaign, sentBy: string): Promise<void>
 
   for (const [i, v] of people.entries()) {
     const others = people.filter((_, n) => n !== i).map((x) => x.name.split(" ")[0] || "the other owner");
-    await sendMail({
+    try {
+      await sendMail({
       to: [v.email],
       subject: `Your marketing for ${c.address} is ready to review`,
       html: `
@@ -143,9 +148,25 @@ export async function sendVendorLink(c: Campaign, sentBy: string): Promise<void>
     `,
       // From the agent, replying to the agent. The staff member who pressed
       // send is not necessarily who the vendor should be talking to.
-      from: agent?.address,
-      replyTo: agent ?? { address: sentBy, name: "Loutakis Real Estate" },
-    });
+      from: agent.address,
+      replyTo: agent,
+      });
+    } catch (err) {
+      /**
+       * One vendor's email failing must not silently take the others with it,
+       * and it must never be quietly re-sent from the office address. Raise
+       * the alarm naming who missed out, then rethrow so the staff member
+       * pressing Send is told too.
+       */
+      await alertMailFailure({
+        what: `Approval request to ${v.name || v.email}`,
+        address: c.address,
+        attemptedFrom: agent.address,
+        detail: err instanceof Error ? err.message : String(err),
+        link: `${siteUrl()}/staff/${c.id}`,
+      });
+      throw err;
+    }
   }
 }
 
@@ -242,12 +263,18 @@ async function finaliseApproval(
   // approver's own address isn't one we hold.
   await addApprovalNote({ name, email: vendorEmails(c)[0] ?? "" }, note);
 
-  // Receipt to everyone who signed — they each keep what they agreed to.
-  const agent = await agentFrom(c);
+  /**
+   * Receipt to everyone who signed — they each keep what they agreed to.
+   *
+   * NOBODY IS WATCHING THIS ONE. It fires when a vendor approves, not when a
+   * staff member presses a button, so a failure here would otherwise be
+   * invisible. It alerts and carries on: the approval itself is already
+   * recorded in the CRM, and losing that over a receipt would be worse.
+   */
+  const agent = await agentFrom(c).catch(() => null);
   await sendMail({
     to: vendorEmails(c),
-    from: agent?.address,
-    replyTo: agent ?? undefined,
+    ...(agent ? { from: agent.address, replyTo: agent } : {}),
     subject: `Marketing approved — ${c.address}`,
     html: `
       <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#111;line-height:1.55">
@@ -258,7 +285,15 @@ async function finaliseApproval(
         <p style="color:#666">This is your copy of the approval. Any questions, call Michael on 0409 438 025.</p>
       </div>
     `,
-  }).catch((err) => console.error("[vendor] receipt failed", err));
+  }).catch((err) =>
+    alertMailFailure({
+      what: "Approval receipt to the vendors",
+      address: c.address,
+      attemptedFrom: agent?.address ?? "the office address",
+      detail: err instanceof Error ? err.message : String(err),
+      link: `${siteUrl()}/staff/${c.id}`,
+    })
+  );
 
   // The office, immediately.
   await sendMail({
