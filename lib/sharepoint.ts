@@ -148,6 +148,28 @@ export async function listMediaSection(
 }
 
 /**
+ * Does this item still exist, and what is it called?
+ *
+ * A cheap metadata read used to check a campaign's files before a vendor is
+ * emailed a link to them. Distinguishes "gone" from "we can't get at it",
+ * because the two need different people to fix them: a 404 is a file that was
+ * re-uploaded and can be found again by name, while a 401 or 403 is the Graph
+ * credential and no amount of looking will help.
+ */
+export async function fileMeta(
+  itemId: string
+): Promise<{ ok: true; name: string; size: number } | { ok: false; status: number }> {
+  const token = await getAccessToken();
+  const res = await fetch(
+    `${GRAPH}/drives/${DRIVE_ID}/items/${encodeURIComponent(itemId)}?$select=id,name,size`,
+    { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
+  );
+  if (!res.ok) return { ok: false, status: res.status };
+  const json: any = await res.json();
+  return { ok: true, name: String(json?.name ?? ""), size: Number(json?.size ?? 0) };
+}
+
+/**
  * Stream a file's bytes. Graph answers the /content request with a redirect to
  * a short-lived pre-authenticated URL; we follow it server-side and hand the
  * body on, so SharePoint itself is never exposed to the vendor's browser.

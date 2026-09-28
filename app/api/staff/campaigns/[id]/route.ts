@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStaff } from "@/lib/staff-auth";
 import { getCampaign, updateCampaign, deleteCampaign, campaignVendors, type Selection } from "@/lib/campaigns";
 import { sendVendorLink } from "@/lib/vendor";
+import { checkCampaignFiles } from "@/lib/vendor-files";
 import { panelUrls } from "@/lib/brochure-render";
 
 export const runtime = "nodejs";
@@ -87,6 +88,26 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     );
   }
 
+  /**
+   * NOTHING IS SENT UNTIL THE FILES ARE PROVEN.
+   *
+   * A vendor must never be the one to discover that the board is missing —
+   * they are being asked to authorise money on the strength of what is on that
+   * page, and a broken image undermines every other thing on it. This checks
+   * each file the page will try to show, heals a stale id where it can, and
+   * refuses to email anyone when it can't.
+   */
+  const files = await checkCampaignFiles(c);
+  if (!files.ok) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `Nothing was sent — the vendor would have seen a broken page. ${files.problems.join(" ")}`,
+      },
+      { status: 409 }
+    );
+  }
+
   try {
     await sendVendorLink(c, staff.email);
   } catch (err) {
@@ -101,12 +122,25 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     await Promise.allSettled(urls.map((u) => fetch(base + u, { cache: "no-store" }).then((r) => r.arrayBuffer())));
   }
 
+  /**
+   * Re-sending resets the approvals: whoever signed did so against a version
+   * nobody is looking at any more, and the point of re-sending is that
+   * something changed.
+   */
+  const resend = c.status !== "draft";
   const next = await updateCampaign(params.id, {
-    status: c.status === "draft" ? "sent" : c.status,
+    status: "sent",
     sentAt: new Date().toISOString(),
     sentBy: staff.email,
+    ...(resend && (c.approvals ?? []).length ? { approvals: [], approvedAt: null, approvedName: null } : {}),
   });
-  return NextResponse.json({ ok: true, campaign: next });
+  return NextResponse.json({
+    ok: true,
+    campaign: next,
+    // Said out loud rather than swallowed: the file on the page is not the one
+    // this campaign was assembled with, and somebody should look at it.
+    healed: files.healed,
+  });
 }
 
 /** Delete a campaign that hasn't been approved. The approved ones are the record. */
