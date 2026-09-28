@@ -1541,3 +1541,25 @@ footer.site .legal-line a { text-decoration: underline; text-underline-offset: 2
 
 /* Open, and — only on an approved property — the quieter way to start again. */
 .vc-pick-actions { display: flex; align-items: center; gap: 20px; justify-content: flex-end; }
+
+/* The example marketing approval. Green rather than the amber staff preview:
+   this is shown to a prospective client, and amber reads as a warning. */
+.va-demo {
+  position: sticky; top: 64px; z-index: 55;
+  background: #1f6b3f; color: #fff; text-align: center;
+  font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  padding: 8px 12px;
+}
+
+/* Nominating the example campaign, at the foot of the approvals list. */
+.demo-pick {
+  margin-top: 64px; padding-top: 28px;
+  border-top: 1px solid var(--line);
+  max-width: 640px;
+}
+.demo-pick label { display: block; margin-top: 14px; }
+.demo-pick label > span {
+  display: block; margin-bottom: 8px;
+  font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+}
+.demo-pick .field { max-width: 420px; }

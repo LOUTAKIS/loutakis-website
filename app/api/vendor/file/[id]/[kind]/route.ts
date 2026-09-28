@@ -3,6 +3,7 @@ import { downloadFile } from "@/lib/sharepoint";
 import { resolveCampaignFile, type FileKind } from "@/lib/vendor-files";
 import { verifyToken } from "@/lib/portal-token";
 import { getStaff } from "@/lib/staff-auth";
+import { isUnlocked, getDemoCampaignId } from "@/lib/demo-approval";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -75,7 +76,14 @@ async function serve(req: Request, params: { id: string; kind: string }) {
   // may read the files for their own campaign.
   const vendorOk = payload?.a === "vendor" && String(payload.c).split(":")[0] === params.id;
   const staffOk = Boolean(getStaff());
-  if (!vendorOk && !staffOk) return new Response("Not found", { status: 404 });
+  /**
+   * The password-protected example at /marketingapproval. Only ever the ONE
+   * campaign staff nominated, and only for somebody who has the password —
+   * the board and brochure are already public marketing, but that is no reason
+   * to serve every campaign's artwork to anyone who guesses an id.
+   */
+  const demoOk = isUnlocked() && (await getDemoCampaignId()) === params.id;
+  if (!vendorOk && !staffOk && !demoOk) return new Response("Not found", { status: 404 });
 
   if (params.kind !== "board" && params.kind !== "brochure") {
     return new Response("Not found", { status: 404 });

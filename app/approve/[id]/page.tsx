@@ -5,26 +5,14 @@ import { getStaff } from "@/lib/staff-auth";
 import { recordOpen, vendorFromToken, AUTHORISATION_WORDING } from "@/lib/vendor";
 import { fmtDate } from "@/lib/when";
 import VendorApprovalForm from "@/components/VendorApprovalForm";
-import VendorVideo from "@/components/VendorVideo";
-import VendorFrame, { type Marker } from "@/components/vendor/VendorFrame";
-import Photos from "@/components/vendor/Photos";
-import Zoomable from "@/components/vendor/Zoomable";
-import BrochureFold from "@/components/vendor/BrochureFold";
-import Board from "@/components/vendor/Board";
-import Copy from "@/components/vendor/Copy";
-import { panelUrls } from "@/lib/brochure-render";
+import VendorFrame from "@/components/vendor/VendorFrame";
+import { buildChapters, ChapterSections } from "@/components/vendor/Chapters";
 
 export const metadata = {
   title: "Review your marketing — Loutakis Real Estate",
   robots: { index: false, follow: false, noarchive: true },
 };
 export const dynamic = "force-dynamic";
-
-function youTubeId(url?: string | null): string | null {
-  if (!url) return null;
-  const m = url.match(/(?:youtu\.be\/|[?&]v=|\/embed\/|\/shorts\/)([\w-]{11})/);
-  return m ? m[1] : null;
-}
 
 function Expired() {
   return (
@@ -71,75 +59,11 @@ export default async function ApprovePage({
   const source = await getMarketingSource(c.listingId);
   if (vendorOk) await recordOpen(c);
 
-  const excluded = new Set(c.selection.excludedPhotos);
-  const photos = (source?.photos ?? []).filter((p) => !excluded.has(p.url));
-  const floorplans = c.selection.includeFloorplan ? source?.floorplans ?? [] : [];
-  const vid = c.selection.includeVideo ? youTubeId(source?.videoUrl) : null;
   const fileQ = vendorOk ? `?t=${encodeURIComponent(token)}` : "";
-  const hero = photos[0]?.url;
-  const b = c.selection.blurbs;
   const approved = c.status === "approved";
-
-  type Chapter = { id: string; label: string; title: string; blurb: string; body: React.ReactNode; aside?: React.ReactNode };
-  const chapters: Chapter[] = [];
-
-  if (c.selection.boardId)
-    chapters.push({
-      id: "board",
-      label: "Board",
-      title: "The board",
-      blurb: b.board,
-      body: <Board src={`/api/vendor/file/${c.id}/board${fileQ}`} />,
-    });
-  if (c.selection.brochureId)
-    chapters.push({
-      id: "brochure",
-      label: "Brochure",
-      title: "The brochure",
-      blurb: b.brochure,
-      body: <BrochureFold src={`/api/vendor/file/${c.id}/brochure${fileQ}`} name={c.selection.brochureName ?? "brochure.pdf"} panels={panelUrls(c.id, c.selection.brochureId)} />,
-      aside: <div id="bf-controls-slot" />,
-    });
-  if (c.selection.includeCopy && c.copyText)
-    chapters.push({
-      id: "copy",
-      label: "Copy",
-      title: "The words",
-      blurb: b.copy,
-      body: <Copy heading={c.copyHeading} text={c.copyText} />,
-    });
-  if (floorplans.length)
-    chapters.push({
-      id: "floorplan",
-      label: "Floorplan",
-      title: "The floorplan",
-      blurb: b.floorplan,
-      body: (
-        <div className="vplans">
-          {floorplans.map((f, i) => (
-            <Zoomable key={f.url} src={f.url} alt={`Floorplan${floorplans.length > 1 ? ` ${i + 1}` : ""}`} className="vz vz-plan" />
-          ))}
-        </div>
-      ),
-    });
-  if (photos.length)
-    chapters.push({
-      id: "photos",
-      label: "Photos",
-      title: "The photographs",
-      blurb: b.images,
-      body: <Photos photos={photos} />,
-    });
-  if (vid)
-    chapters.push({
-      id: "video",
-      label: "Video",
-      title: "The film",
-      blurb: b.video,
-      body: <VendorVideo id={vid} poster={hero} />,
-    });
-
-  const markers: Marker[] = [...chapters.map((ch) => ({ id: ch.id, label: ch.label })), { id: "approve", label: "Approve" }];
+  // The chapters are built in one place and rendered identically here and on
+  // the password-protected example at /marketingapproval.
+  const { chapters, markers, hero } = buildChapters(c, source, fileQ);
 
   return (
     <div className="va2">
@@ -154,16 +78,7 @@ export default async function ApprovePage({
         <a href={`#${markers[0]?.id ?? "approve"}`} className="vh-scroll" aria-label="Scroll to begin"><i /></a>
       </section>
 
-      {chapters.map((ch) => (
-        <section key={ch.id} className={`vch vch-${ch.id}`} id={ch.id}>
-          <div className="vch-head">
-            <h2>{ch.title}</h2>
-            {ch.blurb && <p className="vch-blurb">{ch.blurb}</p>}
-            {ch.aside}
-          </div>
-          <div className="vch-body">{ch.body}</div>
-        </section>
-      ))}
+      <ChapterSections chapters={chapters} />
 
       <section className="vch vch-approve" id="approve">
         <div className="vch-head">

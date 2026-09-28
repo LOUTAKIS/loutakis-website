@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getDemoCampaignId, demoConfigured } from "@/lib/demo-approval";
+import DemoPicker from "@/components/staff/DemoPicker";
 import { getStaff } from "@/lib/staff-auth";
 import {
   listCampaigns,
@@ -75,6 +77,7 @@ export default async function ApprovalsPage() {
   if (!staff) redirect("/staff");
 
   const campaigns = await listCampaigns();
+  const demoId = await getDemoCampaignId();
   const live = campaigns.filter((c) => c.status !== "approved");
   const done = campaigns.filter((c) => c.status === "approved");
 
@@ -140,6 +143,11 @@ export default async function ApprovalsPage() {
             )}
           </>
         )}
+        <DemoPicker
+          campaigns={campaigns.map((c) => ({ id: c.id, address: c.address }))}
+          current={demoId}
+          configured={demoConfigured()}
+        />
       </div>
     </section>
   );
