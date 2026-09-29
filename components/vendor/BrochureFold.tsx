@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLightbox } from "./Lightbox";
-import FoldProbe from "./FoldProbe";
 
 /**
  * The brochure as the object it is — a four-panel closed gatefold — rather
@@ -56,16 +55,6 @@ export default function BrochureFold({ src, name, panels }: { src: string; name:
   // The chapter head (left column) offers a slot for the controls, so they sit with the words, not under the object.
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   useEffect(() => setSlot(document.getElementById("bf-controls-slot")), []);
-
-  /**
-   * ?probe=1 puts a read-only instrument on the fold — see FoldProbe. Off by
-   * default and invisible to a vendor; it exists because the fault only
-   * appears on this page with this page's own brochure.
-   */
-  const [probe, setProbe] = useState(false);
-  useEffect(() => {
-    setProbe(new URLSearchParams(window.location.search).get("probe") === "1");
-  }, []);
 
   /**
    * The shadow, baked into a bitmap at the panel's real pixel size (re-baked
@@ -253,7 +242,6 @@ export default function BrochureFold({ src, name, panels }: { src: string; name:
       </div>
 
       {slot ? createPortal(controls, slot) : controls}
-      {probe && <FoldProbe />}
       {node}
     </div>
   );
