@@ -1,6 +1,7 @@
 import { getMarketingSource } from "@/lib/boxdice";
 import { demoConfigured, isUnlocked, getDemoCampaign } from "@/lib/demo-approval";
 import VendorFrame from "@/components/vendor/VendorFrame";
+import Address from "@/components/vendor/Address";
 import { buildChapters, ChapterSections } from "@/components/vendor/Chapters";
 import DemoGate from "@/components/DemoGate";
 
@@ -72,7 +73,9 @@ export default async function MarketingApprovalDemo() {
 
       <section className="vh" style={hero ? { backgroundImage: `url(${hero})` } : undefined}>
         <div className="vh-inner">
-          <h1>{c.address}</h1>
+          <h1>
+            <Address address={c.address} />
+          </h1>
         </div>
         <a href={`#${markers[0]?.id ?? "approve"}`} className="vh-scroll" aria-label="Scroll to begin">
           <i />

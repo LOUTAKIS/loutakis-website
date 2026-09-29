@@ -6,6 +6,7 @@ import { recordOpen, vendorFromToken, AUTHORISATION_WORDING } from "@/lib/vendor
 import { fmtDate } from "@/lib/when";
 import VendorApprovalForm from "@/components/VendorApprovalForm";
 import VendorFrame from "@/components/vendor/VendorFrame";
+import Address from "@/components/vendor/Address";
 import { buildChapters, ChapterSections } from "@/components/vendor/Chapters";
 
 export const metadata = {
@@ -73,7 +74,9 @@ export default async function ApprovePage({
       {/* Opening */}
       <section className="vh" style={hero ? { backgroundImage: `url(${hero})` } : undefined}>
         <div className="vh-inner">
-          <h1>{c.address}</h1>
+          <h1>
+            <Address address={c.address} />
+          </h1>
         </div>
         <a href={`#${markers[0]?.id ?? "approve"}`} className="vh-scroll" aria-label="Scroll to begin"><i /></a>
       </section>
