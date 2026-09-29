@@ -1,6 +1,5 @@
-import { getCampaign } from "@/lib/campaigns";
 import { getMarketingSource } from "@/lib/boxdice";
-import { demoConfigured, isUnlocked, getDemoCampaignId } from "@/lib/demo-approval";
+import { demoConfigured, isUnlocked, getDemoCampaign } from "@/lib/demo-approval";
 import VendorFrame from "@/components/vendor/VendorFrame";
 import { buildChapters, ChapterSections } from "@/components/vendor/Chapters";
 import DemoGate from "@/components/DemoGate";
@@ -43,18 +42,16 @@ export default async function MarketingApprovalDemo() {
 
   if (!isUnlocked()) return <DemoGate />;
 
-  const id = await getDemoCampaignId();
-  const c = id ? await getCampaign(id) : null;
+  // The frozen copy, not the live campaign: this page must not change when the
+  // campaign behind it does.
+  const c = await getDemoCampaign();
   if (!c) {
     return (
       <section className="va-expired">
         <div>
           <div className="eyebrow">Loutakis Real Estate</div>
           <h2>Nothing to show yet</h2>
-          <p>
-            No example campaign has been chosen. Call Michael on{" "}
-            <a href="tel:0409438025">0409&nbsp;438&nbsp;025</a> and he&rsquo;ll walk you through it.
-          </p>
+          <p>No example has been chosen.</p>
         </div>
       </section>
     );

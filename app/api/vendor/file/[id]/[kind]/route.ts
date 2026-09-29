@@ -3,7 +3,7 @@ import { downloadFile } from "@/lib/sharepoint";
 import { resolveCampaignFile, type FileKind } from "@/lib/vendor-files";
 import { verifyToken } from "@/lib/portal-token";
 import { getStaff } from "@/lib/staff-auth";
-import { isUnlocked, getDemoCampaignId } from "@/lib/demo-approval";
+import { isUnlocked, getDemoCampaign, healDemoFile } from "@/lib/demo-approval";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -82,7 +82,8 @@ async function serve(req: Request, params: { id: string; kind: string }) {
    * the board and brochure are already public marketing, but that is no reason
    * to serve every campaign's artwork to anyone who guesses an id.
    */
-  const demoOk = isUnlocked() && (await getDemoCampaignId()) === params.id;
+  const demo = isUnlocked() ? await getDemoCampaign() : null;
+  const demoOk = demo?.id === params.id;
   if (!vendorOk && !staffOk && !demoOk) return new Response("Not found", { status: 404 });
 
   if (params.kind !== "board" && params.kind !== "brochure") {
@@ -90,7 +91,12 @@ async function serve(req: Request, params: { id: string; kind: string }) {
   }
   const kind = params.kind as FileKind;
 
-  const c = await getCampaign(params.id);
+  /**
+   * For the example, the frozen copy is the campaign — so the board and
+   * brochure a seller is shown stay the ones that were nominated even after
+   * the real campaign has been edited or deleted.
+   */
+  const c = demoOk && demo ? demo : await getCampaign(params.id);
   if (!c) return new Response("Not found", { status: 404 });
 
   const resolved = await resolveCampaignFile(c, kind);
@@ -99,6 +105,14 @@ async function serve(req: Request, params: { id: string; kind: string }) {
     return new Response("Unavailable", { status: 502 });
   }
   if (!resolved.id) return new Response("Not found", { status: 404 });
+
+  // SharePoint moved the file and the resolver found it again: keep the frozen
+  // copy current too, or the example pays for that lookup on every view.
+  if (demoOk && resolved.healed) {
+    healDemoFile(params.id, kind, resolved.id, resolved.name).catch((e) =>
+      console.error("[demo] couldn't heal the example's file id", e)
+    );
+  }
 
   let upstream: Response;
   try {
