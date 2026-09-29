@@ -35,10 +35,7 @@ export default async function MarketingApprovalDemo() {
         <div>
           <div className="eyebrow">Loutakis Real Estate</div>
           <h2>Not available</h2>
-          <p>
-            This example isn&rsquo;t switched on. Call Michael on{" "}
-            <a href="tel:0409438025">0409&nbsp;438&nbsp;025</a>.
-          </p>
+          <p>This example isn&rsquo;t switched on.</p>
         </div>
       </section>
     );
