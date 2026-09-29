@@ -337,6 +337,10 @@ section { padding: 96px 0; }
 
 /* Section head + sync banner */
 .section-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+/* Actions level with the eyebrow rather than the name's baseline: on the
+   dashboard they are the page's controls, not a footnote to the heading. */
+.section-head.top { align-items: flex-start; }
+.sd-actions { display: flex; gap: 18px; align-items: center; }
 .section-head h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 4vw, 46px); }
 .sync { display: flex; align-items: center; gap: 10px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: #000; animation: pulse 2s infinite; }

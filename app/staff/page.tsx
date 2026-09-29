@@ -99,7 +99,7 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
   return (
     <section className="portal-page">
       <div className="wrap">
-        <div className="section-head">
+        <div className="section-head top">
           <div>
             {/* "Staff" was the sign-in page's label, and it said nothing once
                 you were through it. */}
@@ -111,7 +111,7 @@ export default async function StaffPage({ searchParams }: { searchParams?: { exp
               which is a dashboard-level thing to do, and it is what you want
               right after editing a listing in Box & Dice with a vendor on the
               phone. */}
-          <div style={{ display: "flex", gap: 18, alignItems: "center" }}>
+          <div className="sd-actions">
             <RefreshListings />
             <StaffSignOut />
           </div>
