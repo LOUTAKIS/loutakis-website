@@ -99,10 +99,6 @@ export default async function MarketingApprovalDemo() {
               No printing, no scanning, no attachments to find later. One link, on your phone, and
               a record of exactly what you agreed to.
             </p>
-            <p className="vp-note">
-              Questions about any of it — Michael is on{" "}
-              <a href="tel:0409438025">0409&nbsp;438&nbsp;025</a>.
-            </p>
           </div>
         </div>
       </section>
