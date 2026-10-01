@@ -439,8 +439,13 @@ section { padding: 96px 0; }
    so the three thumbnails come to exactly the hero's width. The clamp here is
    only what shows in the instant before that measurement. */
 .gf-strip { flex: 0 0 auto; height: clamp(88px, 16svh, 190px); display: flex; justify-content: center; gap: 10px; }
-.gf-thumb { position: relative; height: 100%; }
-.gf-thumb img { height: 100%; width: auto; display: block; }
+/* Never shrunk by flex, and never clamped by the global img max-width: either
+   of those leaves the width squeezed while the height stays pinned, and the
+   photograph stretches instead of simply being smaller. The row's numbers come
+   from Gallery.tsx and already fit; if they ever don't, this shows as a photo
+   running past its edge rather than as a quietly distorted one. */
+.gf-thumb { position: relative; height: 100%; flex: 0 0 auto; }
+.gf-thumb img { height: 100%; width: auto; max-width: none; display: block; }
 .gf-hero:focus-visible, .gf-thumb:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 .more-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   background: rgba(0,0,0,.45); color: #fff; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }

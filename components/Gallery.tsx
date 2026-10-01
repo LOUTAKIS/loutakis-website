@@ -178,8 +178,31 @@ export default function Gallery({ images }: { images: Img[] }) {
       const gaps = GAP * (thumbs.length - 1);
       // heroWidth = rHero * heroHeight, and stripHeight * S + gaps = heroWidth,
       // with heroHeight + GAP + stripHeight = H. Solve for stripHeight:
-      const strip = (rHero * (H - GAP) - gaps) / (S + rHero);
-      const hero = H - GAP - strip;
+      let strip = (rHero * (H - GAP) - gaps) / (S + rHero);
+      let hero = H - GAP - strip;
+
+      /**
+       * THE WIDTH IS A LIMIT TOO, and on a phone it is the one that binds.
+       *
+       * Solving for the height alone put a 1.5:1 hero at 711px wide on a 335px
+       * screen. The hero itself was fine — it has max-width and simply came
+       * down to the screen — but the thumbnail row had been sized to come to
+       * that imaginary 711px. Three landscape photographs were then squeezed
+       * into a third of the width they were solved for, and because their
+       * height was pinned at the same time they did not crop: THEY STRETCHED,
+       * into portraits. It also left a band of empty space above and below the
+       * hero, since the block still reserved the height it no longer used.
+       *
+       * So when the hero is wider than the box, the box wins: the hero takes
+       * the full width at its own proportions, and the row is re-solved to come
+       * to exactly that. The whole thing is then shorter than the budget, which
+       * is correct — a screenful is a ceiling, not a quota.
+       */
+      if (rHero * hero > W) {
+        hero = W / rHero;
+        strip = (W - gaps) / S;
+      }
+
       if (strip > 24 && hero > 80) {
         publishWidth(rHero * hero);
         setSize({ mode: "row", hero, strip });
