@@ -104,10 +104,17 @@ export default async function PropertyPage({ params }: { params: { slug: string 
                   </a>
                 )}
                 {l.soiUrl && (
+                  /**
+                   * Still the Statement of Information — the document the
+                   * Estate Agents Act requires on a residential sale listing —
+                   * labelled in the words a buyer actually uses. The file and
+                   * the link are unchanged; only what the button says.
+                   */
                   // The padding here was sized for a box that no longer exists.
                   <a href={l.soiUrl} target="_blank" rel="noopener noreferrer" className="btn"
-                    style={{ marginTop: 16, fontSize: 9, letterSpacing: ".15em" }}>
-                    Statement of Information
+                    style={{ marginTop: 16, fontSize: 9, letterSpacing: ".15em" }}
+                    title="Statement of Information">
+                    Price guide details
                   </a>
                 )}
               </div>
