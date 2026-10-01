@@ -103,17 +103,24 @@ export default async function PropertyPage({ params }: { params: { slug: string 
                     &#9654;&nbsp; Watch video
                   </a>
                 )}
-                {l.soiUrl && (
+                {l.priceStatementUrl && (
                   /**
-                   * Still the Statement of Information — the document the
-                   * Estate Agents Act requires on a residential sale listing —
-                   * labelled in the words a buyer actually uses. The file and
-                   * the link are unchanged; only what the button says.
+                   * The Property Price Statement.
+                   *
+                   * LEAVE IT WHERE IT IS. From 1 October 2026 this has to be
+                   * displayed or linked on the first visible part of the main
+                   * advertisement, beside the price — not at the foot of the
+                   * listing. It sits directly under the price guide here, and
+                   * moving it down the page would breach that.
+                   *
+                   * "Price guide details" is the wording realestate.com.au
+                   * uses, so a buyer meets the same words on both; the legal
+                   * name is on the link itself for anyone looking for it.
                    */
                   // The padding here was sized for a box that no longer exists.
-                  <a href={l.soiUrl} target="_blank" rel="noopener noreferrer" className="btn"
+                  <a href={l.priceStatementUrl} target="_blank" rel="noopener noreferrer" className="btn"
                     style={{ marginTop: 16, fontSize: 9, letterSpacing: ".15em" }}
-                    title="Statement of Information">
+                    title="Property Price Statement">
                     Price guide details
                   </a>
                 )}

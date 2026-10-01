@@ -114,7 +114,11 @@ export interface Listing {
   auctionAt?: string;
   geo?: { lat: number; lng: number };
   documents?: { name: string; url: string }[];
-  soiUrl?: string;
+  /**
+   * The Property Price Statement (the Statement of Information before
+   * 1 October 2026). Box & Dice still calls its field soi_file.
+   */
+  priceStatementUrl?: string;
   videoUrl?: string;
   updatedAt: string;
 }

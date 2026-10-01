@@ -277,17 +277,29 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
   const agentIds: number[] = raw.consultant_ids ?? (raw.primary_consultant_id ? [raw.primary_consultant_id] : []);
   const agents = agentIds.map((id) => consultants.get(id)).filter(Boolean) as Agent[];
 
-  // SOI is identified by file TYPE via the dedicated `soi_file` field
-  // (falls back to a website file whose name/type says Statement of Information).
+  /**
+   * The Property Price Statement — what Victoria called the Statement of
+   * Information until 1 October 2026.
+   *
+   * Taken from Box & Dice's dedicated `soi_file` field, which still carries
+   * the old name in the API. The fallback matches a website-tagged file by
+   * name, and MUST match both names: the moment the office starts calling the
+   * file a Property Price Statement, a pattern that only knew the old words
+   * would stop finding it and the button would quietly disappear from the
+   * listing. That is a document the Act requires to be published, so it
+   * failing silently is the worst way for it to fail.
+   */
   const publicFiles = (raw.public_files ?? []).filter((f: any) => f.url);
-  const soiUrl: string | undefined =
+  const priceStatementUrl: string | undefined =
     (raw.soi_file ? String(raw.soi_file) : undefined) ??
     publicFiles.find((f: any) =>
-      /statement of information|\bsoi\b/i.test(`${f.name ?? ""} ${f.description ?? ""}`)
+      /property price statement|price statement|statement of information|\bpps\b|\bsoi\b/i.test(
+        `${f.name ?? ""} ${f.description ?? ""}`
+      )
     )?.url;
-  // Other website-tagged documents (excluding the SOI, which has its own button).
+  // Other website-tagged documents; the price statement has its own button.
   const documents = publicFiles
-    .filter((f: any) => f.url !== soiUrl)
+    .filter((f: any) => f.url !== priceStatementUrl)
     .map((f: any) => ({ name: f.name ?? f.description ?? "Document", url: f.url }));
 
   // Price: sold listings show the actual SALE price (respecting "price undisclosed");
@@ -372,8 +384,8 @@ function normalise(raw: any, consultants: Map<number, Agent>): Listing {
         ? melbourneTime(raw.auction_date, raw.auction_time ?? "12:00") || undefined
         : undefined,
     geo: p.latitude && p.longitude ? { lat: Number(p.latitude), lng: Number(p.longitude) } : undefined,
-    documents, // website-tagged files (read-only), SOI excluded — it has its own button
-    soiUrl,
+    documents, // website-tagged files (read-only); the price statement has its own button
+    priceStatementUrl,
     videoUrl: raw.video_link_url || undefined,
     updatedAt: raw.sale_date ?? raw.date_listed ?? new Date().toISOString(),
   };
