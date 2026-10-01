@@ -1,4 +1,5 @@
 import { getListings, getOffMarketCount } from "@/lib/boxdice";
+import { toCard } from "@/lib/types";
 import PropertyFilters from "@/components/PropertyFilters";
 
 // Per request, not at build — see the note in app/page.tsx. The underlying
@@ -27,7 +28,10 @@ export default async function PropertiesPage() {
         </div>
         {/* The off-market card lives inside PropertyFilters — it only shows on
             the Current tab, so it needs the tab state. */}
-        <PropertyFilters listings={listings} offMarketCount={offMarketCount} />
+        {/* Cards, not whole CRM records: everything handed to a client
+            component is serialised into the page, and the full records made
+            this page 363KB and a second long on every visit. */}
+        <PropertyFilters listings={listings.map(toCard)} offMarketCount={offMarketCount} />
 
         {/* Sale of Land Act 1962 (Vic) ss 33B–33C — the due diligence checklist
             must be available to prospective purchasers from the time the land is

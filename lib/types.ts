@@ -23,6 +23,47 @@ export interface Agent {
   photo?: string;
 }
 
+/**
+ * What a card needs, and nothing else.
+ *
+ * /properties hands its listings to a client component, and everything that
+ * crosses that line is serialised into the page — twice. Passing the whole CRM
+ * record made that page 363KB and a second long on every visit, while a card
+ * shows an address, three numbers, one photograph and a price. Listing is
+ * structurally assignable to this, so anywhere already holding a full record
+ * can pass it straight through.
+ */
+export interface CardListing {
+  id: string;
+  slug: string;
+  status: ListingStatus;
+  headline: string;
+  address: { street: string; suburb: string };
+  priceDisplay: string;
+  bed: number;
+  bath: number;
+  car: number;
+  /** The cover shot only — a card never shows the rest. */
+  images: { url: string; alt: string }[];
+}
+
+/** Strip a full record down to what a card shows. */
+export function toCard(l: Listing): CardListing {
+  const cover = l.images[0];
+  return {
+    id: l.id,
+    slug: l.slug,
+    status: l.status,
+    headline: l.headline,
+    address: { street: l.address.street, suburb: l.address.suburb },
+    priceDisplay: l.priceDisplay,
+    bed: l.bed,
+    bath: l.bath,
+    car: l.car,
+    images: cover ? [{ url: cover.url, alt: cover.alt }] : [],
+  };
+}
+
 export interface Listing {
   id: string;
   slug: string;

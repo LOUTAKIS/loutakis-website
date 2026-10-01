@@ -1,9 +1,9 @@
 import { plural } from "@/lib/plural";
 import Link from "next/link";
 import Image from "next/image";
-import { Listing } from "@/lib/types";
+import { CardListing } from "@/lib/types";
 
-export default function ListingCard({ listing }: { listing: Listing }) {
+export default function ListingCard({ listing }: { listing: CardListing }) {
   const img = listing.images[0]?.url;
   // A sold card leads with the result: the price sits on the photo, and the
   // "it's time to move" line steps aside — the sale is the message here.

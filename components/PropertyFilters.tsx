@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Listing } from "@/lib/types";
+import { CardListing } from "@/lib/types";
 import ListingCard from "./ListingCard";
 import { countPhrase } from "@/lib/off-market-copy";
 
@@ -20,7 +20,7 @@ export default function PropertyFilters({
    */
   offMarketCount = 0,
 }: {
-  listings: Listing[];
+  listings: CardListing[];
   offMarketCount?: number;
 }) {
   const [tab, setTab] = useState("current");
@@ -31,7 +31,7 @@ export default function PropertyFilters({
     [listings]
   );
 
-  const matchesTab = (l: Listing) =>
+  const matchesTab = (l: CardListing) =>
     tab === "current"
       ? l.status === "current" || l.status === "under_offer"
       : tab === "all" || l.status === tab;
